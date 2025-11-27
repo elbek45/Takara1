@@ -4,11 +4,15 @@
 
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
+import * as adminAuthController from '../controllers/admin-auth.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// All admin routes require authentication
+// Public routes (no auth required)
+router.post('/auth/login', adminAuthController.adminLogin);
+
+// All other admin routes require authentication
 router.use(authenticateAdmin);
 
 // Dashboard
