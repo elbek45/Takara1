@@ -54,3 +54,7 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Solana keys (NEVER commit private keys!)
+.solana-keys/
+*.json
