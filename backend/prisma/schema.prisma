@@ -1,0 +1,441 @@
+// Takara Gold v2.1.1 Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER MODELS ====================
+
+model User {
+  id                String              @id @default(uuid())
+  walletAddress     String              @unique // Solana wallet address
+  email             String?             @unique
+  username          String?
+  avatarUrl         String?
+  role              UserRole            @default(USER)
+  isActive          Boolean             @default(true)
+
+  // Stats
+  totalInvested     Decimal             @default(0) @db.Decimal(20, 6)
+  totalEarnedUSDT   Decimal             @default(0) @db.Decimal(20, 6)
+  totalMinedTAKARA  Decimal             @default(0) @db.Decimal(20, 6)
+
+  // Relationships
+  investments       Investment[]
+  withdrawals       WithdrawalRequest[]
+  listings          MarketplaceListing[]
+  referrals         Referral[]          @relation("Referrer")
+  referredBy        Referral?           @relation("Referred")
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  lastLoginAt       DateTime?
+
+  @@index([walletAddress])
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+// ==================== VAULT MODELS ====================
+
+model Vault {
+  id              String        @id @default(uuid())
+  name            String        @unique // e.g., "Starter Vault 12M"
+  tier            VaultTier     // STARTER, PRO, ELITE
+  duration        Int           // months: 12, 30, 36
+  payoutSchedule  PayoutSchedule // MONTHLY, QUARTERLY, END_OF_TERM
+
+  // Requirements
+  minInvestment   Decimal       @db.Decimal(20, 2) // Min USDT
+  maxInvestment   Decimal       @db.Decimal(20, 2) // Max USDT
+  requireTAKARA   Boolean       @default(false)
+  takaraRatio     Decimal?      @db.Decimal(10, 2) // e.g., 30 or 50 per 100 USDT
+
+  // Rewards
+  baseAPY         Decimal       @db.Decimal(5, 2) // e.g., 4.0, 5.5, 8.0
+  maxAPY          Decimal       @db.Decimal(5, 2) // Max with LAIKA boost
+  miningPower     Decimal       @db.Decimal(6, 2) // e.g., 50, 100, 350
+
+  // Status
+  isActive        Boolean       @default(true)
+  totalCapacity   Decimal?      @db.Decimal(20, 2) // Max total USDT
+  currentFilled   Decimal       @default(0) @db.Decimal(20, 2)
+
+  // Relationships
+  investments     Investment[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([tier])
+  @@index([isActive])
+  @@map("vaults")
+}
+
+enum VaultTier {
+  STARTER // Tier 1
+  PRO     // Tier 2
+  ELITE   // Tier 3
+}
+
+enum PayoutSchedule {
+  MONTHLY       // Every 30 days
+  QUARTERLY     // Every 90 days
+  END_OF_TERM   // Only at the end
+}
+
+// ==================== INVESTMENT MODELS ====================
+
+model Investment {
+  id                  String              @id @default(uuid())
+
+  // User & Vault
+  userId              String
+  user                User                @relation(fields: [userId], references: [id])
+  vaultId             String
+  vault               Vault               @relation(fields: [vaultId], references: [id])
+
+  // Investment Details
+  usdtAmount          Decimal             @db.Decimal(20, 6) // USDT invested
+  takaraRequired      Decimal             @default(0) @db.Decimal(20, 6) // TAKARA required
+  takaraLocked        Decimal             @default(0) @db.Decimal(20, 6) // TAKARA actually locked
+
+  // LAIKA Boost
+  laikaBoost          LaikaBoost?
+  finalAPY            Decimal             @db.Decimal(5, 2) // After boost
+
+  // NFT
+  nftMintAddress      String?             @unique // Solana NFT mint address
+  nftMetadataUri      String?
+
+  // Timeline
+  startDate           DateTime            @default(now())
+  endDate             DateTime            // Calculated: startDate + vault.duration
+  lastClaimDate       DateTime?
+  nextPayoutDate      DateTime?
+
+  // Earnings
+  totalEarnedUSDT     Decimal             @default(0) @db.Decimal(20, 6)
+  totalMinedTAKARA    Decimal             @default(0) @db.Decimal(20, 6)
+  pendingUSDT         Decimal             @default(0) @db.Decimal(20, 6)
+  pendingTAKARA       Decimal             @default(0) @db.Decimal(20, 6)
+
+  // Status
+  status              InvestmentStatus    @default(PENDING)
+  isNFTMinted         Boolean             @default(false)
+
+  // Relationships
+  takaraMining        TakaraMining[]
+  marketplaceListing  MarketplaceListing?
+  transactions        Transaction[]
+
+  // Solana Transaction
+  depositTxSignature  String?             // Initial deposit transaction
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([userId, status])
+  @@index([vaultId, status])
+  @@index([status])
+  @@index([nftMintAddress])
+  @@map("investments")
+}
+
+enum InvestmentStatus {
+  PENDING         // Waiting for activation (72h timer)
+  ACTIVE          // Currently earning
+  COMPLETED       // Ended successfully
+  WITHDRAWN       // Early withdrawal
+  SOLD            // Sold on marketplace
+  CANCELLED       // Cancelled by admin
+}
+
+// ==================== LAIKA BOOST ====================
+
+model LaikaBoost {
+  id                String        @id @default(uuid())
+
+  investmentId      String        @unique
+  investment        Investment    @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  // LAIKA Details
+  laikaAmount       Decimal       @db.Decimal(20, 6) // LAIKA tokens deposited
+  laikaValueUSD     Decimal       @db.Decimal(20, 2) // USD value at deposit
+  maxAllowedUSD     Decimal       @db.Decimal(20, 2) // 90% of USDT investment
+
+  // Boost Calculation
+  boostPercentage   Decimal       @db.Decimal(5, 2) // % of max boost applied
+  additionalAPY     Decimal       @db.Decimal(5, 2) // APY added by boost
+
+  // Return
+  isReturned        Boolean       @default(false)
+  returnDate        DateTime?
+  returnTxSignature String?
+
+  depositTxSignature String?      // LAIKA deposit transaction
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([investmentId])
+  @@map("laika_boosts")
+}
+
+// ==================== TAKARA MINING ====================
+
+model TakaraMining {
+  id                String        @id @default(uuid())
+
+  investmentId      String
+  investment        Investment    @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  // Mining Details
+  miningDate        DateTime      @default(now())
+  miningPower       Decimal       @db.Decimal(6, 2) // From vault config
+  difficulty        Decimal       @db.Decimal(10, 6) // Network difficulty that day
+
+  // Rewards
+  takaraMinedRaw    Decimal       @db.Decimal(20, 6) // Before difficulty
+  takaraMinedFinal  Decimal       @db.Decimal(20, 6) // After difficulty
+
+  // Metadata
+  totalMinedSoFar   Decimal       @db.Decimal(20, 6) // Network total at this point
+  activeMiners      Int           // Active miners that day
+
+  createdAt         DateTime      @default(now())
+
+  @@index([investmentId, miningDate])
+  @@index([miningDate])
+  @@map("takara_mining")
+}
+
+// Global mining stats
+model MiningStats {
+  id                String        @id @default(uuid())
+
+  date              DateTime      @unique @default(now())
+  totalMined        Decimal       @db.Decimal(20, 6) // Total TAKARA mined to date
+  activeMiners      Int           // Active investments mining
+  currentDifficulty Decimal       @db.Decimal(10, 6)
+
+  createdAt         DateTime      @default(now())
+
+  @@index([date])
+  @@map("mining_stats")
+}
+
+// ==================== MARKETPLACE ====================
+
+model MarketplaceListing {
+  id                String              @id @default(uuid())
+
+  // Investment NFT
+  investmentId      String              @unique
+  investment        Investment          @relation(fields: [investmentId], references: [id])
+
+  // Seller
+  sellerId          String
+  seller            User                @relation(fields: [sellerId], references: [id])
+
+  // Listing Details
+  priceUSDT         Decimal             @db.Decimal(20, 6)
+  originalInvestment Decimal            @db.Decimal(20, 6) // Original USDT amount
+  currentValue      Decimal             @db.Decimal(20, 6) // With earnings
+
+  // Status
+  status            ListingStatus       @default(ACTIVE)
+
+  // Sale
+  buyerId           String?
+  soldPrice         Decimal?            @db.Decimal(20, 6)
+  soldAt            DateTime?
+  saleTxSignature   String?
+
+  // Fees
+  platformFee       Decimal             @default(2.5) @db.Decimal(5, 2) // %
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([status])
+  @@index([sellerId])
+  @@map("marketplace_listings")
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  EXPIRED
+}
+
+// ==================== WITHDRAWALS ====================
+
+model WithdrawalRequest {
+  id                String            @id @default(uuid())
+
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+
+  // Withdrawal Details
+  amount            Decimal           @db.Decimal(20, 6)
+  tokenType         TokenType         // USDT, TAKARA, LAIKA
+  destinationWallet String            // Solana address
+
+  // Status
+  status            WithdrawalStatus  @default(PENDING)
+
+  // Processing
+  processedAt       DateTime?
+  processedBy       String?           // Admin ID
+  txSignature       String?           // Solana transaction
+
+  // Rejection
+  rejectionReason   String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId, status])
+  @@index([status])
+  @@map("withdrawal_requests")
+}
+
+enum TokenType {
+  USDT
+  TAKARA
+  LAIKA
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+// ==================== TRANSACTIONS ====================
+
+model Transaction {
+  id                String            @id @default(uuid())
+
+  investmentId      String?
+  investment        Investment?       @relation(fields: [investmentId], references: [id])
+
+  // Transaction Details
+  type              TransactionType
+  amount            Decimal           @db.Decimal(20, 6)
+  tokenType         TokenType
+
+  // Solana
+  txSignature       String            @unique
+  fromAddress       String
+  toAddress         String
+
+  // Status
+  status            TxStatus          @default(PENDING)
+  confirmations     Int               @default(0)
+
+  // Metadata
+  description       String?
+  metadata          Json?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([txSignature])
+  @@index([status])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT           // User deposits USDT/TAKARA
+  LAIKA_DEPOSIT     // User deposits LAIKA for boost
+  LAIKA_RETURN      // LAIKA returned to user
+  YIELD_CLAIM       // User claims USDT yield
+  TAKARA_CLAIM      // User claims mined TAKARA
+  WITHDRAWAL        // User withdraws tokens
+  NFT_SALE          // Marketplace sale
+  NFT_TRANSFER      // NFT ownership transfer
+}
+
+enum TxStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+// ==================== REFERRAL SYSTEM ====================
+
+model Referral {
+  id                String        @id @default(uuid())
+
+  // Referrer (who shared the link)
+  referrerId        String
+  referrer          User          @relation("Referrer", fields: [referrerId], references: [id])
+
+  // Referred (who joined)
+  referredId        String        @unique
+  referred          User          @relation("Referred", fields: [referredId], references: [id])
+
+  // Rewards
+  totalEarned       Decimal       @default(0) @db.Decimal(20, 6)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([referrerId])
+  @@map("referrals")
+}
+
+// ==================== ADMIN ====================
+
+model AdminUser {
+  id                String        @id @default(uuid())
+
+  username          String        @unique
+  email             String        @unique
+  passwordHash      String
+
+  role              AdminRole     @default(ADMIN)
+  isActive          Boolean       @default(true)
+
+  lastLoginAt       DateTime?
+  lastLoginIP       String?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("admin_users")
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+// ==================== SYSTEM CONFIG ====================
+
+model SystemConfig {
+  id                String        @id @default(uuid())
+
+  key               String        @unique
+  value             String
+  description       String?
+
+  updatedAt         DateTime      @updatedAt
+
+  @@map("system_config")
+}
