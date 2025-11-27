@@ -19,6 +19,9 @@
   "keywords": ["solana", "defi", "nft", "takara", "laika"],
   "author": "Takara Team",
   "license": "MIT",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "@solana/web3.js": "^1.95.8",

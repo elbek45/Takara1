@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import './index.css'
+import { Buffer } from 'buffer'
+
+// Polyfill Buffer for browser
+window.Buffer = Buffer
 
 // Solana wallet imports
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
