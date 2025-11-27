@@ -22,8 +22,9 @@ const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || `https://api.${SOLANA_NET
 
 // Token mint addresses (replace with actual addresses)
 const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') // Devnet USDT
-const TAKARA_MINT = new PublicKey('TAKARA_MINT_ADDRESS_HERE') // Replace with actual TAKARA mint
-const LAIKA_MINT = new PublicKey('LAIKA_MINT_ADDRESS_HERE') // Replace with actual LAIKA mint
+// TODO: Replace these with your actual token mint addresses after creating tokens
+const TAKARA_MINT = new PublicKey('So11111111111111111111111111111111111111112') // Placeholder - Replace with actual TAKARA mint
+const LAIKA_MINT = new PublicKey('So11111111111111111111111111111111111111113') // Placeholder - Replace with actual LAIKA mint
 
 class SolanaService {
   private connection: Connection
@@ -215,8 +216,9 @@ class SolanaService {
    * Get platform wallet address (where to send tokens)
    */
   getPlatformWalletAddress(): PublicKey {
-    // Replace with actual platform wallet address
-    return new PublicKey('PLATFORM_WALLET_ADDRESS_HERE')
+    // TODO: Replace with actual platform wallet address
+    // This is a placeholder - tokens sent here will be lost!
+    return new PublicKey('11111111111111111111111111111111')
   }
 }
 
