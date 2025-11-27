@@ -15,6 +15,10 @@ import { APP_CONFIG, RATE_LIMIT, CORS_CONFIG } from './config/constants';
 // Load environment variables
 dotenv.config();
 
+// Validate critical environment variables
+import { validateEnvironment } from './config/env';
+validateEnvironment();
+
 // Initialize logger
 const logger = pino({
   name: APP_CONFIG.NAME,
@@ -27,6 +31,10 @@ const logger = pino({
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || APP_CONFIG.DEFAULT_PORT;
+
+// Trust proxy (required for rate limiting behind nginx)
+// Use '127.0.0.1' to trust only local nginx proxy
+app.set('trust proxy', '127.0.0.1');
 
 // ==================== MIDDLEWARE ====================
 

@@ -96,6 +96,8 @@ export interface InvestmentCalculation {
     usdtAmount: number
     requiredTAKARA: number
     laikaBoostUSD: number
+    lkiToUsdtRate?: number
+    laikaValueUSD?: number
   }
   earnings: {
     baseAPY: number
@@ -230,4 +232,5 @@ export interface CreateInvestmentInput {
 export interface CalculateInvestmentInput {
   usdtAmount: number
   laikaBoostUSD?: number
+  laikaAmountLKI?: number
 }
