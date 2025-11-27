@@ -191,7 +191,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
 export async function calculateInvestment(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const { usdtAmount, laikaBoostUSD } = req.body;
+    const { usdtAmount, laikaAmountLKI } = req.body;
 
     if (!usdtAmount || usdtAmount <= 0) {
       res.status(400).json({
@@ -236,13 +236,19 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
       ? (usdtAmount / 100) * Number(vault.takaraRatio)
       : 0;
 
+    // Get LKI to USDT exchange rate
+    const lkiToUsdtRate = parseFloat(process.env.LKI_TO_USDT_RATE || '0.01');
+
+    // Convert LKI amount to USD value
+    const laikaAmountLKIValue = laikaAmountLKI || 0;
+    const laikaValueUSD = laikaAmountLKIValue * lkiToUsdtRate;
+
     // Calculate LAIKA boost
-    const laikaBoostValue = laikaBoostUSD || 0;
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
       tier: vault.tier as VaultTier,
       usdtInvested: usdtAmount,
-      laikaValueUSD: laikaBoostValue
+      laikaValueUSD: laikaValueUSD
     });
 
     // Calculate USDT earnings
@@ -282,7 +288,9 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
         investment: {
           usdtAmount,
           requiredTAKARA,
-          laikaBoostUSD: laikaBoostValue
+          laikaAmountLKI: laikaAmountLKIValue,
+          laikaValueUSD: laikaValueUSD,
+          lkiToUsdtRate: lkiToUsdtRate
         },
         earnings: {
           baseAPY: Number(vault.baseAPY),
@@ -302,7 +310,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           totalTAKARA: miningResult.totalTakaraExpected
         },
         summary: {
-          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaBoostValue,
+          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaValueUSD,
           totalUSDTReturn: usdtAmount + earningsResult.totalEarnings,
           totalTAKARAMined: miningResult.totalTakaraExpected,
           roi: ((earningsResult.totalEarnings / usdtAmount) * 100).toFixed(2) + '%'

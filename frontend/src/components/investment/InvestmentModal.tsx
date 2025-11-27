@@ -13,7 +13,7 @@ interface InvestmentModalProps {
   vaultId: string
   calculation: InvestmentCalculation
   usdtAmount: number
-  laikaBoostUSD: number
+  laikaAmountLKI: number
 }
 
 type Step = 'review' | 'transfer' | 'confirm' | 'success'
@@ -24,7 +24,7 @@ export default function InvestmentModal({
   vaultId,
   calculation,
   usdtAmount,
-  laikaBoostUSD,
+  laikaAmountLKI,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
   const queryClient = useQueryClient()
@@ -63,12 +63,12 @@ export default function InvestmentModal({
       }
 
       // Step 3: Transfer LAIKA if boosting
-      if (laikaBoostUSD > 0) {
+      if (laikaAmountLKI > 0) {
         toast.info('Transferring LAIKA...')
         await solanaService.transferLAIKA(
           publicKey,
           platformWallet,
-          laikaBoostUSD,
+          laikaAmountLKI,
           signTransaction
         )
         toast.success('LAIKA transferred successfully!')
@@ -82,10 +82,10 @@ export default function InvestmentModal({
         vaultId,
         usdtAmount,
         takaraAmount: calculation.investment.requiredTAKARA,
-        laikaBoost: laikaBoostUSD > 0
+        laikaBoost: laikaAmountLKI > 0
           ? {
-              laikaAmount: laikaBoostUSD,
-              laikaValueUSD: laikaBoostUSD,
+              laikaAmount: laikaAmountLKI,
+              laikaValueUSD: calculation.investment.laikaValueUSD || 0,
             }
           : undefined,
         txSignature: usdtSignature,
@@ -187,7 +187,7 @@ export default function InvestmentModal({
                 </div>
               )}
 
-              {laikaBoostUSD > 0 && (
+              {laikaAmountLKI > 0 && (
                 <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
                   <div className="text-sm text-laika-purple font-medium mb-2">
                     LAIKA Boost
@@ -196,7 +196,10 @@ export default function InvestmentModal({
                     <div>
                       <div className="text-xs text-gray-400">Amount</div>
                       <div className="text-white font-semibold">
-                        ${laikaBoostUSD.toLocaleString()}
+                        {laikaAmountLKI.toLocaleString()} LKI
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ≈ ${calculation.investment.laikaValueUSD?.toFixed(2) || 0} USDT
                       </div>
                     </div>
                     <div>

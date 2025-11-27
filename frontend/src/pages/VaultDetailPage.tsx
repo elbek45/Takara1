@@ -13,7 +13,7 @@ export default function VaultDetailPage() {
   const { connected } = useWallet()
   const { isAuthenticated } = useAuth()
   const [usdtAmount, setUsdtAmount] = useState<string>('')
-  const [laikaBoostUSD, setLaikaBoostUSD] = useState<number>(0)
+  const [laikaAmountLKI, setLaikaAmountLKI] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { data: vaultResponse, isLoading: vaultLoading } = useQuery({
@@ -25,18 +25,22 @@ export default function VaultDetailPage() {
   const vault = vaultResponse?.data?.vault
 
   const { data: calculationResponse, isLoading: calculating } = useQuery({
-    queryKey: ['calculate', id, usdtAmount, laikaBoostUSD],
+    queryKey: ['calculate', id, usdtAmount, laikaAmountLKI],
     queryFn: () =>
       api.calculateInvestment(id!, {
         usdtAmount: parseFloat(usdtAmount),
-        laikaBoostUSD: laikaBoostUSD > 0 ? laikaBoostUSD : undefined,
+        laikaAmountLKI: laikaAmountLKI > 0 ? laikaAmountLKI : undefined,
       }),
     enabled: !!id && !!usdtAmount && parseFloat(usdtAmount) > 0,
   })
 
   const calculation = calculationResponse?.data
 
-  const maxLaikaBoost = usdtAmount ? parseFloat(usdtAmount) * 0.9 : 0
+  // Calculate max LKI based on 90% of USDT amount
+  // Using exchange rate: 1 LKI = 0.01 USDT, so 1 USDT = 100 LKI
+  const lkiToUsdtRate = calculation?.investment?.lkiToUsdtRate || 0.01
+  const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.9 : 0
+  const maxLaikaBoostLKI = maxLaikaBoostUSD / lkiToUsdtRate
 
   if (vaultLoading) {
     return (
@@ -185,23 +189,28 @@ export default function VaultDetailPage() {
                   <label className="text-sm font-medium text-gray-300">
                     LAIKA Boost (Optional)
                   </label>
-                  <span className="text-sm text-gold-500 font-medium">
-                    ${laikaBoostUSD.toFixed(2)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-sm text-gold-500 font-medium block">
+                      {laikaAmountLKI.toLocaleString()} LKI
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      ≈ ${(laikaAmountLKI * lkiToUsdtRate).toFixed(2)} USDT
+                    </span>
+                  </div>
                 </div>
                 <input
                   type="range"
                   min="0"
-                  max={maxLaikaBoost}
+                  max={maxLaikaBoostLKI}
                   step="100"
-                  value={laikaBoostUSD}
-                  onChange={(e) => setLaikaBoostUSD(parseFloat(e.target.value))}
+                  value={laikaAmountLKI}
+                  onChange={(e) => setLaikaAmountLKI(parseFloat(e.target.value))}
                   disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>$0</span>
-                  <span>Max: ${maxLaikaBoost.toFixed(2)} (90% of USDT)</span>
+                  <span>0 LKI</span>
+                  <span>Max: {maxLaikaBoostLKI.toLocaleString()} LKI (≈ ${maxLaikaBoostUSD.toFixed(2)} USDT)</span>
                 </div>
               </div>
 
@@ -317,7 +326,7 @@ export default function VaultDetailPage() {
           vaultId={id!}
           calculation={calculation}
           usdtAmount={parseFloat(usdtAmount)}
-          laikaBoostUSD={laikaBoostUSD}
+          laikaAmountLKI={laikaAmountLKI}
         />
       )}
     </div>
