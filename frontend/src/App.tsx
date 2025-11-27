@@ -13,10 +13,15 @@ import PortfolioPage from './pages/PortfolioPage'
 import MarketplacePage from './pages/MarketplacePage'
 import ProfilePage from './pages/ProfilePage'
 
+// Admin Pages
+import AdminLoginPage from './pages/admin/AdminLoginPage'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+
 function App() {
   return (
     <>
       <Routes>
+        {/* Main App Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<LandingPage />} />
           <Route path="vaults" element={<VaultsPage />} />
@@ -26,6 +31,10 @@ function App() {
           <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
+
+        {/* Admin Routes (No Layout) */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
       </Routes>
 
       <Toaster
