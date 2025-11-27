@@ -22,7 +22,7 @@ export default function VaultDetailPage() {
     enabled: !!id,
   })
 
-  const vault = vaultResponse?.data
+  const vault = vaultResponse?.data?.vault
 
   const { data: calculationResponse, isLoading: calculating } = useQuery({
     queryKey: ['calculate', id, usdtAmount, laikaBoostUSD],
