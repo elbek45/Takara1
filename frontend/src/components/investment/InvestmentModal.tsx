@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
+import { useMetaMask } from '../../hooks/useMetaMask'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
 
@@ -27,32 +28,33 @@ export default function InvestmentModal({
   laikaAmountLKI,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
+  const { transferUSDT: transferUSDTMetaMask, isConnected: metaMaskConnected } = useMetaMask()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
 
   const investMutation = useMutation({
     mutationFn: async () => {
-      if (!publicKey || !signTransaction) {
-        throw new Error('Wallet not connected')
+      // Check wallet connections
+      if (!metaMaskConnected) {
+        throw new Error('Please connect MetaMask for USDT payment')
       }
 
-      // Step 1: Transfer USDT to platform
-      toast.info('Transferring USDT...')
-      const platformWallet = solanaService.getPlatformWalletAddress()
+      if (!publicKey || !signTransaction) {
+        throw new Error('Please connect Phantom wallet for TAKARA/LAIKA tokens')
+      }
 
-      const usdtSignature = await solanaService.transferUSDT(
-        publicKey,
-        platformWallet,
-        usdtAmount,
-        signTransaction
-      )
+      // Step 1: Transfer USDT via MetaMask (BSC/Ethereum)
+      toast.info('Transferring USDT via MetaMask...')
+
+      const { hash: usdtSignature } = await transferUSDTMetaMask(usdtAmount.toString())
 
       toast.success('USDT transferred successfully!')
 
-      // Step 2: Transfer TAKARA if required
+      // Step 2: Transfer TAKARA if required (via Phantom/Solana)
       if (calculation.investment.requiredTAKARA > 0) {
-        toast.info('Transferring TAKARA...')
+        toast.info('Transferring TAKARA via Phantom...')
+        const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferTAKARA(
           publicKey,
           platformWallet,
@@ -62,9 +64,10 @@ export default function InvestmentModal({
         toast.success('TAKARA transferred successfully!')
       }
 
-      // Step 3: Transfer LAIKA if boosting
+      // Step 3: Transfer LAIKA if boosting (via Phantom/Solana)
       if (laikaAmountLKI > 0) {
-        toast.info('Transferring LAIKA...')
+        toast.info('Transferring LAIKA via Phantom...')
+        const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferLAIKA(
           publicKey,
           platformWallet,
@@ -147,6 +150,23 @@ export default function InvestmentModal({
           {/* Review Step */}
           {step === 'review' && (
             <div className="space-y-6">
+              {/* Wallet Connection Status */}
+              {(!metaMaskConnected || !publicKey) && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                  <div className="text-sm text-yellow-400 font-medium mb-2">
+                    ⚠️ Required Wallets
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-1">
+                    {!metaMaskConnected && (
+                      <div>• Connect MetaMask for USDT payment (BSC Testnet)</div>
+                    )}
+                    {!publicKey && (
+                      <div>• Connect Phantom for TAKARA/LAIKA tokens (Solana)</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-background-elevated rounded-lg p-4 space-y-3">
                 <h3 className="text-lg font-semibold text-white">Investment Summary</h3>
 
