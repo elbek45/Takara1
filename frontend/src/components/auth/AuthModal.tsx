@@ -83,8 +83,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const isPending = loginMutation.isPending || registerMutation.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-background-card rounded-xl max-w-md w-full border border-green-900/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-background-card rounded-xl max-w-md w-full border border-green-900/20 my-auto">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-green-900/20">
           <h2 className="text-2xl font-bold text-white">

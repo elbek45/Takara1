@@ -120,11 +120,16 @@ export default function Header() {
               </Link>
             )}
 
-            {/* MetaMask Button */}
-            <MetaMaskButton variant="secondary" size="md" />
+            {/* Wallet Buttons - Only show if authenticated */}
+            {isAuthenticated && (
+              <>
+                {/* MetaMask Button */}
+                <MetaMaskButton variant="secondary" size="md" />
 
-            {/* Phantom Wallet Button */}
-            <WalletMultiButton className="!bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
+                {/* Phantom Wallet Button */}
+                <WalletMultiButton className="!bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -177,13 +182,44 @@ export default function Header() {
                 Profile
               </Link>
             )}
-            <div className="pt-2 space-y-2">
-              {/* MetaMask Button */}
-              <MetaMaskButtonCompact className="w-full" />
 
-              {/* Phantom Wallet Button */}
-              <WalletMultiButton className="!w-full !bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
-            </div>
+            {/* Login Button for mobile */}
+            {!isAuthenticated && (
+              <button
+                onClick={() => {
+                  setAuthModalOpen(true)
+                  setMobileMenuOpen(false)
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:opacity-90 transition-opacity"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Login</span>
+              </button>
+            )}
+
+            {/* Wallet Buttons - Only show if authenticated */}
+            {isAuthenticated && (
+              <div className="pt-2 space-y-2">
+                {/* MetaMask Button */}
+                <MetaMaskButtonCompact className="w-full" />
+
+                {/* Phantom Wallet Button */}
+                <WalletMultiButton className="!w-full !bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
+
+                {/* Logout Button for mobile */}
+                {currentUser?.data && (
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full px-4 py-2.5 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:opacity-90 transition-opacity"
+                  >
+                    Logout
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </nav>
