@@ -37,7 +37,9 @@
     "recharts": "^2.13.3",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.4",
+    "viem": "^1.21.4",
     "vite-plugin-node-polyfills": "^0.24.0",
+    "wagmi": "^1.4.13",
     "zod": "^3.23.8",
     "zustand": "^4.5.5"
   },

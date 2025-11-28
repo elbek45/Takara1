@@ -1,18 +1,18 @@
 # 🏆 Takara Gold v2.1.1
 
-**Premium Investment Platform & NFT Marketplace on Solana**
+**Premium Dual-Blockchain Investment Platform & NFT Marketplace**
 
 > **"TAKARA — это новая криптовалюта, которая скоро будет листиться на биржах. Успей намайнить её первым! А в качестве приятного бонуса — получай стабильный доход в USDT."**
 
 ## 📋 Overview
 
-Takara Gold is a next-generation DeFi platform built on Solana that allows users to:
+Takara Gold is a next-generation DeFi platform with **dual-blockchain architecture** that allows users to:
 
-- 💰 **Invest USDT** in 9 different Vault types with 4-12% APY
-- ⛏️ **Mine TAKARA tokens** daily (600M total supply over 5 years)
-- 🚀 **Boost earnings** with LAIKA ($LKI) tokens up to 12% APY
-- 🎨 **Trade positions** on integrated NFT marketplace
-- 💎 **Own investment NFTs** representing your position
+- 💰 **Invest USDT** via Ethereum (ERC-20) or TRON (TRC-20) in 9 different Vault types with 4-12% APY
+- ⛏️ **Mine TAKARA tokens** daily on Solana (600M total supply over 5 years)
+- 🚀 **Boost earnings** with LAIKA ($LKI) tokens on Solana up to 12% APY
+- 🎨 **Trade positions** on integrated NFT marketplace (Solana)
+- 💎 **Own investment NFTs** representing your position (Solana)
 
 ## ✨ Key Features
 
@@ -34,10 +34,54 @@ Takara Gold is a next-generation DeFi platform built on Solana that allows users
 
 ## 🏗️ Architecture
 
+### Dual-Blockchain Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INVESTMENT PROCESS                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Step 1: USDT Deposit (Ethereum or TRON)                   │
+│  ┌──────────────────────────────────────────────┐           │
+│  │  MetaMask (ETH)   OR   TronLink (TRC20)     │           │
+│  │  └─> Platform Wallet                         │           │
+│  └──────────────────────────────────────────────┘           │
+│                       ↓                                      │
+│  Step 2: TAKARA Requirement (Solana)                        │
+│  ┌──────────────────────────────────────────────┐           │
+│  │  Phantom Wallet                              │           │
+│  │  └─> Transfer TAKARA (Tier 2/3 only)        │           │
+│  └──────────────────────────────────────────────┘           │
+│                       ↓                                      │
+│  Step 3: LAIKA Boost (Optional, Solana)                     │
+│  ┌──────────────────────────────────────────────┐           │
+│  │  Phantom Wallet                              │           │
+│  │  └─> Transfer LAIKA for APY boost           │           │
+│  └──────────────────────────────────────────────┘           │
+│                       ↓                                      │
+│  Step 4: NFT Minting & Rewards (Solana)                     │
+│  ┌──────────────────────────────────────────────┐           │
+│  │  Investment NFT minted to Phantom           │           │
+│  │  TAKARA mining rewards daily                 │           │
+│  └──────────────────────────────────────────────┘           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### File Structure
+
 ```
 takara-gold/
 ├── backend/          # Node.js + Express + Prisma
 ├── frontend/         # React + Vite + TypeScript
+│   ├── src/
+│   │   ├── services/
+│   │   │   ├── ethereum.service.ts    # MetaMask integration
+│   │   │   └── solana.service.ts      # Phantom integration
+│   │   ├── hooks/
+│   │   │   ├── useMetaMask.ts         # Ethereum wallet hook
+│   │   │   └── useTronLink.ts         # TronLink hook
+│   │   └── types/
+│   │       └── blockchain.ts          # Multi-chain types
 ├── contracts/        # Solana Smart Contracts (Anchor)
 └── docs/            # Documentation
 ```
@@ -61,11 +105,21 @@ takara-gold/
 - **State**: Zustand + TanStack Query
 - **Routing**: React Router 6
 
-### Blockchain
+### Blockchain (Dual-Chain Architecture)
+
+**Ethereum Chain (USDT Deposits)**
+- **Network**: Ethereum Mainnet
+- **Standard**: ERC-20
+- **Library**: ethers.js 6.9
+- **Wallet**: MetaMask
+- **USDT Contract**: `0xdac17f958d2ee523a2206206994597c13d831ec7`
+
+**Solana Chain (Tokens & NFTs)**
 - **Network**: Solana Mainnet
 - **Framework**: Anchor 0.29
 - **RPC**: Helius
-- **Wallets**: Phantom, MetaMask Snap
+- **Wallet**: Phantom
+- **Tokens**: TAKARA, LAIKA
 
 ## 🚀 Quick Start
 
@@ -257,9 +311,12 @@ npm run build
 - [x] LAIKA boost system
 - [x] TAKARA mining calculator
 - [x] Database schema
-- [ ] API implementation
-- [ ] Frontend UI
-- [ ] Solana integration
+- [x] API implementation
+- [x] Frontend UI
+- [x] Dual-blockchain integration (Ethereum + Solana)
+- [x] MetaMask integration for USDT (ERC-20)
+- [x] Phantom wallet integration for TAKARA/LAIKA
+- [x] TronLink integration for USDT (TRC-20)
 
 ### Phase 2: Launch
 - [ ] Smart contract deployment

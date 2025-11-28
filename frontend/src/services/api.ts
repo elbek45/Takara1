@@ -75,6 +75,33 @@ class ApiClient {
     return data
   }
 
+  async register(username: string, password: string, email?: string): Promise<LoginResponse> {
+    const { data } = await this.client.post<LoginResponse>('/auth/register', {
+      username,
+      password,
+      email,
+    })
+
+    if (data.token) {
+      localStorage.setItem('auth_token', data.token)
+    }
+
+    return data
+  }
+
+  async loginWithPassword(username: string, password: string): Promise<LoginResponse> {
+    const { data } = await this.client.post<LoginResponse>('/auth/login-password', {
+      username,
+      password,
+    })
+
+    if (data.token) {
+      localStorage.setItem('auth_token', data.token)
+    }
+
+    return data
+  }
+
   async getCurrentUser(): Promise<ApiResponse<User>> {
     const { data } = await this.client.get<ApiResponse<User>>('/auth/me')
     return data

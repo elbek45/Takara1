@@ -1,9 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
-import { Menu, X, User, Wallet } from 'lucide-react'
+import { Menu, X, User, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { useMetaMask } from '../../hooks/useMetaMask'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { api } from '../../services/api'
+import AuthModal from '../auth/AuthModal'
+import { MetaMaskButton, MetaMaskButtonCompact } from '../wallet'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -16,8 +19,24 @@ const navigation = [
 export default function Header() {
   const location = useLocation()
   const { connected } = useWallet()
-  const { isConnected: metaMaskConnected, address: metaMaskAddress, connect: connectMetaMask, disconnect: disconnectMetaMask } = useMetaMask()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const queryClient = useQueryClient()
+
+  // Check if user is logged in (via password auth)
+  const isAuthenticated = api.isAuthenticated()
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => api.getCurrentUser(),
+    enabled: isAuthenticated,
+    retry: false,
+  })
+
+  const handleLogout = () => {
+    api.logout()
+    queryClient.clear()
+    window.location.href = '/'
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-green-900/20 bg-background-primary/95 backdrop-blur supports-[backdrop-filter]:bg-background-primary/80">
@@ -57,7 +76,38 @@ export default function Header() {
 
           {/* Wallet Button & Profile */}
           <div className="hidden md:flex md:items-center md:gap-3">
-            {connected && (
+            {/* Password Auth - Login/Logout Button */}
+            {isAuthenticated && currentUser?.data ? (
+              <>
+                <Link
+                  to="/profile"
+                  className={`p-2.5 rounded-lg transition-colors ${
+                    location.pathname === '/profile'
+                      ? 'bg-green-900/20 text-gold-500'
+                      : 'text-gray-300 hover:bg-green-900/10 hover:text-gold-400'
+                  }`}
+                  title={`Logged in as ${currentUser.data.username || 'User'}`}
+                >
+                  <User className="h-5 w-5" />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2.5 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:opacity-90 transition-opacity"
+                >
+                  Logout
+                </button>
+              </>
+            ) : !connected && (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:opacity-90 transition-opacity"
+              >
+                <LogIn className="h-4 w-4" />
+                <span className="hidden lg:inline">Login</span>
+              </button>
+            )}
+
+            {(connected || isAuthenticated) && !currentUser?.data && (
               <Link
                 to="/profile"
                 className={`p-2.5 rounded-lg transition-colors ${
@@ -71,24 +121,7 @@ export default function Header() {
             )}
 
             {/* MetaMask Button */}
-            <button
-              onClick={metaMaskConnected ? disconnectMetaMask : connectMetaMask}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-opacity ${
-                metaMaskConnected
-                  ? 'bg-orange-500 text-white hover:opacity-90'
-                  : 'bg-gray-700 text-gray-300 hover:opacity-90'
-              }`}
-              title={metaMaskConnected ? `MetaMask: ${metaMaskAddress?.slice(0, 6)}...${metaMaskAddress?.slice(-4)}` : 'Connect MetaMask'}
-            >
-              <Wallet className="h-4 w-4" />
-              {metaMaskConnected ? (
-                <span className="hidden lg:inline">
-                  {metaMaskAddress?.slice(0, 4)}...{metaMaskAddress?.slice(-4)}
-                </span>
-              ) : (
-                <span className="hidden lg:inline">MetaMask</span>
-              )}
-            </button>
+            <MetaMaskButton variant="secondary" size="md" />
 
             {/* Phantom Wallet Button */}
             <WalletMultiButton className="!bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
@@ -146,23 +179,7 @@ export default function Header() {
             )}
             <div className="pt-2 space-y-2">
               {/* MetaMask Button */}
-              <button
-                onClick={metaMaskConnected ? disconnectMetaMask : connectMetaMask}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-opacity ${
-                  metaMaskConnected
-                    ? 'bg-orange-500 text-white hover:opacity-90'
-                    : 'bg-gray-700 text-gray-300 hover:opacity-90'
-                }`}
-              >
-                <Wallet className="h-4 w-4" />
-                {metaMaskConnected ? (
-                  <span>
-                    {metaMaskAddress?.slice(0, 6)}...{metaMaskAddress?.slice(-4)}
-                  </span>
-                ) : (
-                  <span>Connect MetaMask</span>
-                )}
-              </button>
+              <MetaMaskButtonCompact className="w-full" />
 
               {/* Phantom Wallet Button */}
               <WalletMultiButton className="!w-full !bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
@@ -170,6 +187,15 @@ export default function Header() {
           </div>
         )}
       </nav>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        }}
+      />
     </header>
   )
 }

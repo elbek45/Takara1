@@ -177,7 +177,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       token,
       user: {
         id: user.id,
-        walletAddress: user.walletAddress,
+        walletAddress: user.walletAddress || undefined,
         username: user.username || undefined,
         email: user.email || undefined
       }
@@ -278,6 +278,213 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * POST /api/auth/register
+ * Register new user with username and password
+ */
+export async function registerWithPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { username, password, email } = req.body;
+
+    // Validate input
+    if (!username || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Username and password are required'
+      });
+      return;
+    }
+
+    // Validate username format (alphanumeric, 3-20 characters)
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      res.status(400).json({
+        success: false,
+        message: 'Username must be 3-20 characters and contain only letters, numbers, and underscores'
+      });
+      return;
+    }
+
+    // Validate password strength (minimum 6 characters)
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+      return;
+    }
+
+    // Check if username already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (existingUser) {
+      res.status(409).json({
+        success: false,
+        message: 'Username already taken'
+      });
+      return;
+    }
+
+    // Check if email already exists (if provided)
+    if (email) {
+      const existingEmail = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingEmail) {
+        res.status(409).json({
+          success: false,
+          message: 'Email already registered'
+        });
+        return;
+      }
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        email: email || null,
+        role: 'USER',
+        isActive: true,
+        lastLoginAt: new Date()
+      }
+    });
+
+    logger.info({ username }, 'New user registered with password');
+
+    // Generate JWT
+    // @ts-expect-error - JWT type definitions have overload resolution issues
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        username: user.username!,
+        role: user.role
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      }
+    );
+
+    const response: LoginResponse = {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        walletAddress: user.walletAddress || undefined,
+        username: user.username || undefined,
+        email: user.email || undefined
+      }
+    };
+
+    res.status(201).json(response);
+  } catch (error) {
+    logger.error({ error }, 'Registration failed');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * POST /api/auth/login-password
+ * Login with username and password
+ */
+export async function loginWithPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Username and password are required'
+      });
+      return;
+    }
+
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (!user || !user.isActive) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+      return;
+    }
+
+    // Check if user has a password set
+    if (!user.password) {
+      res.status(401).json({
+        success: false,
+        message: 'This account uses wallet authentication. Please login with your wallet.'
+      });
+      return;
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+      return;
+    }
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    });
+
+    logger.info({ username }, 'User logged in with password');
+
+    // Generate JWT
+    // @ts-expect-error - JWT type definitions have overload resolution issues
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        username: user.username!,
+        role: user.role
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      }
+    );
+
+    const response: LoginResponse = {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        walletAddress: user.walletAddress || undefined,
+        username: user.username || undefined,
+        email: user.email || undefined
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    logger.error({ error }, 'Password login failed');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
  * GET /api/auth/me
  * Get current user info
  */
@@ -318,6 +525,8 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
 export default {
   getNonce,
   login,
+  registerWithPassword,
+  loginWithPassword,
   adminLogin,
   getCurrentUser
 };

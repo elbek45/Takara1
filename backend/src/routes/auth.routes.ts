@@ -11,6 +11,8 @@ const router = Router();
 // Public routes
 router.get('/nonce', authController.getNonce);
 router.post('/login', authController.login);
+router.post('/register', authController.registerWithPassword);
+router.post('/login-password', authController.loginWithPassword);
 router.post('/admin/login', authController.adminLogin);
 
 // Protected routes

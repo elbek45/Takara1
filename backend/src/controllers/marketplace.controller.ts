@@ -308,7 +308,7 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
           amount: price,
           tokenType: 'USDT',
           txSignature,
-          fromAddress: listing.seller.walletAddress,
+          fromAddress: listing.seller.walletAddress || '',
           toAddress: '', // Will be filled with buyer's wallet
           status: 'CONFIRMED',
           description: `NFT sale on marketplace: ${listing.investment.vault.name}`,

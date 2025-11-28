@@ -9,7 +9,7 @@ import { useTronLink } from '../../hooks/useTronLink'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
 
-type PaymentNetwork = 'BSC' | 'TRC20'
+type PaymentNetwork = 'ETH' | 'TRC20'
 
 interface InvestmentModalProps {
   isOpen: boolean
@@ -31,18 +31,18 @@ export default function InvestmentModal({
   laikaAmountLKI,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
-  const { transferUSDT: transferUSDTMetaMask, isConnected: metaMaskConnected } = useMetaMask()
+  const { transferUSDT: transferUSDTMetaMask, isConnected: metaMaskConnected, address: ethAddress } = useMetaMask()
   const { transferUSDT: transferUSDTTronLink, isConnected: tronLinkConnected } = useTronLink()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
-  const [paymentNetwork, setPaymentNetwork] = useState<PaymentNetwork>('TRC20')
+  const [paymentNetwork, setPaymentNetwork] = useState<PaymentNetwork>('ETH')
 
   const investMutation = useMutation({
     mutationFn: async () => {
       // Check wallet connections based on selected network
-      if (paymentNetwork === 'BSC' && !metaMaskConnected) {
-        throw new Error('Please connect MetaMask for USDT payment (BSC)')
+      if (paymentNetwork === 'ETH' && !metaMaskConnected) {
+        throw new Error('Please connect MetaMask for USDT payment (Ethereum)')
       }
 
       if (paymentNetwork === 'TRC20' && !tronLinkConnected) {
@@ -56,10 +56,18 @@ export default function InvestmentModal({
       // Step 1: Transfer USDT based on selected network
       let usdtSignature: string
 
-      if (paymentNetwork === 'BSC') {
-        toast.info('Transferring USDT via MetaMask (BSC)...')
-        const result = await transferUSDTMetaMask(usdtAmount.toString())
-        usdtSignature = result.hash
+      if (paymentNetwork === 'ETH') {
+        if (!ethAddress) {
+          throw new Error('MetaMask address not available')
+        }
+
+        toast.info('Transferring USDT via MetaMask (Ethereum)...')
+
+        // Get platform wallet address from environment
+        const platformWalletETH = import.meta.env.VITE_PLATFORM_WALLET_ETH || ethAddress
+
+        const result = await transferUSDTMetaMask(platformWalletETH, usdtAmount)
+        usdtSignature = result.txHash
       } else {
         toast.info('Transferring USDT via TronLink (TRC20)...')
         const result = await transferUSDTTronLink(usdtAmount.toString())
@@ -173,6 +181,18 @@ export default function InvestmentModal({
                 <h3 className="text-sm font-medium text-gray-300 mb-3">Select USDT Payment Network</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <button
+                    onClick={() => setPaymentNetwork('ETH')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      paymentNetwork === 'ETH'
+                        ? 'border-gold-500 bg-gold-500/10'
+                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
+                    }`}
+                  >
+                    <div className="font-semibold text-white mb-1">Ethereum (ERC20)</div>
+                    <div className="text-xs text-gray-400">Mainnet USDT</div>
+                    <div className="text-xs text-green-400 mt-2">Recommended</div>
+                  </button>
+                  <button
                     onClick={() => setPaymentNetwork('TRC20')}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       paymentNetwork === 'TRC20'
@@ -182,24 +202,12 @@ export default function InvestmentModal({
                   >
                     <div className="font-semibold text-white mb-1">TRC20 (TRON)</div>
                     <div className="text-xs text-gray-400">Lowest fees</div>
-                    <div className="text-xs text-green-400 mt-2">Recommended</div>
-                  </button>
-                  <button
-                    onClick={() => setPaymentNetwork('BSC')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentNetwork === 'BSC'
-                        ? 'border-gold-500 bg-gold-500/10'
-                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
-                    }`}
-                  >
-                    <div className="font-semibold text-white mb-1">BSC (BEP20)</div>
-                    <div className="text-xs text-gray-400">Alternative option</div>
                   </button>
                 </div>
               </div>
 
               {/* Wallet Connection Status */}
-              {((paymentNetwork === 'BSC' && !metaMaskConnected) ||
+              {((paymentNetwork === 'ETH' && !metaMaskConnected) ||
                 (paymentNetwork === 'TRC20' && !tronLinkConnected) ||
                 !publicKey) && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
@@ -207,8 +215,8 @@ export default function InvestmentModal({
                     ⚠️ Required Wallets
                   </div>
                   <div className="text-sm text-gray-300 space-y-1">
-                    {paymentNetwork === 'BSC' && !metaMaskConnected && (
-                      <div>• Connect MetaMask for USDT payment (BSC Network)</div>
+                    {paymentNetwork === 'ETH' && !metaMaskConnected && (
+                      <div>• Connect MetaMask for USDT payment (Ethereum Mainnet)</div>
                     )}
                     {paymentNetwork === 'TRC20' && !tronLinkConnected && (
                       <div>• Connect TronLink for USDT payment (TRC20 Network)</div>
@@ -353,9 +361,13 @@ export default function InvestmentModal({
                 </p>
                 {txSignature && (
                   <div className="bg-background-elevated rounded-lg p-4 mb-4">
-                    <div className="text-sm text-gray-400 mb-2">Transaction Signature</div>
+                    <div className="text-sm text-gray-400 mb-2">Transaction Hash</div>
                     <a
-                      href={`https://solscan.io/tx/${txSignature}?cluster=devnet`}
+                      href={
+                        paymentNetwork === 'ETH'
+                          ? `https://etherscan.io/tx/${txSignature}`
+                          : `https://tronscan.org/#/transaction/${txSignature}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gold-500 hover:text-gold-400 text-sm break-all"

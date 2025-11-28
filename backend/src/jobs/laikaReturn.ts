@@ -62,7 +62,7 @@ export async function processLaikaReturn(): Promise<void> {
         }
 
         const laikaAmount = Number(investment.laikaBoost.laikaAmount);
-        const ownerWallet = investment.user.walletAddress;
+        const ownerWallet = investment.user.walletAddress || '';
 
         logger.info({
           investmentId: investment.id,

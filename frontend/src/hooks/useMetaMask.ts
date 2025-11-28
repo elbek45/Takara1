@@ -1,34 +1,37 @@
 /**
  * useMetaMask Hook
- * Manages MetaMask connection and state
+ * Manages MetaMask connection and Ethereum state
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { evmService } from '../services/evm.service'
+import { ethereumService } from '../services/ethereum.service'
 import { toast } from 'sonner'
+import type { EthereumWallet } from '../types/blockchain'
 
 interface MetaMaskState {
   address: string | null
+  chainId: number | null
   isConnected: boolean
   isConnecting: boolean
-  usdtBalance: string
-  bnbBalance: string
+  usdtBalance: number
+  ethBalance: string
 }
 
 export function useMetaMask() {
   const [state, setState] = useState<MetaMaskState>({
     address: null,
+    chainId: null,
     isConnected: false,
     isConnecting: false,
-    usdtBalance: '0',
-    bnbBalance: '0',
+    usdtBalance: 0,
+    ethBalance: '0',
   })
 
   /**
    * Connect to MetaMask
    */
   const connect = useCallback(async () => {
-    if (!evmService.isMetaMaskInstalled()) {
+    if (!ethereumService.isMetaMaskInstalled()) {
       toast.error('Please install MetaMask extension')
       window.open('https://metamask.io/download/', '_blank')
       return
@@ -37,20 +40,18 @@ export function useMetaMask() {
     setState((prev) => ({ ...prev, isConnecting: true }))
 
     try {
-      const address = await evmService.connect()
+      const wallet: EthereumWallet = await ethereumService.connect()
 
-      // Get balances
-      const [usdtBalance, bnbBalance] = await Promise.all([
-        evmService.getUSDTBalance(address),
-        evmService.getBNBBalance(address),
-      ])
+      // Get USDT balance
+      const usdtBalance = await ethereumService.getUSDTBalance(wallet.address)
 
       setState({
-        address,
+        address: wallet.address,
+        chainId: wallet.chainId,
         isConnected: true,
         isConnecting: false,
         usdtBalance,
-        bnbBalance,
+        ethBalance: wallet.balance,
       })
 
       toast.success('MetaMask connected successfully')
@@ -65,13 +66,14 @@ export function useMetaMask() {
    * Disconnect MetaMask
    */
   const disconnect = useCallback(() => {
-    evmService.disconnect()
+    ethereumService.disconnect()
     setState({
       address: null,
+      chainId: null,
       isConnected: false,
       isConnecting: false,
-      usdtBalance: '0',
-      bnbBalance: '0',
+      usdtBalance: 0,
+      ethBalance: '0',
     })
     toast.info('MetaMask disconnected')
   }, [])
@@ -83,15 +85,15 @@ export function useMetaMask() {
     if (!state.address) return
 
     try {
-      const [usdtBalance, bnbBalance] = await Promise.all([
-        evmService.getUSDTBalance(state.address),
-        evmService.getBNBBalance(state.address),
+      const [usdtBalance, ethBalance] = await Promise.all([
+        ethereumService.getUSDTBalance(state.address),
+        ethereumService.getBalance(state.address),
       ])
 
       setState((prev) => ({
         ...prev,
         usdtBalance,
-        bnbBalance,
+        ethBalance,
       }))
     } catch (error) {
       console.error('Failed to refresh balances:', error)
@@ -102,26 +104,52 @@ export function useMetaMask() {
    * Transfer USDT
    */
   const transferUSDT = useCallback(
-    async (amount: string) => {
-      if (!state.isConnected) {
+    async (toAddress: string, amount: number) => {
+      if (!state.isConnected || !state.address) {
         throw new Error('MetaMask not connected')
       }
 
-      const platformAddress = evmService.getPlatformWalletAddress()
-      const result = await evmService.transferUSDT(platformAddress, amount)
+      const result = await ethereumService.transferUSDT({
+        amount,
+        toAddress,
+        fromAddress: state.address,
+      })
 
       // Refresh balances after transfer
       await refreshBalances()
 
       return result
     },
-    [state.isConnected, refreshBalances]
+    [state.isConnected, state.address, refreshBalances]
+  )
+
+  /**
+   * Check network and switch if needed
+   */
+  const checkAndSwitchNetwork = useCallback(async () => {
+    const isCorrectNetwork = await ethereumService.checkNetwork()
+    if (!isCorrectNetwork) {
+      await ethereumService.switchToMainnet()
+      toast.info('Switched to Ethereum Mainnet')
+    }
+  }, [])
+
+  /**
+   * Get gas estimate for USDT transfer
+   */
+  const estimateTransferGas = useCallback(
+    async (toAddress: string, amount: number) => {
+      return await ethereumService.estimateGas(toAddress, amount)
+    },
+    []
   )
 
   /**
    * Listen for account/chain changes
    */
   useEffect(() => {
+    if (!window.ethereum) return
+
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
         disconnect()
@@ -136,8 +164,8 @@ export function useMetaMask() {
       window.location.reload()
     }
 
-    evmService.onAccountsChanged(handleAccountsChanged)
-    evmService.onChainChanged(handleChainChanged)
+    window.ethereum.on('accountsChanged', handleAccountsChanged)
+    window.ethereum.on('chainChanged', handleChainChanged)
 
     // Cleanup
     return () => {
@@ -153,7 +181,7 @@ export function useMetaMask() {
    */
   useEffect(() => {
     const autoConnect = async () => {
-      if (!evmService.isMetaMaskInstalled()) return
+      if (!ethereumService.isMetaMaskInstalled()) return
 
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' })
@@ -174,6 +202,10 @@ export function useMetaMask() {
     disconnect,
     refreshBalances,
     transferUSDT,
-    isMetaMaskInstalled: evmService.isMetaMaskInstalled(),
+    checkAndSwitchNetwork,
+    estimateTransferGas,
+    isMetaMaskInstalled: ethereumService.isMetaMaskInstalled(),
+    formatAddress: ethereumService.formatAddress,
+    isValidAddress: ethereumService.isValidAddress,
   }
 }

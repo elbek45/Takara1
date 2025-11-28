@@ -46,15 +46,28 @@ export function validateEnvironment(): void {
   console.log('✅ Environment variables validated successfully');
 }
 
-// Export validated environment variables
-export const env = {
-  NODE_ENV: getOptionalEnv('NODE_ENV', 'development'),
-  PORT: parseInt(getOptionalEnv('PORT', '3000')),
-  DATABASE_URL: getRequiredEnv('DATABASE_URL'),
-  JWT_SECRET: getRequiredEnv('JWT_SECRET'),
-  JWT_EXPIRES_IN: getOptionalEnv('JWT_EXPIRES_IN', '7d'),
-  REDIS_URL: getOptionalEnv('REDIS_URL', 'redis://localhost:6379'),
-  FRONTEND_URL: getOptionalEnv('FRONTEND_URL', 'http://localhost:5173'),
-  SOLANA_RPC_URL: getOptionalEnv('SOLANA_RPC_URL', 'https://api.devnet.solana.com'),
-  PLATFORM_WALLET: getOptionalEnv('PLATFORM_WALLET', ''),
-};
+// Export validated environment variables (lazy loaded to allow dotenv to load first)
+let _env: any = null;
+export function getEnv() {
+  if (!_env) {
+    _env = {
+      NODE_ENV: getOptionalEnv('NODE_ENV', 'development'),
+      PORT: parseInt(getOptionalEnv('PORT', '3000')),
+      DATABASE_URL: getRequiredEnv('DATABASE_URL'),
+      JWT_SECRET: getRequiredEnv('JWT_SECRET'),
+      JWT_EXPIRES_IN: getOptionalEnv('JWT_EXPIRES_IN', '7d'),
+      REDIS_URL: getOptionalEnv('REDIS_URL', 'redis://localhost:6379'),
+      FRONTEND_URL: getOptionalEnv('FRONTEND_URL', 'http://localhost:5173'),
+      SOLANA_RPC_URL: getOptionalEnv('SOLANA_RPC_URL', 'https://api.devnet.solana.com'),
+      PLATFORM_WALLET: getOptionalEnv('PLATFORM_WALLET', ''),
+    };
+  }
+  return _env;
+}
+
+// Legacy export for backwards compatibility
+export const env = new Proxy({} as any, {
+  get(target, prop) {
+    return getEnv()[prop];
+  }
+});

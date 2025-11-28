@@ -49,7 +49,7 @@ export interface LoginResponse {
   token: string;
   user: {
     id: string;
-    walletAddress: string;
+    walletAddress?: string;
     username?: string;
     email?: string;
   };

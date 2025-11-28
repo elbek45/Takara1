@@ -100,7 +100,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
         recentUsers,
         recentInvestments: recentInvestments.map(inv => ({
           id: inv.id,
-          user: inv.user.username || inv.user.walletAddress.slice(0, 8) + '...',
+          user: inv.user.username || (inv.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
           vault: inv.vault.name,
           amount: Number(inv.usdtAmount),
           status: inv.status,
@@ -231,8 +231,8 @@ export async function getInvestments(req: Request, res: Response): Promise<void>
 
     const investmentsData = investments.map(inv => ({
       id: inv.id,
-      user: inv.user.username || inv.user.walletAddress.slice(0, 8) + '...',
-      userWallet: inv.user.walletAddress,
+      user: inv.user.username || (inv.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
+      userWallet: inv.user.walletAddress || 'N/A',
       vault: inv.vault.name,
       vaultTier: inv.vault.tier,
       usdtAmount: Number(inv.usdtAmount),
@@ -297,8 +297,8 @@ export async function getWithdrawals(req: Request, res: Response): Promise<void>
 
     const withdrawalsData = withdrawals.map(w => ({
       id: w.id,
-      user: w.user.username || w.user.walletAddress.slice(0, 8) + '...',
-      userWallet: w.user.walletAddress,
+      user: w.user.username || (w.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
+      userWallet: w.user.walletAddress || 'N/A',
       amount: Number(w.amount),
       tokenType: w.tokenType,
       destinationWallet: w.destinationWallet,
@@ -582,7 +582,7 @@ export async function getMiningStats(req: Request, res: Response): Promise<void>
           activeMiners: stat.activeMiners
         })),
         topMiners: topMiners.map(miner => ({
-          user: miner.user.username || miner.user.walletAddress.slice(0, 8) + '...',
+          user: miner.user.username || (miner.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
           vault: miner.vault.name,
           totalMined: Number(miner.totalMinedTAKARA),
           investment: Number(miner.usdtAmount)
