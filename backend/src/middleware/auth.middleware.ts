@@ -55,7 +55,7 @@ export async function authenticateUser(
     // Verify JWT
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'default-secret'
+      process.env.JWT_SECRET!
     ) as JWTPayload;
 
     // Fetch user from database
@@ -129,7 +129,7 @@ export async function authenticateAdmin(
     // Verify JWT
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'default-secret'
+      process.env.JWT_SECRET!
     ) as AdminJWTPayload;
 
     // Fetch admin from database
@@ -222,7 +222,7 @@ export async function optionalAuth(
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'default-secret'
+      process.env.JWT_SECRET!
     ) as JWTPayload;
 
     const user = await prisma.user.findUnique({

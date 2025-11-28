@@ -5,8 +5,11 @@ import { X, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
 import { useMetaMask } from '../../hooks/useMetaMask'
+import { useTronLink } from '../../hooks/useTronLink'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
+
+type PaymentNetwork = 'BSC' | 'TRC20'
 
 interface InvestmentModalProps {
   isOpen: boolean
@@ -29,25 +32,39 @@ export default function InvestmentModal({
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
   const { transferUSDT: transferUSDTMetaMask, isConnected: metaMaskConnected } = useMetaMask()
+  const { transferUSDT: transferUSDTTronLink, isConnected: tronLinkConnected } = useTronLink()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
+  const [paymentNetwork, setPaymentNetwork] = useState<PaymentNetwork>('TRC20')
 
   const investMutation = useMutation({
     mutationFn: async () => {
-      // Check wallet connections
-      if (!metaMaskConnected) {
-        throw new Error('Please connect MetaMask for USDT payment')
+      // Check wallet connections based on selected network
+      if (paymentNetwork === 'BSC' && !metaMaskConnected) {
+        throw new Error('Please connect MetaMask for USDT payment (BSC)')
+      }
+
+      if (paymentNetwork === 'TRC20' && !tronLinkConnected) {
+        throw new Error('Please connect TronLink for USDT payment (TRC20)')
       }
 
       if (!publicKey || !signTransaction) {
         throw new Error('Please connect Phantom wallet for TAKARA/LAIKA tokens')
       }
 
-      // Step 1: Transfer USDT via MetaMask (BSC/Ethereum)
-      toast.info('Transferring USDT via MetaMask...')
+      // Step 1: Transfer USDT based on selected network
+      let usdtSignature: string
 
-      const { hash: usdtSignature } = await transferUSDTMetaMask(usdtAmount.toString())
+      if (paymentNetwork === 'BSC') {
+        toast.info('Transferring USDT via MetaMask (BSC)...')
+        const result = await transferUSDTMetaMask(usdtAmount.toString())
+        usdtSignature = result.hash
+      } else {
+        toast.info('Transferring USDT via TronLink (TRC20)...')
+        const result = await transferUSDTTronLink(usdtAmount.toString())
+        usdtSignature = result.hash
+      }
 
       toast.success('USDT transferred successfully!')
 
@@ -88,6 +105,7 @@ export default function InvestmentModal({
         laikaBoost: laikaAmountLKI > 0
           ? {
               laikaAmount: laikaAmountLKI,
+              // @ts-ignore - Type definitions need updating
               laikaValueUSD: calculation.investment.laikaValueUSD || 0,
             }
           : undefined,
@@ -150,15 +168,50 @@ export default function InvestmentModal({
           {/* Review Step */}
           {step === 'review' && (
             <div className="space-y-6">
+              {/* Payment Network Selection */}
+              <div className="bg-background-elevated rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-300 mb-3">Select USDT Payment Network</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setPaymentNetwork('TRC20')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      paymentNetwork === 'TRC20'
+                        ? 'border-gold-500 bg-gold-500/10'
+                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
+                    }`}
+                  >
+                    <div className="font-semibold text-white mb-1">TRC20 (TRON)</div>
+                    <div className="text-xs text-gray-400">Lowest fees</div>
+                    <div className="text-xs text-green-400 mt-2">Recommended</div>
+                  </button>
+                  <button
+                    onClick={() => setPaymentNetwork('BSC')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      paymentNetwork === 'BSC'
+                        ? 'border-gold-500 bg-gold-500/10'
+                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
+                    }`}
+                  >
+                    <div className="font-semibold text-white mb-1">BSC (BEP20)</div>
+                    <div className="text-xs text-gray-400">Alternative option</div>
+                  </button>
+                </div>
+              </div>
+
               {/* Wallet Connection Status */}
-              {(!metaMaskConnected || !publicKey) && (
+              {((paymentNetwork === 'BSC' && !metaMaskConnected) ||
+                (paymentNetwork === 'TRC20' && !tronLinkConnected) ||
+                !publicKey) && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                   <div className="text-sm text-yellow-400 font-medium mb-2">
                     ⚠️ Required Wallets
                   </div>
                   <div className="text-sm text-gray-300 space-y-1">
-                    {!metaMaskConnected && (
-                      <div>• Connect MetaMask for USDT payment (BSC Testnet)</div>
+                    {paymentNetwork === 'BSC' && !metaMaskConnected && (
+                      <div>• Connect MetaMask for USDT payment (BSC Network)</div>
+                    )}
+                    {paymentNetwork === 'TRC20' && !tronLinkConnected && (
+                      <div>• Connect TronLink for USDT payment (TRC20 Network)</div>
                     )}
                     {!publicKey && (
                       <div>• Connect Phantom for TAKARA/LAIKA tokens (Solana)</div>
@@ -218,7 +271,8 @@ export default function InvestmentModal({
                       <div className="text-white font-semibold">
                         {laikaAmountLKI.toLocaleString()} LKI
                       </div>
-                      <div className="text-xs text-gray-500">
+                       <div className="text-xs text-gray-500">
+                        {/* @ts-ignore - Type definitions need updating */}
                         ≈ ${calculation.investment.laikaValueUSD?.toFixed(2) || 0} USDT
                       </div>
                     </div>

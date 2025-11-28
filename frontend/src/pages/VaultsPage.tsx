@@ -63,7 +63,7 @@ export default function VaultsPage() {
                 Filter by Duration
               </label>
               <div className="flex flex-wrap gap-2">
-                {['ALL', 12, 24, 36].map((duration) => (
+                {['ALL', 12, 30, 36].map((duration) => (
                   <button
                     key={duration}
                     onClick={() => setSelectedDuration(duration as number | 'ALL')}

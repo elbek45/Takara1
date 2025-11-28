@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { adminApiService } from '../../services/admin.api'
-import { LogOut, Users, TrendingUp, DollarSign, Coins, Package, ShoppingCart, AlertCircle } from 'lucide-react'
-import { toast } from 'sonner'
+import { Users, TrendingUp, DollarSign, Coins, Package, ShoppingCart, AlertCircle } from 'lucide-react'
+import AdminLayout from '../../components/admin/AdminLayout'
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate()
@@ -18,48 +18,24 @@ export default function AdminDashboardPage() {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['adminDashboard'],
     queryFn: () => adminApiService.getDashboardStats(),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   })
-
-  const handleLogout = () => {
-    adminApiService.logout()
-    toast.success('Logged out successfully')
-    navigate('/admin/login')
-  }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="loading-spinner"></div>
+        </div>
+      </AdminLayout>
     )
   }
 
   const stats = dashboardData?.data?.stats
 
   return (
-    <div className="min-h-screen bg-background-primary">
-      {/* Header */}
-      <header className="bg-background-card border-b border-green-900/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-              <p className="text-sm text-gray-400">Takara Gold v2.1.1</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout>
+      <div>
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Users */}
@@ -195,7 +171,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   )
 }

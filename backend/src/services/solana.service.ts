@@ -28,7 +28,7 @@ import pino from 'pino';
 const logger = pino({ name: 'solana-service' });
 
 // Solana connection
-const connection = new Connection(
+export const connection = new Connection(
   process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
   'confirmed'
 );
@@ -118,7 +118,7 @@ export async function verifyTransaction(signature: string): Promise<{
 
     return {
       confirmed: true,
-      blockTime: tx.blockTime,
+      blockTime: tx.blockTime ?? null,
       slot: tx.slot
     };
   } catch (error) {

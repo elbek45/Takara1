@@ -16,6 +16,10 @@ import ProfilePage from './pages/ProfilePage'
 // Admin Pages
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
+import AdminVaultsPage from './pages/admin/AdminVaultsPage'
+import AdminMiningStatsPage from './pages/admin/AdminMiningStatsPage'
 
 function App() {
   return (
@@ -35,6 +39,10 @@ function App() {
         {/* Admin Routes (No Layout) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
+        <Route path="/admin/vaults" element={<AdminVaultsPage />} />
+        <Route path="/admin/mining" element={<AdminMiningStatsPage />} />
       </Routes>
 
       <Toaster

@@ -159,13 +159,14 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     // Generate JWT
+    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         userId: user.id,
         walletAddress: user.walletAddress,
         role: user.role
       },
-      process.env.JWT_SECRET || 'default-secret',
+      process.env.JWT_SECRET!,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       }
@@ -242,13 +243,14 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
     });
 
     // Generate JWT
+    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         adminId: admin.id,
         username: admin.username,
         role: admin.role
       },
-      process.env.JWT_SECRET || 'default-secret',
+      process.env.JWT_SECRET!,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       }
