@@ -14,6 +14,7 @@ import { prisma } from '../config/database';
 import { AdminRequest, DashboardStats, ProcessWithdrawalInput } from '../types';
 import { ERROR_MESSAGES } from '../config/constants';
 import { transferFromPlatform } from '../services/solana.service';
+import { transferUSDTFromPlatform } from '../services/ethereum.service';
 import pino from 'pino';
 
 const logger = pino({ name: 'admin-controller' });
@@ -379,47 +380,67 @@ export async function processWithdrawal(req: Request, res: Response): Promise<vo
         return;
       }
 
-      // Get token mint address
-      const tokenMint = withdrawal.tokenType === 'USDT'
-        ? process.env.USDT_TOKEN_MINT
-        : withdrawal.tokenType === 'TAKARA'
-        ? process.env.TAKARA_TOKEN_MINT
-        : process.env.LAIKA_TOKEN_MINT;
-
-      if (!tokenMint) {
-        res.status(500).json({
-          success: false,
-          message: 'Token mint address not configured'
-        });
-        return;
-      }
-
-      // Transfer tokens via Solana
+      // Transfer tokens (Ethereum for USDT, Solana for TAKARA/LAIKA)
       let actualTxSignature = txSignature;
 
       try {
-        if (process.env.ENABLE_REAL_TOKEN_TRANSFERS === 'true') {
-          // Actually transfer tokens on-chain
-          actualTxSignature = await transferFromPlatform(
-            withdrawal.destinationWallet,
-            tokenMint,
-            Number(withdrawal.amount)
-          );
+        if (withdrawal.tokenType === 'USDT') {
+          // Transfer USDT via Ethereum
+          if (process.env.ENABLE_REAL_ETH_TRANSFERS === 'true') {
+            actualTxSignature = await transferUSDTFromPlatform(
+              withdrawal.destinationWallet,
+              Number(withdrawal.amount)
+            );
 
-          logger.info({
-            withdrawalId: id,
-            txSignature: actualTxSignature,
-            amount: Number(withdrawal.amount)
-          }, 'Tokens transferred on-chain');
+            logger.info({
+              withdrawalId: id,
+              txSignature: actualTxSignature,
+              amount: Number(withdrawal.amount),
+              blockchain: 'Ethereum'
+            }, 'USDT transferred on Ethereum');
+          } else {
+            logger.warn({
+              withdrawalId: id
+            }, 'USDT transfer skipped (ENABLE_REAL_ETH_TRANSFERS not set to true)');
+          }
         } else {
-          logger.warn({
-            withdrawalId: id
-          }, 'Token transfer skipped (ENABLE_REAL_TOKEN_TRANSFERS not set to true)');
+          // Transfer TAKARA/LAIKA via Solana
+          const tokenMint = withdrawal.tokenType === 'TAKARA'
+            ? process.env.TAKARA_TOKEN_MINT
+            : process.env.LAIKA_TOKEN_MINT;
+
+          if (!tokenMint) {
+            res.status(500).json({
+              success: false,
+              message: `${withdrawal.tokenType} token mint address not configured`
+            });
+            return;
+          }
+
+          if (process.env.ENABLE_REAL_TOKEN_TRANSFERS === 'true') {
+            actualTxSignature = await transferFromPlatform(
+              withdrawal.destinationWallet,
+              tokenMint,
+              Number(withdrawal.amount)
+            );
+
+            logger.info({
+              withdrawalId: id,
+              txSignature: actualTxSignature,
+              amount: Number(withdrawal.amount),
+              blockchain: 'Solana'
+            }, `${withdrawal.tokenType} transferred on Solana`);
+          } else {
+            logger.warn({
+              withdrawalId: id
+            }, `${withdrawal.tokenType} transfer skipped (ENABLE_REAL_TOKEN_TRANSFERS not set to true)`);
+          }
         }
       } catch (transferError: any) {
         logger.error({
           error: transferError,
-          withdrawalId: id
+          withdrawalId: id,
+          tokenType: withdrawal.tokenType
         }, 'Failed to transfer tokens');
 
         res.status(500).json({

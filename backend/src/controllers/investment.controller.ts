@@ -17,7 +17,8 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES, INVESTMENT_CONFIG } from '../config/c
 import { calculateLaikaBoost } from '../utils/laika.calculator';
 import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calculator';
 import { VaultTier } from '../config/vaults.config';
-import { verifyTransaction, transferUSDTReward, transferTAKARAReward } from '../services/solana.service';
+import { verifyTransaction, transferTAKARAReward } from '../services/solana.service';
+import { verifyUSDTTransaction, transferUSDTFromPlatform } from '../services/ethereum.service';
 import pino from 'pino';
 
 const logger = pino({ name: 'investment-controller' });
@@ -77,16 +78,56 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Verify transaction (in production)
-    if (process.env.NODE_ENV === 'production') {
-      const txVerified = await verifyTransaction(txSignature);
-      if (!txVerified) {
+    // Verify USDT transaction on Ethereum
+    if (!process.env.SKIP_TX_VERIFICATION) {
+      // Get user's Ethereum address
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { ethereumAddress: true }
+      });
+
+      if (!user?.ethereumAddress) {
         res.status(400).json({
           success: false,
-          message: 'Transaction not found or not confirmed'
+          message: 'Please connect your MetaMask wallet first'
         });
         return;
       }
+
+      // Get platform Ethereum wallet address
+      const platformEthAddress = process.env.PLATFORM_ETHEREUM_ADDRESS;
+      if (!platformEthAddress) {
+        logger.error('PLATFORM_ETHEREUM_ADDRESS not configured');
+        res.status(500).json({
+          success: false,
+          message: 'Platform wallet not configured'
+        });
+        return;
+      }
+
+      // Verify USDT transaction on Ethereum
+      const txVerified = await verifyUSDTTransaction(
+        txSignature,
+        user.ethereumAddress, // from user's MetaMask
+        platformEthAddress,   // platform's Ethereum wallet
+        usdtAmount
+      );
+
+      if (!txVerified) {
+        res.status(400).json({
+          success: false,
+          message: 'USDT transaction verification failed. Please ensure the transaction is confirmed on Ethereum.'
+        });
+        return;
+      }
+
+      logger.info({
+        userId,
+        txSignature,
+        from: user.ethereumAddress,
+        to: platformEthAddress,
+        amount: usdtAmount
+      }, 'USDT transaction verified on Ethereum');
     }
 
     // Calculate final APY (with LAIKA boost if provided)
@@ -394,24 +435,24 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Get user's Solana wallet address
+    // Get user's Ethereum wallet address
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { walletAddress: true }
+      select: { ethereumAddress: true }
     });
 
-    if (!user?.walletAddress) {
+    if (!user?.ethereumAddress) {
       res.status(400).json({
         success: false,
-        message: 'Please connect your Phantom wallet first to claim rewards'
+        message: 'Please connect your MetaMask wallet first to claim rewards'
       });
       return;
     }
 
-    // Transfer USDT to user's Solana wallet
+    // Transfer USDT to user's Ethereum wallet
     let txSignature: string;
     try {
-      txSignature = await transferUSDTReward(user.walletAddress, pendingAmount);
+      txSignature = await transferUSDTFromPlatform(user.ethereumAddress, pendingAmount);
     } catch (error: any) {
       logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer USDT');
       res.status(500).json({
