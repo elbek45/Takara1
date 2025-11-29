@@ -76,7 +76,7 @@ sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SER
 # Step 6: Restart services
 echo -e "${YELLOW}🔄 Restarting services...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && pm2 delete takara-backend 2>/dev/null || true"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && pm2 start dist/app.js --name takara-backend --env-file .env.production"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && pm2 start dist/app.js --name takara-backend"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "systemctl restart nginx"
 
 # Step 7: Health check
