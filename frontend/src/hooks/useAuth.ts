@@ -16,7 +16,7 @@ export function useAuth() {
   const { data: userResponse, isLoading: isLoadingUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.getCurrentUser(),
-    enabled: connected && api.isAuthenticated(),
+    enabled: api.isAuthenticated(), // Don't require wallet to be connected for password auth
     retry: false,
   })
 
@@ -85,7 +85,7 @@ export function useAuth() {
 
   return {
     user,
-    isAuthenticated: api.isAuthenticated() && connected,
+    isAuthenticated: api.isAuthenticated(), // Allow password auth without wallet connection
     isLoading: isLoadingUser || loginMutation.isPending || isAuthenticating,
     login: loginMutation.mutate,
     logout,
