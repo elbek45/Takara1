@@ -182,8 +182,26 @@ export default function VaultDetailPage() {
                   placeholder={`Min: ${vault.minInvestment}`}
                   min={vault.minInvestment}
                   max={vault.maxInvestment}
-                  className="w-full px-4 py-3 bg-background-elevated border border-green-900/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                  className={`w-full px-4 py-3 bg-background-elevated border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                    usdtAmount && parseFloat(usdtAmount) > vault.maxInvestment
+                      ? 'border-red-500 focus:border-red-500'
+                      : 'border-green-900/30 focus:border-gold-500'
+                  }`}
                 />
+                {usdtAmount && parseFloat(usdtAmount) > vault.maxInvestment && (
+                  <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">
+                      <strong>⚠️ Amount exceeds maximum!</strong> Maximum investment for this vault is <strong>${vault.maxInvestment.toLocaleString()} USDT</strong>. Please enter a lower amount.
+                    </p>
+                  </div>
+                )}
+                {usdtAmount && parseFloat(usdtAmount) < vault.minInvestment && parseFloat(usdtAmount) > 0 && (
+                  <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm text-yellow-400">
+                      Minimum investment is <strong>${vault.minInvestment.toLocaleString()} USDT</strong>.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* LAIKA Boost Slider */}
