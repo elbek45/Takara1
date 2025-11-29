@@ -5,10 +5,16 @@
  */
 
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { Metaplex, keypairIdentity, toMetaplexFile } from '@metaplex-foundation/js';
+import { NFTStorage, File as NFTFile, Blob } from 'nft.storage';
 import { connection } from './solana.service';
 import pino from 'pino';
 
 const logger = pino({ name: 'nft-service' });
+
+// Initialize NFT.Storage client (if API key is available)
+const NFT_STORAGE_KEY = process.env.NFT_STORAGE_API_KEY;
+const nftStorageClient = NFT_STORAGE_KEY ? new NFTStorage({ token: NFT_STORAGE_KEY }) : null;
 
 export interface NFTMetadata {
   name: string;
@@ -95,27 +101,28 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
 }
 
 /**
- * Upload metadata to IPFS/Arweave
- *
- * TODO: Implement actual upload to decentralized storage
- * For now, returns a placeholder URL
+ * Upload metadata to IPFS using NFT.Storage
  */
 export async function uploadMetadata(metadata: NFTMetadata): Promise<string> {
   try {
-    // TODO: Implement actual IPFS/Arweave upload
-    // Using services like:
-    // - NFT.Storage
-    // - Bundlr (Arweave)
-    // - Pinata (IPFS)
+    logger.debug({ metadata }, 'Uploading NFT metadata to IPFS');
 
-    logger.debug({ metadata }, 'Uploading NFT metadata');
+    if (nftStorageClient) {
+      // Use NFT.Storage for real IPFS upload
+      const metadataBlob = new Blob([JSON.stringify(metadata)]);
+      const cid = await nftStorageClient.storeBlob(metadataBlob);
+      const metadataUri = `https://nftstorage.link/ipfs/${cid}`;
 
-    // Placeholder URL
-    const metadataUri = `https://metadata.takaragold.io/${Date.now()}.json`;
+      logger.info({ metadataUri, cid }, 'Metadata uploaded to IPFS');
+      return metadataUri;
+    } else {
+      // Fallback to placeholder if no API key
+      logger.warn('NFT_STORAGE_API_KEY not configured, using placeholder metadata URI');
+      const metadataUri = `https://metadata.takaragold.io/${Date.now()}.json`;
 
-    logger.info({ metadataUri }, 'Metadata uploaded (placeholder)');
-
-    return metadataUri;
+      logger.info({ metadataUri }, 'Metadata uploaded (placeholder)');
+      return metadataUri;
+    }
   } catch (error) {
     logger.error({ error }, 'Failed to upload metadata');
     throw new Error('Failed to upload NFT metadata');
@@ -123,10 +130,7 @@ export async function uploadMetadata(metadata: NFTMetadata): Promise<string> {
 }
 
 /**
- * Mint NFT for investment
- *
- * TODO: Implement actual Metaplex NFT minting
- * This is a placeholder that generates necessary data
+ * Mint NFT for investment using Metaplex
  */
 export async function mintInvestmentNFT(
   input: MintNFTInput,
@@ -142,57 +146,67 @@ export async function mintInvestmentNFT(
     // Generate metadata
     const metadata = generateNFTMetadata(input);
 
-    // Upload metadata
+    // Upload metadata to IPFS
     const metadataUri = await uploadMetadata(metadata);
 
-    // TODO: Implement actual Metaplex minting
-    // Using @metaplex-foundation/js
-    // Steps:
-    // 1. Create mint account
-    // 2. Create metadata account (Metaplex)
-    // 3. Mint token to owner
-    // 4. Freeze authority (optional)
+    // Check if we're in development/test mode
+    const isDevMode = process.env.NODE_ENV !== 'production' || process.env.SOLANA_NETWORK === 'devnet';
 
-    /*
-    Example with Metaplex (to be implemented):
+    if (isDevMode && !process.env.ENABLE_REAL_NFT_MINTING) {
+      // Use placeholder minting in development (unless explicitly enabled)
+      logger.warn('Using placeholder NFT minting (set ENABLE_REAL_NFT_MINTING=true for real minting)');
 
-    import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+      const mockMintAddress = Keypair.generate().publicKey.toBase58();
+      const mockSignature = 'mock_signature_' + Date.now();
+
+      logger.info({
+        investmentId: input.investmentId,
+        mintAddress: mockMintAddress
+      }, 'NFT minted (placeholder)');
+
+      return {
+        mintAddress: mockMintAddress,
+        metadataUri,
+        signature: mockSignature
+      };
+    }
+
+    // Real Metaplex NFT minting
+    logger.info('Initializing Metaplex for real NFT minting');
 
     const metaplex = Metaplex.make(connection)
       .use(keypairIdentity(platformWallet));
 
-    const { nft } = await metaplex.nfts().create({
+    const { nft, response } = await metaplex.nfts().create({
       uri: metadataUri,
       name: metadata.name,
       symbol: metadata.symbol,
-      sellerFeeBasisPoints: 250, // 2.5%
-      tokenOwner: new PublicKey(input.ownerWallet)
+      sellerFeeBasisPoints: 250, // 2.5% platform fee
+      tokenOwner: new PublicKey(input.ownerWallet),
+      creators: [
+        {
+          address: platformWallet.publicKey,
+          share: 100
+        }
+      ]
     });
+
+    const signature = response?.signature || 'unknown';
+
+    logger.info({
+      investmentId: input.investmentId,
+      mintAddress: nft.address.toBase58(),
+      signature
+    }, 'NFT minted successfully on Solana');
 
     return {
       mintAddress: nft.address.toBase58(),
       metadataUri,
-      signature: nft.signature
+      signature
     };
-    */
-
-    // Placeholder response
-    const mockMintAddress = Keypair.generate().publicKey.toBase58();
-    const mockSignature = 'mock_signature_' + Date.now();
-
-    logger.info({
-      investmentId: input.investmentId,
-      mintAddress: mockMintAddress
-    }, 'NFT minted (placeholder)');
-
-    return {
-      mintAddress: mockMintAddress,
-      metadataUri,
-      signature: mockSignature
-    };
-  } catch (error) {
+  } catch (error: any) {
     logger.error({ error, investmentId: input.investmentId }, 'Failed to mint NFT');
-    throw new Error('Failed to mint investment NFT');
+    throw new Error(`Failed to mint investment NFT: ${error?.message || 'Unknown error'}`);
   }
 }
 
@@ -281,25 +295,27 @@ export async function verifyNFTOwnership(
 }
 
 /**
- * Get NFT metadata from chain
+ * Get NFT metadata from chain using Metaplex
  */
 export async function getNFTMetadata(mintAddress: string): Promise<NFTMetadata | null> {
   try {
-    // TODO: Implement actual metadata fetching from Metaplex
-    // Using @metaplex-foundation/js
+    logger.debug({ mintAddress }, 'Fetching NFT metadata from chain');
 
-    /*
     const metaplex = Metaplex.make(connection);
-    const nft = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(mintAddress) });
+    const nft = await metaplex.nfts().findByMint({
+      mintAddress: new PublicKey(mintAddress)
+    });
 
     // Fetch JSON metadata from URI
-    const response = await fetch(nft.uri);
-    const metadata = await response.json();
+    if (nft.uri) {
+      const response = await fetch(nft.uri);
+      const metadata = await response.json();
 
-    return metadata as NFTMetadata;
-    */
+      logger.info({ mintAddress, metadataUri: nft.uri }, 'NFT metadata fetched successfully');
+      return metadata as NFTMetadata;
+    }
 
-    logger.debug({ mintAddress }, 'Fetching NFT metadata (placeholder)');
+    logger.warn({ mintAddress }, 'NFT has no metadata URI');
     return null;
   } catch (error) {
     logger.error({ error, mintAddress }, 'Failed to get NFT metadata');

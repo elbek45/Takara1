@@ -394,12 +394,40 @@ export async function processWithdrawal(req: Request, res: Response): Promise<vo
         return;
       }
 
-      // TODO: Transfer tokens via Solana
-      // await transferFromPlatform(
-      //   withdrawal.destinationWallet,
-      //   tokenMint,
-      //   Number(withdrawal.amount)
-      // );
+      // Transfer tokens via Solana
+      let actualTxSignature = txSignature;
+
+      try {
+        if (process.env.ENABLE_REAL_TOKEN_TRANSFERS === 'true') {
+          // Actually transfer tokens on-chain
+          actualTxSignature = await transferFromPlatform(
+            withdrawal.destinationWallet,
+            tokenMint,
+            Number(withdrawal.amount)
+          );
+
+          logger.info({
+            withdrawalId: id,
+            txSignature: actualTxSignature,
+            amount: Number(withdrawal.amount)
+          }, 'Tokens transferred on-chain');
+        } else {
+          logger.warn({
+            withdrawalId: id
+          }, 'Token transfer skipped (ENABLE_REAL_TOKEN_TRANSFERS not set to true)');
+        }
+      } catch (transferError: any) {
+        logger.error({
+          error: transferError,
+          withdrawalId: id
+        }, 'Failed to transfer tokens');
+
+        res.status(500).json({
+          success: false,
+          message: `Token transfer failed: ${transferError?.message || 'Unknown error'}`
+        });
+        return;
+      }
 
       // Update withdrawal
       await prisma.withdrawalRequest.update({
@@ -408,7 +436,7 @@ export async function processWithdrawal(req: Request, res: Response): Promise<vo
           status: 'COMPLETED',
           processedAt: new Date(),
           processedBy: adminId,
-          txSignature
+          txSignature: actualTxSignature
         }
       });
 
