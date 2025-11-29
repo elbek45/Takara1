@@ -6,7 +6,7 @@
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/takara_test';
+process.env.DATABASE_URL = 'postgresql://takara:takara_password@localhost:5432/takara_test';
 
 // Mock console methods to reduce noise in tests
 global.console = {
