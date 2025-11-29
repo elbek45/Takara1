@@ -254,6 +254,40 @@ export async function transferFromPlatform(
 }
 
 /**
+ * Transfer USDT from platform wallet to user
+ */
+export async function transferUSDTReward(
+  toAddress: string,
+  amount: number
+): Promise<string> {
+  const usdtMint = process.env.USDT_TOKEN_MINT;
+
+  if (!usdtMint) {
+    throw new Error('USDT token mint address not configured');
+  }
+
+  logger.info({ toAddress, amount }, 'Transferring USDT reward');
+  return transferFromPlatform(toAddress, usdtMint, amount);
+}
+
+/**
+ * Transfer TAKARA from platform wallet to user
+ */
+export async function transferTAKARAReward(
+  toAddress: string,
+  amount: number
+): Promise<string> {
+  const takaraMint = process.env.TAKARA_TOKEN_MINT;
+
+  if (!takaraMint) {
+    throw new Error('TAKARA token mint address not configured');
+  }
+
+  logger.info({ toAddress, amount }, 'Transferring TAKARA reward');
+  return transferFromPlatform(toAddress, takaraMint, amount);
+}
+
+/**
  * Validate Solana address
  */
 export function isValidSolanaAddress(address: string): boolean {
@@ -310,6 +344,8 @@ export default {
   getSolBalance,
   transferTokens,
   transferFromPlatform,
+  transferUSDTReward,
+  transferTAKARAReward,
   isValidSolanaAddress,
   generateSignatureMessage,
   getTransactionFee,

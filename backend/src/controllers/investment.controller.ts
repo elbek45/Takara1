@@ -17,7 +17,7 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES, INVESTMENT_CONFIG } from '../config/c
 import { calculateLaikaBoost } from '../utils/laika.calculator';
 import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calculator';
 import { VaultTier } from '../config/vaults.config';
-import { verifyTransaction } from '../services/solana.service';
+import { verifyTransaction, transferUSDTReward, transferTAKARAReward } from '../services/solana.service';
 import pino from 'pino';
 
 const logger = pino({ name: 'investment-controller' });
@@ -394,6 +394,33 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Get user's Solana wallet address
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { walletAddress: true }
+    });
+
+    if (!user?.walletAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'Please connect your Phantom wallet first to claim rewards'
+      });
+      return;
+    }
+
+    // Transfer USDT to user's Solana wallet
+    let txSignature: string;
+    try {
+      txSignature = await transferUSDTReward(user.walletAddress, pendingAmount);
+    } catch (error: any) {
+      logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer USDT');
+      res.status(500).json({
+        success: false,
+        message: 'Failed to transfer USDT. Please try again later.'
+      });
+      return;
+    }
+
     // Update investment
     await prisma.investment.update({
       where: { id },
@@ -416,20 +443,20 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
       }
     });
 
-    // TODO: Transfer USDT to user wallet via Solana
-
     logger.info({
       investmentId: id,
       userId,
-      amount: pendingAmount
-    }, 'USDT yield claimed');
+      amount: pendingAmount,
+      txSignature
+    }, 'USDT yield claimed and transferred');
 
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.YIELD_CLAIMED,
       data: {
         amountClaimed: pendingAmount,
-        totalEarned: Number(investment.totalEarnedUSDT) + pendingAmount
+        totalEarned: Number(investment.totalEarnedUSDT) + pendingAmount,
+        txSignature
       }
     });
   } catch (error) {
@@ -476,6 +503,33 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Get user's Solana wallet address
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { walletAddress: true }
+    });
+
+    if (!user?.walletAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'Please connect your Phantom wallet first to claim rewards'
+      });
+      return;
+    }
+
+    // Transfer TAKARA to user's Solana wallet
+    let txSignature: string;
+    try {
+      txSignature = await transferTAKARAReward(user.walletAddress, pendingAmount);
+    } catch (error: any) {
+      logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer TAKARA');
+      res.status(500).json({
+        success: false,
+        message: 'Failed to transfer TAKARA. Please try again later.'
+      });
+      return;
+    }
+
     // Update investment
     await prisma.investment.update({
       where: { id },
@@ -497,20 +551,20 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       }
     });
 
-    // TODO: Transfer TAKARA to user wallet via Solana
-
     logger.info({
       investmentId: id,
       userId,
-      amount: pendingAmount
-    }, 'TAKARA claimed');
+      amount: pendingAmount,
+      txSignature
+    }, 'TAKARA claimed and transferred');
 
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.TAKARA_CLAIMED,
       data: {
         amountClaimed: pendingAmount,
-        totalMined: Number(investment.totalMinedTAKARA) + pendingAmount
+        totalMined: Number(investment.totalMinedTAKARA) + pendingAmount,
+        txSignature
       }
     });
   } catch (error) {
