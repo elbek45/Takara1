@@ -102,7 +102,9 @@ export default function AdminUsersPage() {
                         <div className="text-sm font-medium text-white">
                           {user.username || 'No username'}
                         </div>
-                        <div className="text-xs text-gray-500">{user.walletAddress.slice(0, 8)}...</div>
+                        <div className="text-xs text-gray-500">
+                          {user.walletAddress ? `${user.walletAddress.slice(0, 8)}...` : 'No wallet'}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

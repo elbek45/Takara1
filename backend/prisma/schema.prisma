@@ -12,7 +12,8 @@ datasource db {
 
 model User {
   id                String              @id @default(uuid())
-  walletAddress     String?             @unique // Solana wallet address (optional)
+  walletAddress     String?             @unique // Solana wallet address (Phantom)
+  ethereumAddress   String?             @unique // Ethereum wallet address (MetaMask)
   email             String?             @unique
   username          String?             @unique
   password          String? // Hashed password for username/password auth
@@ -37,6 +38,7 @@ model User {
   lastLoginAt       DateTime?
 
   @@index([walletAddress])
+  @@index([ethereumAddress])
   @@index([email])
   @@map("users")
 }

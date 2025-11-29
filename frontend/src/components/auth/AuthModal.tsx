@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation } from '@tanstack/react-query'
 import { X, Loader2, User, Lock } from 'lucide-react'
 import { api } from '../../services/api'
@@ -82,8 +83,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
   const isPending = loginMutation.isPending || registerMutation.isPending
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-background-card rounded-xl max-w-md w-full border border-green-900/20 my-auto">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-green-900/20">
@@ -218,4 +219,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }

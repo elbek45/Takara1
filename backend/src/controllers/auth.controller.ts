@@ -522,11 +522,115 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
   }
 }
 
+/**
+ * Connect Ethereum Wallet (MetaMask)
+ */
+export async function connectEthereum(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as any).user?.userId;
+    const { ethereumAddress } = req.body;
+
+    if (!ethereumAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'Ethereum address is required'
+      });
+      return;
+    }
+
+    // Check if address is already used by another user
+    const existingUser = await prisma.user.findFirst({
+      where: { ethereumAddress }
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      res.status(400).json({
+        success: false,
+        message: 'This Ethereum address is already connected to another account'
+      });
+      return;
+    }
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { ethereumAddress }
+    });
+
+    res.json({
+      success: true,
+      message: 'MetaMask wallet connected successfully',
+      data: {
+        ethereumAddress: updatedUser.ethereumAddress
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Failed to connect Ethereum wallet');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * Connect Solana Wallet (Phantom)
+ */
+export async function connectSolana(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as any).user?.userId;
+    const { walletAddress } = req.body;
+
+    if (!walletAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'Solana address is required'
+      });
+      return;
+    }
+
+    // Check if address is already used by another user
+    const existingUser = await prisma.user.findFirst({
+      where: { walletAddress }
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      res.status(400).json({
+        success: false,
+        message: 'This Solana address is already connected to another account'
+      });
+      return;
+    }
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { walletAddress }
+    });
+
+    res.json({
+      success: true,
+      message: 'Phantom wallet connected successfully',
+      data: {
+        walletAddress: updatedUser.walletAddress
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Failed to connect Solana wallet');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
 export default {
   getNonce,
   login,
   registerWithPassword,
   loginWithPassword,
   adminLogin,
-  getCurrentUser
+  getCurrentUser,
+  connectEthereum,
+  connectSolana
 };

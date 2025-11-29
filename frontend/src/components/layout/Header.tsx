@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
 import { MetaMaskButton, MetaMaskButtonCompact } from '../wallet'
+import { useMetaMask } from '../../hooks/useMetaMask'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -18,7 +19,8 @@ const navigation = [
 
 export default function Header() {
   const location = useLocation()
-  const { connected } = useWallet()
+  const { connected, disconnect: disconnectPhantom } = useWallet()
+  const { disconnect: disconnectMetaMask } = useMetaMask()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -33,8 +35,26 @@ export default function Header() {
   })
 
   const handleLogout = () => {
+    // Logout from backend (clear JWT token)
     api.logout()
+
+    // Disconnect wallets
+    try {
+      disconnectPhantom()
+    } catch (error) {
+      console.log('Phantom already disconnected')
+    }
+
+    try {
+      disconnectMetaMask()
+    } catch (error) {
+      console.log('MetaMask already disconnected')
+    }
+
+    // Clear all cached data
     queryClient.clear()
+
+    // Redirect to home
     window.location.href = '/'
   }
 

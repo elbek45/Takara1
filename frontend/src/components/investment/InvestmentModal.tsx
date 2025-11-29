@@ -5,11 +5,8 @@ import { X, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
 import { useMetaMask } from '../../hooks/useMetaMask'
-import { useTronLink } from '../../hooks/useTronLink'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
-
-type PaymentNetwork = 'ETH' | 'TRC20'
 
 interface InvestmentModalProps {
   isOpen: boolean
@@ -31,81 +28,77 @@ export default function InvestmentModal({
   laikaAmountLKI,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
-  const { transferUSDT: transferUSDTMetaMask, isConnected: metaMaskConnected, address: ethAddress } = useMetaMask()
-  const { transferUSDT: transferUSDTTronLink, isConnected: tronLinkConnected } = useTronLink()
+  const { transferUSDT, isConnected: metaMaskConnected, address: ethAddress } = useMetaMask()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
-  const [paymentNetwork, setPaymentNetwork] = useState<PaymentNetwork>('ETH')
 
   const investMutation = useMutation({
     mutationFn: async () => {
-      // Check wallet connections based on selected network
-      if (paymentNetwork === 'ETH' && !metaMaskConnected) {
-        throw new Error('Please connect MetaMask for USDT payment (Ethereum)')
+      // Critical validation: Check all required wallets are connected
+      if (!metaMaskConnected) {
+        throw new Error('MetaMask must be connected for USDT payment')
       }
 
-      if (paymentNetwork === 'TRC20' && !tronLinkConnected) {
-        throw new Error('Please connect TronLink for USDT payment (TRC20)')
+      if (calculation.investment.requiredTAKARA > 0 && (!publicKey || !signTransaction)) {
+        throw new Error('Phantom wallet must be connected for TAKARA payment. Your investment will be REJECTED without it!')
       }
 
-      if (!publicKey || !signTransaction) {
-        throw new Error('Please connect Phantom wallet for TAKARA/LAIKA tokens')
+      if (laikaAmountLKI > 0 && (!publicKey || !signTransaction)) {
+        throw new Error('Phantom wallet must be connected for LAIKA boost')
       }
 
-      // Step 1: Transfer USDT based on selected network
-      let usdtSignature: string
-
-      if (paymentNetwork === 'ETH') {
-        if (!ethAddress) {
-          throw new Error('MetaMask address not available')
-        }
-
-        toast.info('Transferring USDT via MetaMask (Ethereum)...')
-
-        // Get platform wallet address from environment
-        const platformWalletETH = import.meta.env.VITE_PLATFORM_WALLET_ETH || ethAddress
-
-        const result = await transferUSDTMetaMask(platformWalletETH, usdtAmount)
-        usdtSignature = result.txHash
-      } else {
-        toast.info('Transferring USDT via TronLink (TRC20)...')
-        const result = await transferUSDTTronLink(usdtAmount.toString())
-        usdtSignature = result.hash
+      // Step 1: Transfer USDT via MetaMask (Ethereum Mainnet)
+      if (!ethAddress) {
+        throw new Error('MetaMask address not available')
       }
 
-      toast.success('USDT transferred successfully!')
+      toast.info('Step 1/3: Transferring USDT via MetaMask (Ethereum Mainnet)...')
+
+      // Get platform wallet address from environment
+      const platformWalletETH = import.meta.env.VITE_PLATFORM_WALLET_ETH || ethAddress
+
+      const result = await transferUSDT(platformWalletETH, usdtAmount)
+      const usdtSignature = result.txHash
+
+      toast.success('✓ USDT transferred successfully!')
 
       // Step 2: Transfer TAKARA if required (via Phantom/Solana)
+      let stepNumber = 2
       if (calculation.investment.requiredTAKARA > 0) {
-        toast.info('Transferring TAKARA via Phantom...')
+        const totalSteps = laikaAmountLKI > 0 ? 4 : 3
+        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring TAKARA via Phantom (Solana)...`)
         const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferTAKARA(
-          publicKey,
+          publicKey!,
           platformWallet,
           calculation.investment.requiredTAKARA,
-          signTransaction
+          signTransaction!
         )
-        toast.success('TAKARA transferred successfully!')
+        toast.success('✓ TAKARA transferred successfully!')
+        stepNumber++
       }
 
       // Step 3: Transfer LAIKA if boosting (via Phantom/Solana)
       if (laikaAmountLKI > 0) {
-        toast.info('Transferring LAIKA via Phantom...')
+        const totalSteps = calculation.investment.requiredTAKARA > 0 ? 4 : 3
+        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring LKI via Phantom (Solana) for APY boost...`)
         const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferLAIKA(
-          publicKey,
+          publicKey!,
           platformWallet,
           laikaAmountLKI,
-          signTransaction
+          signTransaction!
         )
-        toast.success('LAIKA transferred successfully!')
+        toast.success('✓ LKI boost transferred successfully!')
+        stepNumber++
       }
 
       setTxSignature(usdtSignature)
 
-      // Step 4: Create investment record in backend
-      toast.info('Creating investment...')
+      // Final Step: Create investment record and NFT on Solana
+      const totalSteps = (calculation.investment.requiredTAKARA > 0 ? 1 : 0) + (laikaAmountLKI > 0 ? 1 : 0) + 2
+      toast.info(`Step ${stepNumber}/${totalSteps}: Creating investment and minting NFT on Solana...`)
       const response = await api.createInvestment({
         vaultId,
         usdtAmount,
@@ -176,53 +169,80 @@ export default function InvestmentModal({
           {/* Review Step */}
           {step === 'review' && (
             <div className="space-y-6">
-              {/* Payment Network Selection */}
-              <div className="bg-background-elevated rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-300 mb-3">Select USDT Payment Network</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setPaymentNetwork('ETH')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentNetwork === 'ETH'
-                        ? 'border-gold-500 bg-gold-500/10'
-                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
-                    }`}
-                  >
-                    <div className="font-semibold text-white mb-1">Ethereum (ERC20)</div>
-                    <div className="text-xs text-gray-400">Mainnet USDT</div>
-                    <div className="text-xs text-green-400 mt-2">Recommended</div>
-                  </button>
-                  <button
-                    onClick={() => setPaymentNetwork('TRC20')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentNetwork === 'TRC20'
-                        ? 'border-gold-500 bg-gold-500/10'
-                        : 'border-green-900/30 bg-background-card hover:border-green-900/50'
-                    }`}
-                  >
-                    <div className="font-semibold text-white mb-1">TRC20 (TRON)</div>
-                    <div className="text-xs text-gray-400">Lowest fees</div>
-                  </button>
+              {/* Payment Flow Information */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <div className="text-sm font-medium text-blue-400 mb-3">
+                  💳 Payment Process
+                </div>
+                <div className="text-sm text-gray-300 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-400 font-bold">1.</span>
+                    <span><strong>USDT Payment</strong> via MetaMask (Ethereum Mainnet)</span>
+                  </div>
+                  {calculation.investment.requiredTAKARA > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400 font-bold">2.</span>
+                      <span><strong>TAKARA Payment</strong> via Phantom (Solana) - Required for this vault</span>
+                    </div>
+                  )}
+                  {laikaAmountLKI > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400 font-bold">{calculation.investment.requiredTAKARA > 0 ? '3' : '2'}.</span>
+                      <span><strong>LKI Boost</strong> via Phantom (Solana) - Optional APY boost</span>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-400 font-bold">{calculation.investment.requiredTAKARA > 0 ? (laikaAmountLKI > 0 ? '4' : '3') : (laikaAmountLKI > 0 ? '3' : '2')}.</span>
+                    <span><strong>NFT Creation</strong> on Solana - Automatic</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Wallet Connection Status */}
-              {((paymentNetwork === 'ETH' && !metaMaskConnected) ||
-                (paymentNetwork === 'TRC20' && !tronLinkConnected) ||
-                !publicKey) && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                  <div className="text-sm text-yellow-400 font-medium mb-2">
-                    ⚠️ Required Wallets
+              {/* Wallet Connection Status - CRITICAL WARNING */}
+              {(!metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
+                <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
+                  <div className="text-sm text-red-400 font-bold mb-3">
+                    ⚠️ CRITICAL: Required Wallets Not Connected!
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-2 mb-3">
+                    <div className="text-red-300 font-medium">
+                      You MUST connect these wallets BEFORE proceeding with payment:
+                    </div>
+                    {!metaMaskConnected && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">✗</span>
+                        <span><strong>MetaMask</strong> - Required for USDT payment (${usdtAmount.toLocaleString()})</span>
+                      </div>
+                    )}
+                    {calculation.investment.requiredTAKARA > 0 && !publicKey && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">✗</span>
+                        <span><strong>Phantom</strong> - Required for TAKARA payment ({calculation.investment.requiredTAKARA.toLocaleString()} TAKARA)</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-red-500/20 border border-red-500/40 rounded p-3 text-xs text-red-300">
+                    <strong>WARNING:</strong> If you pay USDT without connecting Phantom for TAKARA payment, your investment will be REJECTED and you may lose funds!
+                  </div>
+                </div>
+              )}
+
+              {/* Wallet Connection Status - Success */}
+              {metaMaskConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <div className="text-sm text-green-400 font-medium mb-2">
+                    ✓ All Required Wallets Connected
                   </div>
                   <div className="text-sm text-gray-300 space-y-1">
-                    {paymentNetwork === 'ETH' && !metaMaskConnected && (
-                      <div>• Connect MetaMask for USDT payment (Ethereum Mainnet)</div>
-                    )}
-                    {paymentNetwork === 'TRC20' && !tronLinkConnected && (
-                      <div>• Connect TronLink for USDT payment (TRC20 Network)</div>
-                    )}
-                    {!publicKey && (
-                      <div>• Connect Phantom for TAKARA/LAIKA tokens (Solana)</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400">✓</span>
+                      <span>MetaMask connected - Ready for USDT payment</span>
+                    </div>
+                    {calculation.investment.requiredTAKARA > 0 && publicKey && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-400">✓</span>
+                        <span>Phantom connected - Ready for TAKARA payment</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -318,20 +338,39 @@ export default function InvestmentModal({
                 </div>
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <div className="text-sm text-yellow-400">
-                  ⏱️ <strong>72-Hour Activation:</strong> Your investment will be pending for 72
-                  hours before activation. During this time, you cannot withdraw.
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <div className="text-sm text-blue-400 space-y-2">
+                  <div>
+                    <strong>📊 Vault Activation Process:</strong>
+                  </div>
+                  <div className="pl-4 space-y-1">
+                    <div>• Vault must collect minimum <strong>$100,000 USDT</strong> in total investments</div>
+                    <div>• After reaching this target, a <strong>72-hour countdown</strong> begins</div>
+                    <div>• During pending period, you cannot withdraw</div>
+                    <div>• Earnings start accruing after activation</div>
+                  </div>
                 </div>
               </div>
 
               <button
                 onClick={handleInvest}
-                disabled={investMutation.isPending}
-                className="btn-gold w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2"
+                disabled={
+                  investMutation.isPending ||
+                  !metaMaskConnected ||
+                  (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                }
+                className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
+                  !metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'btn-gold'
+                }`}
               >
-                Proceed to Transfer
-                <ArrowRight className="h-5 w-5" />
+                {!metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                  ? 'Connect Required Wallets First'
+                  : 'Proceed to Transfer'}
+                {metaMaskConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+                  <ArrowRight className="h-5 w-5" />
+                )}
               </button>
             </div>
           )}
@@ -356,18 +395,13 @@ export default function InvestmentModal({
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Investment Created!</h3>
                 <p className="text-gray-400 mb-4">
-                  Your investment has been created successfully. It will be activated after 72
-                  hours.
+                  Your investment has been created successfully. It will be activated once the vault reaches $100,000 USDT and the 72-hour countdown completes.
                 </p>
                 {txSignature && (
                   <div className="bg-background-elevated rounded-lg p-4 mb-4">
-                    <div className="text-sm text-gray-400 mb-2">Transaction Hash</div>
+                    <div className="text-sm text-gray-400 mb-2">USDT Transaction Hash (Ethereum)</div>
                     <a
-                      href={
-                        paymentNetwork === 'ETH'
-                          ? `https://etherscan.io/tx/${txSignature}`
-                          : `https://tronscan.org/#/transaction/${txSignature}`
-                      }
+                      href={`https://etherscan.io/tx/${txSignature}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gold-500 hover:text-gold-400 text-sm break-all"

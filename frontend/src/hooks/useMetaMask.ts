@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ethereumService } from '../services/ethereum.service'
+import { api } from '../services/api'
 import { toast } from 'sonner'
 import type { EthereumWallet } from '../types/blockchain'
 
@@ -42,8 +43,14 @@ export function useMetaMask() {
     try {
       const wallet: EthereumWallet = await ethereumService.connect()
 
-      // Get USDT balance
-      const usdtBalance = await ethereumService.getUSDTBalance(wallet.address)
+      // Get USDT balance (with error handling)
+      let usdtBalance = 0
+      try {
+        usdtBalance = await ethereumService.getUSDTBalance(wallet.address)
+      } catch (balanceError) {
+        console.warn('Failed to get USDT balance:', balanceError)
+        // Continue without USDT balance
+      }
 
       setState({
         address: wallet.address,
@@ -54,7 +61,18 @@ export function useMetaMask() {
         ethBalance: wallet.balance,
       })
 
-      toast.success('MetaMask connected successfully')
+      // Save Ethereum address to backend if user is authenticated (with debounce)
+      if (api.isAuthenticated()) {
+        try {
+          await api.connectEthereum(wallet.address)
+          toast.success('MetaMask connected and saved')
+        } catch (backendError: any) {
+          console.error('Failed to save Ethereum address:', backendError)
+          // Don't show error toast to avoid annoying the user
+        }
+      } else {
+        toast.success('MetaMask connected successfully')
+      }
     } catch (error: any) {
       console.error('MetaMask connection error:', error)
       toast.error(error.message || 'Failed to connect MetaMask')
@@ -152,10 +170,21 @@ export function useMetaMask() {
 
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
+        // User disconnected wallet
         disconnect()
-      } else if (accounts[0] !== state.address) {
-        // Account changed, reconnect
-        connect()
+      } else if (accounts[0] !== state.address && state.address !== null) {
+        // Account changed - just update state without reconnecting
+        setState((prev) => ({
+          ...prev,
+          address: accounts[0],
+        }))
+
+        // Save new address if authenticated
+        if (api.isAuthenticated()) {
+          api.connectEthereum(accounts[0]).catch((err) => {
+            console.error('Failed to save new Ethereum address:', err)
+          })
+        }
       }
     }
 
@@ -174,7 +203,7 @@ export function useMetaMask() {
         window.ethereum.removeListener('chainChanged', handleChainChanged)
       }
     }
-  }, [state.address, connect, disconnect])
+  }, [state.address, disconnect])
 
   /**
    * Auto-connect if previously connected

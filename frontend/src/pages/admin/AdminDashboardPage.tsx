@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
                 <div key={user.id} className="flex justify-between items-center p-3 bg-background-elevated rounded-lg">
                   <div>
                     <div className="text-sm font-medium text-white">
-                      {user.username || user.walletAddress.slice(0, 8) + '...'}
+                      {user.username || (user.walletAddress ? user.walletAddress.slice(0, 8) + '...' : 'No identifier')}
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(user.createdAt).toLocaleDateString()}

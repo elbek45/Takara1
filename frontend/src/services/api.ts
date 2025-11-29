@@ -115,6 +115,20 @@ class ApiClient {
     return !!localStorage.getItem('auth_token')
   }
 
+  async connectEthereum(ethereumAddress: string): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>('/auth/connect-ethereum', {
+      ethereumAddress,
+    })
+    return data
+  }
+
+  async connectSolana(walletAddress: string): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>('/auth/connect-solana', {
+      walletAddress,
+    })
+    return data
+  }
+
   // ==================== VAULTS ====================
 
   async getVaults(params?: {
