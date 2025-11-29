@@ -1,40 +1,85 @@
-# Blockchain Implementation Plan - Dev Mode
+# Blockchain Implementation Plan - Hybrid Architecture
 
-## Цель
-Реализовать полную блокчейн функциональность на Solana Devnet для разработки и тестирования.
+## ⚠️ ВАЖНО: Гибридная Архитектура
+
+Платформа Takara Gold использует **две блокчейн сети**:
+
+### 💳 **Ethereum (для USDT)**
+- **Сеть**: Ethereum Mainnet / Sepolia Testnet
+- **Кошелек**: MetaMask
+- **Токен**: ERC-20 USDT (6 decimals)
+- **Библиотека**: Web3.js
+- **Операции**: Deposits, Withdrawals, Yield Claims
+
+### 🎨 **Solana (для NFT и токенов)**
+- **Сеть**: Solana Mainnet / Devnet
+- **Кошелек**: Phantom
+- **Токены**: SPL (TAKARA, LAIKA)
+- **NFT**: Metaplex
+- **Библиотека**: @solana/web3.js
+- **Операции**: NFT Minting, TAKARA/LAIKA transfers
 
 ---
 
-## Фаза 1: Подготовка Devnet окружения (30 мин)
+## Фаза 1: Подготовка Devnet окружения ✅ ЗАВЕРШЕНО
 
-### 1.1 Установка зависимостей
+### 1.1 Установка зависимостей ✅
 
 ```bash
 cd /home/elbek/TakaraClaude/takara-gold/backend
+
+# Solana + Metaplex
 npm install --save @metaplex-foundation/js @metaplex-foundation/mpl-token-metadata
-npm install --save-dev @solana/spl-token-registry
+npm install --save nft.storage
+
+# Ethereum + Web3.js
+npm install --save web3
+npm install --save-dev @types/web3
 ```
 
-### 1.2 Создание dev wallet
+**Статус**: ✅ Установлено (633ee71, fa90b04)
+
+### 1.2 Создание Solana dev wallet ✅
 
 ```bash
 # Создать новый devnet wallet
-solana-keygen new --outfile ~/.config/solana/devnet-wallet.json
+solana-keygen new --outfile ~/.config/solana/devnet-platform-wallet.json
 
 # Получить devnet SOL
 solana airdrop 2 --url devnet
 
 # Получить public key
-solana address --keypair ~/.config/solana/devnet-wallet.json
+solana address --keypair ~/.config/solana/devnet-platform-wallet.json
 ```
 
-### 1.3 Создать тестовые SPL tokens на devnet
+**Результат**:
+- Wallet создан: `AinafdFme7f68yGjJwfnmYgtJpZPu9RAHuJBcRTXif4i`
+- Файл: `~/.config/solana/devnet-platform-wallet.json`
 
-Использовать `spl-token` CLI:
+### 1.3 Создание Ethereum testnet wallet
+
+Для тестирования USDT на Sepolia:
+
 ```bash
-# Create USDT test token
-spl-token create-token --decimals 6 --url devnet
+# Вариант 1: Создать через MetaMask UI
+# - Установить MetaMask
+# - Переключить на Sepolia network
+# - Создать новый аккаунт "Platform Wallet"
+# - Экспортировать private key
 
+# Вариант 2: Создать через Web3.js
+node -e "const Web3 = require('web3'); const account = new Web3().eth.accounts.create(); console.log('Address:', account.address); console.log('Private Key:', account.privateKey);"
+
+# Получить testnet ETH от faucet
+# https://sepoliafaucet.com/
+```
+
+### 1.4 Создать тестовые SPL tokens на Solana devnet
+
+⚠️ **ВАЖНО**: USDT теперь НЕ создается на Solana! Используется Ethereum.
+
+Использовать `spl-token` CLI только для TAKARA и LAIKA:
+```bash
 # Create TAKARA test token
 spl-token create-token --decimals 6 --url devnet
 
@@ -46,34 +91,58 @@ spl-token create-account <TOKEN_MINT> --url devnet
 spl-token mint <TOKEN_MINT> 1000000 --url devnet
 ```
 
-### 1.4 Environment variables для devnet
+### 1.5 Environment variables для hybrid dev mode ✅
 
 ```env
 # .env.development
+
+# ========== SOLANA CONFIGURATION ==========
 NODE_ENV=development
 SOLANA_RPC_URL=https://api.devnet.solana.com
 SOLANA_NETWORK=devnet
 
-# Platform wallet (from step 1.2)
+# Solana Platform wallet
 PLATFORM_WALLET_PRIVATE_KEY=<base58-private-key>
-PLATFORM_WALLET_ADDRESS=<public-key>
+PLATFORM_WALLET_ADDRESS=AinafdFme7f68yGjJwfnmYgtJpZPu9RAHuJBcRTXif4i
 
-# Test token mints (from step 1.3)
-USDT_TOKEN_MINT=<devnet-usdt-mint>
+# SPL Token mints (только TAKARA и LAIKA)
 TAKARA_TOKEN_MINT=<devnet-takara-mint>
 LAIKA_TOKEN_MINT=<devnet-laika-mint>
 
-# Skip TX verification in dev
-SKIP_TX_VERIFICATION=true
+# NFT Storage для Metaplex
+NFT_STORAGE_API_KEY=<your-nft-storage-key>
+ENABLE_REAL_NFT_MINTING=false
+
+# ========== ETHEREUM CONFIGURATION ==========
+ETHEREUM_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+# или Alchemy: https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+
+# Ethereum Platform wallet
+PLATFORM_ETHEREUM_PRIVATE_KEY=0x...
+PLATFORM_ETHEREUM_ADDRESS=0x...
+
+# USDT на Sepolia (testnet)
+# Для тестирования можно задеплоить свой ERC-20 или использовать mock
+USDT_CONTRACT_ADDRESS=0x...  # Sepolia testnet USDT mock contract
+
+ENABLE_REAL_ETH_TRANSFERS=false  # Mock режим для разработки
+
+# ========== SHARED CONFIGURATION ==========
+SKIP_TX_VERIFICATION=true  # Для ускорения разработки
+ENABLE_REAL_TOKEN_TRANSFERS=false  # Mock режим для Solana токенов
 ```
+
+**Статус**: ✅ Файл создан с гибридной конфигурацией
 
 ---
 
-## Фаза 2: Реализация NFT Minting (Metaplex) (2-3 часа)
+## Фаза 2: Реализация NFT Minting (Metaplex) ✅ ЗАВЕРШЕНО
 
-### 2.1 Создать Metaplex NFT service
+**Статус**: ✅ NFT минтинг реализован (commit 633ee71)
 
-**Файл**: `backend/src/services/metaplex.service.ts`
+### 2.1 Metaplex NFT service ✅
+
+**Файл**: `backend/src/services/nft.service.ts` (323 lines)
 
 ```typescript
 import { Metaplex, keypairIdentity, bundlrStorage } from '@metaplex-foundation/js';
@@ -137,34 +206,97 @@ function generateNFTImage(tier: string): string {
 
 ---
 
-## Фаза 3: Token Transfers (1-2 часа)
+## Фаза 3: Token Transfers - Hybrid Implementation ✅ ЗАВЕРШЕНО
 
-### 3.1 Раскомментировать withdrawal processing
+**Статус**: ✅ Гибридные переводы реализованы (commits 633ee71, fa90b04)
 
-**Файл**: `backend/src/controllers/admin.controller.ts:397`
+### 3.1 Ethereum Service для USDT ✅
+
+**Файл**: `backend/src/services/ethereum.service.ts` (259 lines)
+
+**Реализованные функции**:
+```typescript
+// Верификация USDT транзакции на Ethereum
+export async function verifyUSDTTransaction(
+  txHash: string,
+  expectedFrom: string,
+  expectedTo: string,
+  expectedAmount: number
+): Promise<boolean>
+
+// Перевод USDT с платформенного кошелька
+export async function transferUSDTFromPlatform(
+  toAddress: string,
+  amount: number
+): Promise<string>
+
+// Проверка балансов
+export async function getUSDTBalance(address: string): Promise<number>
+export async function getPlatformUSDTBalance(): Promise<number>
+export async function getPlatformETHBalance(): Promise<number>
+```
+
+### 3.2 Обновленный Withdrawal Processing ✅
+
+**Файл**: `backend/src/controllers/admin.controller.ts:383-451`
+
+Гибридная логика для разных токенов:
 
 ```typescript
-// BEFORE (commented):
-// await transferFromPlatform(...);
+// USDT - через Ethereum
+if (withdrawal.tokenType === 'USDT') {
+  if (process.env.ENABLE_REAL_ETH_TRANSFERS === 'true') {
+    actualTxSignature = await transferUSDTFromPlatform(
+      withdrawal.destinationWallet,
+      Number(withdrawal.amount)
+    );
+    logger.info({ blockchain: 'Ethereum' }, 'USDT transferred');
+  }
+}
 
-// AFTER (uncommented):
-await transferFromPlatform(
-  withdrawal.destinationWallet,
-  tokenMint,
-  Number(withdrawal.amount)
+// TAKARA/LAIKA - через Solana
+else {
+  const tokenMint = withdrawal.tokenType === 'TAKARA'
+    ? process.env.TAKARA_TOKEN_MINT
+    : process.env.LAIKA_TOKEN_MINT;
+
+  if (process.env.ENABLE_REAL_TOKEN_TRANSFERS === 'true') {
+    actualTxSignature = await transferFromPlatform(
+      withdrawal.destinationWallet,
+      tokenMint,
+      Number(withdrawal.amount)
+    );
+    logger.info({ blockchain: 'Solana' }, 'Token transferred');
+  }
+}
+```
+
+### 3.3 Claim Functions - Hybrid ✅
+
+**Файл**: `backend/src/controllers/investment.controller.ts`
+
+**USDT Yield Claim** (lines 438-455) - через Ethereum:
+```typescript
+// Get user's Ethereum wallet
+const user = await prisma.user.findUnique({
+  where: { id: userId },
+  select: { ethereumAddress: true }
+});
+
+// Transfer USDT via Ethereum
+txSignature = await transferUSDTFromPlatform(
+  user.ethereumAddress,
+  pendingAmount
 );
 ```
 
-### 3.2 Implement claim functions
-
-**В** `investment.controller.ts`:
-
+**TAKARA Claim** - через Solana (без изменений):
 ```typescript
-// claimYield - line 414
-const txSignature = await transferUSDTReward(user.walletAddress, pendingAmount);
-
-// claimTakara - line 523
-const txSignature = await transferTAKARAReward(user.walletAddress, pendingAmount);
+// Uses Solana transferTAKARAReward
+const txSignature = await transferTAKARAReward(
+  user.walletAddress,
+  pendingAmount
+);
 ```
 
 ### 3.3 Добавить error handling
