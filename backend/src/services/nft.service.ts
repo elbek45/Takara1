@@ -8,9 +8,9 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { Metaplex, keypairIdentity, toMetaplexFile } from '@metaplex-foundation/js';
 import { NFTStorage, File as NFTFile, Blob } from 'nft.storage';
 import { connection } from './solana.service';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'nft-service' });
+const logger = getLogger('nft-service');
 
 // Initialize NFT.Storage client (if API key is available)
 const NFT_STORAGE_KEY = process.env.NFT_STORAGE_API_KEY;

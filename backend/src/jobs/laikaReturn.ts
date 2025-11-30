@@ -9,9 +9,9 @@
 
 import { prisma } from '../config/database';
 import { transferFromPlatform } from '../services/solana.service';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'laika-return-job' });
+const logger = getLogger('laika-return-job');
 
 /**
  * Process LAIKA returns for completed investments

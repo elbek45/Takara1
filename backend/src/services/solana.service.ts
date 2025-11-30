@@ -23,9 +23,9 @@ import {
 } from '@solana/spl-token';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'solana-service' });
+const logger = getLogger('solana-service');
 
 // Solana connection
 export const connection = new Connection(
@@ -124,6 +124,248 @@ export async function verifyTransaction(signature: string): Promise<{
   } catch (error) {
     logger.error({ error, signature }, 'Transaction verification failed');
     return null;
+  }
+}
+
+/**
+ * Verify transaction with full details validation
+ *
+ * @param signature - Transaction signature
+ * @param expectedRecipient - Expected recipient address
+ * @param expectedAmount - Expected transfer amount
+ * @param expectedTokenMint - Expected token mint address (for SPL tokens)
+ * @param maxAgeSeconds - Maximum transaction age in seconds (default 1 hour)
+ * @returns Verification result with details
+ */
+export async function verifyTransactionDetails(params: {
+  signature: string;
+  expectedRecipient: string;
+  expectedAmount: number;
+  expectedTokenMint?: string;
+  maxAgeSeconds?: number;
+}): Promise<{
+  success: boolean;
+  message: string;
+  details?: {
+    confirmed: boolean;
+    recipient: string;
+    amount: number;
+    tokenMint?: string;
+    blockTime: number | null;
+    age: number;
+  };
+}> {
+  const { signature, expectedRecipient, expectedAmount, expectedTokenMint, maxAgeSeconds = 3600 } = params;
+
+  try {
+    // 1. Fetch transaction
+    const tx = await connection.getParsedTransaction(signature, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (!tx) {
+      return {
+        success: false,
+        message: 'Transaction not found'
+      };
+    }
+
+    // 2. Check confirmation
+    if (!tx.meta || tx.meta.err) {
+      return {
+        success: false,
+        message: 'Transaction failed or not confirmed'
+      };
+    }
+
+    // 3. Check transaction age (replay prevention)
+    const now = Math.floor(Date.now() / 1000);
+    const blockTime = tx.blockTime || 0;
+    const age = now - blockTime;
+
+    if (age > maxAgeSeconds) {
+      return {
+        success: false,
+        message: `Transaction too old: ${age} seconds (max ${maxAgeSeconds})`,
+        details: {
+          confirmed: true,
+          recipient: '',
+          amount: 0,
+          blockTime: tx.blockTime ?? null,
+          age
+        }
+      };
+    }
+
+    // If this is a SOL transfer (no token mint specified)
+    if (!expectedTokenMint) {
+      // Check SOL transfers in postBalances
+      const accountKeys = tx.transaction.message.accountKeys;
+      const recipientIndex = accountKeys.findIndex(
+        key => key.pubkey.toBase58() === expectedRecipient
+      );
+
+      if (recipientIndex === -1) {
+        return {
+          success: false,
+          message: 'Recipient not found in transaction'
+        };
+      }
+
+      const preBalance = tx.meta.preBalances[recipientIndex] || 0;
+      const postBalance = tx.meta.postBalances[recipientIndex] || 0;
+      const actualAmount = (postBalance - preBalance) / LAMPORTS_PER_SOL;
+
+      // Allow 0.001 SOL tolerance for fees
+      if (Math.abs(actualAmount - expectedAmount) > 0.001) {
+        return {
+          success: false,
+          message: `Amount mismatch: expected ${expectedAmount} SOL, got ${actualAmount} SOL`,
+          details: {
+            confirmed: true,
+            recipient: expectedRecipient,
+            amount: actualAmount,
+            blockTime: tx.blockTime ?? null,
+            age
+          }
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Transaction verified successfully',
+        details: {
+          confirmed: true,
+          recipient: expectedRecipient,
+          amount: actualAmount,
+          blockTime: tx.blockTime ?? null,
+          age
+        }
+      };
+    }
+
+    // SPL Token transfer verification
+    const instructions = tx.transaction.message.instructions;
+
+    // Find token transfer instruction
+    let transferFound = false;
+    let actualAmount = 0;
+    let actualRecipient = '';
+    let actualTokenMint = '';
+
+    for (const ix of instructions) {
+      if ('parsed' in ix && ix.program === 'spl-token' && ix.parsed.type === 'transfer') {
+        const info = ix.parsed.info;
+        actualAmount = Number(info.amount) || 0;
+        actualRecipient = info.destination || '';
+
+        // Get token mint from account info
+        const destinationAccountInfo = await connection.getParsedAccountInfo(
+          new PublicKey(actualRecipient)
+        );
+
+        if (destinationAccountInfo.value?.data && 'parsed' in destinationAccountInfo.value.data) {
+          actualTokenMint = destinationAccountInfo.value.data.parsed.info.mint;
+        }
+
+        transferFound = true;
+        break;
+      }
+    }
+
+    if (!transferFound) {
+      return {
+        success: false,
+        message: 'No token transfer instruction found in transaction'
+      };
+    }
+
+    // 4. Verify token mint
+    if (actualTokenMint !== expectedTokenMint) {
+      return {
+        success: false,
+        message: `Token mint mismatch: expected ${expectedTokenMint}, got ${actualTokenMint}`,
+        details: {
+          confirmed: true,
+          recipient: actualRecipient,
+          amount: actualAmount,
+          tokenMint: actualTokenMint,
+          blockTime: tx.blockTime ?? null,
+          age
+        }
+      };
+    }
+
+    // 5. Verify recipient (get associated token account owner)
+    const recipientAccountInfo = await connection.getParsedAccountInfo(
+      new PublicKey(actualRecipient)
+    );
+
+    let recipientOwner = '';
+    if (recipientAccountInfo.value?.data && 'parsed' in recipientAccountInfo.value.data) {
+      recipientOwner = recipientAccountInfo.value.data.parsed.info.owner;
+    }
+
+    if (recipientOwner !== expectedRecipient && actualRecipient !== expectedRecipient) {
+      return {
+        success: false,
+        message: `Recipient mismatch: expected ${expectedRecipient}, got ${recipientOwner}`,
+        details: {
+          confirmed: true,
+          recipient: recipientOwner,
+          amount: actualAmount,
+          tokenMint: actualTokenMint,
+          blockTime: tx.blockTime ?? null,
+          age
+        }
+      };
+    }
+
+    // 6. Get token decimals and verify amount
+    const mintInfo = await connection.getParsedAccountInfo(new PublicKey(expectedTokenMint));
+    const decimals = mintInfo.value?.data && 'parsed' in mintInfo.value.data
+      ? mintInfo.value.data.parsed.info.decimals
+      : 6;
+
+    const actualAmountDecimal = actualAmount / Math.pow(10, decimals);
+    const tolerance = 0.01; // 1% tolerance
+
+    if (Math.abs(actualAmountDecimal - expectedAmount) > expectedAmount * tolerance) {
+      return {
+        success: false,
+        message: `Amount mismatch: expected ${expectedAmount}, got ${actualAmountDecimal}`,
+        details: {
+          confirmed: true,
+          recipient: recipientOwner || actualRecipient,
+          amount: actualAmountDecimal,
+          tokenMint: actualTokenMint,
+          blockTime: tx.blockTime ?? null,
+          age
+        }
+      };
+    }
+
+    // All checks passed
+    return {
+      success: true,
+      message: 'Transaction verified successfully',
+      details: {
+        confirmed: true,
+        recipient: recipientOwner || actualRecipient,
+        amount: actualAmountDecimal,
+        tokenMint: actualTokenMint,
+        blockTime: tx.blockTime ?? null,
+        age
+      }
+    };
+
+  } catch (error) {
+    logger.error({ error, signature }, 'Detailed transaction verification failed');
+    return {
+      success: false,
+      message: `Verification error: ${(error as Error).message}`
+    };
   }
 }
 
@@ -340,6 +582,7 @@ initializePlatformWallet();
 export default {
   verifyWalletSignature,
   verifyTransaction,
+  verifyTransactionDetails,
   getTokenBalance,
   getSolBalance,
   transferTokens,

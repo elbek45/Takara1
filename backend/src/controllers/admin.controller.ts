@@ -15,9 +15,9 @@ import { AdminRequest, DashboardStats, ProcessWithdrawalInput } from '../types';
 import { ERROR_MESSAGES } from '../config/constants';
 import { transferFromPlatform } from '../services/solana.service';
 import { transferUSDTFromPlatform } from '../services/ethereum.service';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'admin-controller' });
+const logger = getLogger('admin-controller');
 
 /**
  * GET /api/admin/dashboard

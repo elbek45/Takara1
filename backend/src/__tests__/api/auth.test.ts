@@ -49,9 +49,9 @@ describe('Authentication API', () => {
         .post('/api/auth/register')
         .send(mockUsers.validUser);
 
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/email.*already.*exists/i);
+      expect(response.status).toBe(409);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toMatch(/email.*already/i);
     });
 
     it('should reject registration with duplicate username', async () => {
@@ -68,9 +68,9 @@ describe('Authentication API', () => {
           email: 'different@example.com'
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/username.*already.*exists/i);
+      expect(response.status).toBe(409);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toMatch(/username.*already/i);
     });
 
     it('should reject registration with weak password', async () => {
@@ -79,8 +79,8 @@ describe('Authentication API', () => {
         .send(mockUsers.weakPassword);
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/password/i);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toMatch(/password|validation/i);
     });
 
     it('should reject registration with invalid email', async () => {
@@ -89,8 +89,8 @@ describe('Authentication API', () => {
         .send(mockUsers.invalidEmail);
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/email/i);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toMatch(/email|validation/i);
     });
 
     it('should reject registration with missing fields', async () => {
@@ -99,7 +99,7 @@ describe('Authentication API', () => {
         .send({ email: 'test@example.com' }); // Missing password and username
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('message');
     });
   });
 

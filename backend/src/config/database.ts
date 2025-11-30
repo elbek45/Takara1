@@ -3,9 +3,9 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import pino from 'pino';
+import { getLogger } from './logger';
 
-const logger = pino({ name: 'database' });
+const logger = getLogger('database');
 
 // Prisma Client Singleton
 declare global {

@@ -5,9 +5,9 @@
  */
 
 import rateLimit from 'express-rate-limit';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'rate-limiter' });
+const logger = getLogger('rate-limiter');
 
 /**
  * Admin login rate limiter

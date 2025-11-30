@@ -323,7 +323,7 @@ describe('TAKARA Mining Calculator', () => {
       });
 
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('mining power');
+      expect(validation.error?.toLowerCase()).toContain('mining power');
     });
 
     it('should reject negative USDT amount', () => {
@@ -335,7 +335,7 @@ describe('TAKARA Mining Calculator', () => {
       });
 
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('investment amount');
+      expect(validation.error?.toLowerCase()).toContain('investment amount');
     });
 
     it('should reject zero difficulty', () => {
@@ -347,7 +347,7 @@ describe('TAKARA Mining Calculator', () => {
       });
 
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('difficulty');
+      expect(validation.error?.toLowerCase()).toContain('difficulty');
     });
 
     it('should reject negative duration', () => {
@@ -359,7 +359,7 @@ describe('TAKARA Mining Calculator', () => {
       });
 
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('duration');
+      expect(validation.error?.toLowerCase()).toContain('duration');
     });
   });
 

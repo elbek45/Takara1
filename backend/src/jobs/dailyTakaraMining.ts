@@ -10,9 +10,9 @@
 
 import { prisma } from '../config/database';
 import { calculateDifficulty, calculateMining, TAKARA_CONFIG } from '../utils/mining.calculator';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'daily-mining-job' });
+const logger = getLogger('daily-mining-job');
 
 /**
  * Process daily mining for all active investments

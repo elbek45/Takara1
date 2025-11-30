@@ -8,9 +8,9 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
 import { ERROR_MESSAGES } from '../config/constants';
 import { getEnv } from '../config/env';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'admin-auth-controller' });
+const logger = getLogger('admin-auth-controller');
 
 /**
  * POST /api/admin/auth/login
@@ -92,11 +92,19 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
       role: admin.role
     }, 'Admin logged in');
 
+    // Set httpOnly cookie (secure in production)
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        token,
         admin: {
           id: admin.id,
           username: admin.username,
@@ -114,6 +122,34 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
   }
 }
 
+/**
+ * POST /api/admin/auth/logout
+ * Admin logout (clear cookie)
+ */
+export async function adminLogout(req: Request, res: Response): Promise<void> {
+  try {
+    // Clear admin cookie
+    res.clearCookie('admin_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    res.json({
+      success: true,
+      message: 'Logout successful',
+    });
+  } catch (error) {
+    logger.error({ error }, 'Admin logout error');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
 export default {
-  adminLogin
+  adminLogin,
+  adminLogout
 };

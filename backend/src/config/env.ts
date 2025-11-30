@@ -60,6 +60,12 @@ export function getEnv() {
       FRONTEND_URL: getOptionalEnv('FRONTEND_URL', 'http://localhost:5173'),
       SOLANA_RPC_URL: getOptionalEnv('SOLANA_RPC_URL', 'https://api.devnet.solana.com'),
       PLATFORM_WALLET: getOptionalEnv('PLATFORM_WALLET', ''),
+
+      // Sentry Configuration (optional)
+      SENTRY_DSN: process.env.SENTRY_DSN || '',
+      SENTRY_TRACES_SAMPLE_RATE: process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1',
+      SENTRY_PROFILES_SAMPLE_RATE: process.env.SENTRY_PROFILES_SAMPLE_RATE || '0.1',
+      APP_VERSION: process.env.APP_VERSION || '2.1.1',
     };
   }
   return _env;

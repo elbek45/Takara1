@@ -13,14 +13,15 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { prisma } from '../config/database';
+import { UserRole } from '@prisma/client';
 import { verifyWalletSignature, generateSignatureMessage, isValidSolanaAddress } from '../services/solana.service';
 import { setNonce as storeNonce, getNonce as retrieveNonce, deleteNonce as removeNonce } from '../services/redis.service';
 import { LoginResponse, AdminLoginResponse } from '../types';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/constants';
 import { getEnv } from '../config/env';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'auth-controller' });
+const logger = getLogger('auth-controller');
 
 /**
  * GET /api/auth/nonce
@@ -328,7 +329,7 @@ export async function registerWithPassword(req: Request, res: Response): Promise
         username,
         password: hashedPassword,
         email: email || null,
-        role: 'USER',
+        role: UserRole.USER,
         isActive: true,
         lastLoginAt: new Date()
       }

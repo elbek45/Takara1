@@ -10,9 +10,9 @@
 
 import { prisma } from '../config/database';
 import { calculatePendingEarnings } from '../utils/apy.calculator';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'payout-job' });
+const logger = getLogger('payout-job');
 
 /**
  * Process payout distribution

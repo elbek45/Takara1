@@ -84,18 +84,19 @@ export async function authenticateUser(
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid token'
-      });
-      return;
-    }
-
+    // Check TokenExpiredError first (it's a subclass of JsonWebTokenError)
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
         message: 'Token expired'
+      });
+      return;
+    }
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid token'
       });
       return;
     }
@@ -109,7 +110,7 @@ export async function authenticateUser(
 
 /**
  * Admin authentication middleware
- * Verifies JWT and attaches admin to request
+ * Verifies JWT from cookie (preferred) or Authorization header (fallback)
  */
 export async function authenticateAdmin(
   req: Request,
@@ -117,7 +118,13 @@ export async function authenticateAdmin(
   next: NextFunction
 ): Promise<void> {
   try {
-    const token = extractToken(req);
+    // Try to get token from cookie first (httpOnly), then fallback to Authorization header
+    let token = req.cookies?.admin_token;
+
+    if (!token) {
+      // Fallback to Authorization header for backward compatibility
+      token = extractToken(req);
+    }
 
     if (!token) {
       res.status(401).json({
@@ -161,18 +168,19 @@ export async function authenticateAdmin(
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid token'
-      });
-      return;
-    }
-
+    // Check TokenExpiredError first (it's a subclass of JsonWebTokenError)
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
         message: 'Token expired'
+      });
+      return;
+    }
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid token'
       });
       return;
     }

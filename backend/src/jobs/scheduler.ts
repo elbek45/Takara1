@@ -9,9 +9,9 @@ import { runActivationJob } from './investmentActivation';
 import { runPayoutJob } from './payoutDistribution';
 import { runLaikaReturnJob } from './laikaReturn';
 import { CRON_SCHEDULES } from '../config/constants';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'job-scheduler' });
+const logger = getLogger('job-scheduler');
 
 // Simple in-memory scheduler (use BullMQ or node-cron in production)
 const jobIntervals: NodeJS.Timeout[] = [];

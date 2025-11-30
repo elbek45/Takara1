@@ -11,9 +11,9 @@
 import { prisma } from '../config/database';
 import { INVESTMENT_CONFIG } from '../config/constants';
 import { mintInvestmentNFT } from '../services/nft.service';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'activation-job' });
+const logger = getLogger('activation-job');
 
 /**
  * Process investment activation

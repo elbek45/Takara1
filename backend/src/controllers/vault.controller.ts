@@ -16,9 +16,9 @@ import { calculateLaikaBoost } from '../utils/laika.calculator';
 import { calculateMining } from '../utils/mining.calculator';
 import { calculateEarnings } from '../utils/apy.calculator';
 import { VaultTier } from '../config/vaults.config';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'vault-controller' });
+const logger = getLogger('vault-controller');
 
 /**
  * GET /api/vaults
@@ -28,11 +28,12 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
   try {
     const { tier, duration, isActive } = req.query;
 
-    // Build filter
-    const where: any = {};
+    // Build filter - default to active vaults only
+    const where: any = {
+      isActive: isActive !== undefined ? isActive === 'true' : true
+    };
     if (tier) where.tier = tier as string;
     if (duration) where.duration = parseInt(duration as string);
-    if (isActive !== undefined) where.isActive = isActive === 'true';
 
     // Get vaults with investment counts
     const vaults = await prisma.vault.findMany({
@@ -93,6 +94,16 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
 export async function getVaultById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid vault ID format'
+      });
+      return;
+    }
 
     const vault = await prisma.vault.findUnique({
       where: { id },
@@ -192,6 +203,16 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
   try {
     const { id } = req.params;
     const { usdtAmount, laikaAmountLKI } = req.body;
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid vault ID format'
+      });
+      return;
+    }
 
     if (!usdtAmount || usdtAmount <= 0) {
       res.status(400).json({

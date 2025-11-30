@@ -6,9 +6,9 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'validation-middleware' });
+const logger = getLogger('validation-middleware');
 
 /**
  * Validate request body

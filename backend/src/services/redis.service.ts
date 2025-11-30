@@ -10,9 +10,9 @@
 
 import Redis from 'ioredis';
 import { getEnv } from '../config/env';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'redis-service' });
+const logger = getLogger('redis-service');
 
 // Redis client instance
 let redisClient: Redis | null = null;
@@ -80,6 +80,11 @@ export async function isRedisConnected(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Health check alias for consistency
+ */
+export const getRedisHealth = isRedisConnected;
 
 // ===================================
 // Nonce Management (for authentication)

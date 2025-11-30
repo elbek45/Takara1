@@ -3,7 +3,7 @@
  * Helper functions for testing
  */
 
-import { PrismaClient, User, Vault, Investment, UserRole, VaultTier, PayoutSchedule } from '@prisma/client';
+import { PrismaClient, User, Vault, Investment, UserRole, VaultTier, PayoutSchedule, Prisma } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
@@ -33,12 +33,11 @@ export async function cleanDatabase() {
  * Create test user
  */
 export async function createTestUser(overrides?: Partial<User>): Promise<User> {
-  const defaultUser = {
+  const defaultUser: any = {
     email: `test-${Date.now()}@example.com`,
     username: `testuser-${Date.now()}`,
     password: await bcrypt.hash('TestPassword123!', 10),
     walletAddress: null,
-    ethereumAddress: null,
     role: UserRole.USER,
     isActive: true,
     ...overrides,
@@ -85,22 +84,36 @@ export function generateExpiredToken(userId: string): string {
 /**
  * Create test vault
  */
-export async function createTestVault(overrides?: Partial<Vault>): Promise<Vault> {
-  const defaultVault = {
+export async function createTestVault(overrides?: any): Promise<Vault> {
+  const defaultVault: any = {
     name: `Test Vault ${Date.now()}`,
     tier: VaultTier.STARTER,
     duration: 12,
     payoutSchedule: PayoutSchedule.MONTHLY,
-    minInvestment: 100,
-    maxInvestment: 10000,
+    minInvestment: new Prisma.Decimal(100),
+    maxInvestment: new Prisma.Decimal(10000),
     requireTAKARA: false,
     baseAPY: 4.0,
     maxAPY: 8.0,
     miningPower: 50,
     isActive: true,
-    currentFilled: 0,
+    currentFilled: new Prisma.Decimal(0),
     ...overrides,
   };
+
+  // Convert number overrides to Decimal
+  if (overrides?.minInvestment !== undefined && typeof overrides.minInvestment === 'number') {
+    defaultVault.minInvestment = new Prisma.Decimal(overrides.minInvestment);
+  }
+  if (overrides?.maxInvestment !== undefined && typeof overrides.maxInvestment === 'number') {
+    defaultVault.maxInvestment = new Prisma.Decimal(overrides.maxInvestment);
+  }
+  if (overrides?.currentFilled !== undefined && typeof overrides.currentFilled === 'number') {
+    defaultVault.currentFilled = new Prisma.Decimal(overrides.currentFilled);
+  }
+  if (overrides?.totalCapacity !== undefined && typeof (overrides as any).totalCapacity === 'number') {
+    defaultVault.totalCapacity = new Prisma.Decimal((overrides as any).totalCapacity);
+  }
 
   return await prisma.vault.create({
     data: defaultVault,
@@ -113,7 +126,7 @@ export async function createTestVault(overrides?: Partial<Vault>): Promise<Vault
 export async function createTestInvestment(
   userId: string,
   vaultId: string,
-  overrides?: Partial<Investment>
+  overrides?: any
 ): Promise<Investment> {
   const vault = await prisma.vault.findUnique({ where: { id: vaultId } });
   if (!vault) throw new Error('Vault not found');
@@ -121,12 +134,12 @@ export async function createTestInvestment(
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + vault.duration);
 
-  const defaultInvestment = {
+  const defaultInvestment: any = {
     userId,
     vaultId,
-    usdtAmount: 1000,
-    takaraRequired: 0,
-    takaraLocked: 0,
+    usdtAmount: new Prisma.Decimal(1000),
+    takaraRequired: new Prisma.Decimal(0),
+    takaraLocked: new Prisma.Decimal(0),
     finalAPY: vault.baseAPY,
     startDate: new Date(),
     endDate,
@@ -134,6 +147,29 @@ export async function createTestInvestment(
     isNFTMinted: false,
     ...overrides,
   };
+
+  // Convert number overrides to Decimal
+  if (overrides?.usdtAmount !== undefined && typeof overrides.usdtAmount === 'number') {
+    defaultInvestment.usdtAmount = new Prisma.Decimal(overrides.usdtAmount);
+  }
+  if (overrides?.takaraRequired !== undefined && typeof overrides.takaraRequired === 'number') {
+    defaultInvestment.takaraRequired = new Prisma.Decimal(overrides.takaraRequired);
+  }
+  if (overrides?.takaraLocked !== undefined && typeof overrides.takaraLocked === 'number') {
+    defaultInvestment.takaraLocked = new Prisma.Decimal(overrides.takaraLocked);
+  }
+  if ((overrides as any)?.pendingUSDT !== undefined && typeof (overrides as any).pendingUSDT === 'number') {
+    defaultInvestment.pendingUSDT = new Prisma.Decimal((overrides as any).pendingUSDT);
+  }
+  if ((overrides as any)?.pendingTAKARA !== undefined && typeof (overrides as any).pendingTAKARA === 'number') {
+    defaultInvestment.pendingTAKARA = new Prisma.Decimal((overrides as any).pendingTAKARA);
+  }
+  if ((overrides as any)?.totalEarnedUSDT !== undefined && typeof (overrides as any).totalEarnedUSDT === 'number') {
+    defaultInvestment.totalEarnedUSDT = new Prisma.Decimal((overrides as any).totalEarnedUSDT);
+  }
+  if ((overrides as any)?.totalMinedTAKARA !== undefined && typeof (overrides as any).totalMinedTAKARA === 'number') {
+    defaultInvestment.totalMinedTAKARA = new Prisma.Decimal((overrides as any).totalMinedTAKARA);
+  }
 
   return await prisma.investment.create({
     data: defaultInvestment,

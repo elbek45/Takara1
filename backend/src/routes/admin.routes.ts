@@ -13,6 +13,9 @@ const router = Router();
 // Public routes (no auth required)
 router.post('/auth/login', adminLoginLimiter, adminAuthController.adminLogin);
 
+// Auth routes (require authentication)
+router.post('/auth/logout', authenticateAdmin, adminAuthController.adminLogout);
+
 // All other admin routes require authentication
 router.use(authenticateAdmin);
 

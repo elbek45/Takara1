@@ -32,8 +32,7 @@ describe('Investment API', () => {
     const user = await createTestUser({
       email: 'investor@example.com',
       username: 'investor',
-      walletAddress: '7xKWvfqJQRnJGZJz3xKGGMqCJpqjhqjJzXqZ9vF9qYnJ',
-      ethereumAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1'
+      walletAddress: '7xKWvfqJQRnJGZJz3xKGGMqCJpqjhqjJzXqZ9vF9qYnJ'
     });
     userId = user.id;
     userToken = generateTestToken(userId);

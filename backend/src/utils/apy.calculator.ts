@@ -56,8 +56,10 @@ export function calculateEarnings(input: APYCalculationInput): APYCalculationRes
   let totalValue: number;
 
   if (compounding) {
-    // Compound interest formula
-    totalValue = principal * Math.pow(1 + (apy / 100), durationYears);
+    // Compound interest formula with monthly compounding
+    // A = P(1 + r/n)^(nt) where n = 12 (monthly)
+    const monthlyRate = (apy / 100) / 12;
+    totalValue = principal * Math.pow(1 + monthlyRate, durationMonths);
     totalEarnings = totalValue - principal;
   } else {
     // Simple interest (standard for USDT payouts)

@@ -19,9 +19,9 @@ import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calcul
 import { VaultTier } from '../config/vaults.config';
 import { verifyTransaction, transferTAKARAReward } from '../services/solana.service';
 import { verifyUSDTTransaction, transferUSDTFromPlatform } from '../services/ethereum.service';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'investment-controller' });
+const logger = getLogger('investment-controller');
 
 /**
  * POST /api/investments

@@ -7,10 +7,12 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import pino from 'pino';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { connectDatabase } from './config/database';
 import { APP_CONFIG, RATE_LIMIT, CORS_CONFIG } from './config/constants';
+import { logger, requestLogger } from './config/logger';
+import { initializeSentry, setupSentryErrorHandler } from './config/sentry';
 
 // Load environment variables
 dotenv.config();
@@ -19,18 +21,12 @@ dotenv.config();
 import { validateEnvironment } from './config/env';
 validateEnvironment();
 
-// Initialize logger
-const logger = pino({
-  name: APP_CONFIG.NAME,
-  level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development'
-    ? { target: 'pino-pretty', options: { colorize: true } }
-    : undefined
-});
-
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || APP_CONFIG.DEFAULT_PORT;
+
+// Initialize Sentry (must be first)
+initializeSentry(app);
 
 // Trust proxy (required for rate limiting behind nginx)
 // Use '127.0.0.1' to trust only local nginx proxy
@@ -87,6 +83,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Cookie parser (for httpOnly cookies)
+app.use(cookieParser());
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
@@ -97,38 +96,14 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Request logging
-app.use((req: Request, res: Response, next: NextFunction) => {
-  logger.info({
-    method: req.method,
-    path: req.path,
-    ip: req.ip
-  });
-  next();
-});
+// Request/Response logging with timing
+app.use(requestLogger());
 
 // ==================== ROUTES ====================
 
-// Health check
-app.get('/health', async (req: Request, res: Response) => {
-  try {
-    const dbHealthy = await import('./config/database').then(
-      mod => mod.checkDatabaseHealth()
-    );
-
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: APP_CONFIG.VERSION,
-      database: dbHealthy ? 'connected' : 'disconnected'
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Health check failed'
-    });
-  }
-});
+// Health check routes
+import healthRoutes from './routes/health.routes';
+app.use('/health', healthRoutes);
 
 // API info
 app.get('/api', (req: Request, res: Response) => {
@@ -151,6 +126,9 @@ import apiRoutes from './routes';
 app.use('/api', apiRoutes);
 
 // ==================== ERROR HANDLING ====================
+
+// Sentry error handler (must be after routes, before other error handlers)
+setupSentryErrorHandler(app);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

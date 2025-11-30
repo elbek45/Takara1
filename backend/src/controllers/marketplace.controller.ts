@@ -13,9 +13,10 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { AuthenticatedRequest, CreateListingInput } from '../types';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, MARKETPLACE_CONFIG } from '../config/constants';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
+import { invalidateCacheByPrefix } from '../middleware/cache.middleware';
 
-const logger = pino({ name: 'marketplace-controller' });
+const logger = getLogger('marketplace-controller');
 
 /**
  * GET /api/marketplace
@@ -202,6 +203,11 @@ export async function createListing(req: Request, res: Response): Promise<void> 
       price: priceUSDT
     }, 'Listing created');
 
+    // Invalidate marketplace caches
+    await invalidateCacheByPrefix('cache:short:public:/api/marketplace');
+    await invalidateCacheByPrefix('cache:medium:public:/api/marketplace/stats');
+    await invalidateCacheByPrefix(`cache:short:${userId}:/api/marketplace/my-listings`);
+
     res.status(201).json({
       success: true,
       message: SUCCESS_MESSAGES.NFT_LISTED,
@@ -341,6 +347,12 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
       platformFee: platformFeeAmount
     }, 'NFT purchased');
 
+    // Invalidate marketplace caches
+    await invalidateCacheByPrefix('cache:short:public:/api/marketplace');
+    await invalidateCacheByPrefix('cache:medium:public:/api/marketplace/stats');
+    await invalidateCacheByPrefix(`cache:short:${userId}:/api/marketplace/my-listings`);
+    await invalidateCacheByPrefix(`cache:short:${listing.sellerId}:/api/marketplace/my-listings`);
+
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.NFT_PURCHASED,
@@ -401,6 +413,11 @@ export async function cancelListing(req: Request, res: Response): Promise<void> 
       listingId: id,
       userId
     }, 'Listing cancelled');
+
+    // Invalidate marketplace caches
+    await invalidateCacheByPrefix('cache:short:public:/api/marketplace');
+    await invalidateCacheByPrefix('cache:medium:public:/api/marketplace/stats');
+    await invalidateCacheByPrefix(`cache:short:${userId}:/api/marketplace/my-listings`);
 
     res.json({
       success: true,

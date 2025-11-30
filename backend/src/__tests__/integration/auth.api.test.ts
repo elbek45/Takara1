@@ -4,18 +4,18 @@
  */
 
 import request from 'supertest';
-import { app } from '../../app';
+import app from '../../app';
 import { prisma } from '../../config/database';
-import { generateKeyPair, sign } from 'tweetnacl';
+import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 
 describe('Authentication API', () => {
-  let testWallet: { publicKey: Uint8Array; secretKey: Uint8Array };
+  let testWallet: nacl.SignKeyPair;
   let testWalletAddress: string;
 
   beforeAll(async () => {
     // Generate test wallet
-    testWallet = generateKeyPair();
+    testWallet = nacl.sign.keyPair();
     testWalletAddress = bs58.encode(testWallet.publicKey);
   });
 
@@ -69,7 +69,7 @@ describe('Authentication API', () => {
 
       // Step 2: Sign message
       const messageBytes = Buffer.from(message, 'utf8');
-      const signature = sign.detached(messageBytes, testWallet.secretKey);
+      const signature = nacl.sign.detached(messageBytes, testWallet.secretKey);
       const signatureBase58 = bs58.encode(signature);
 
       // Step 3: Login
@@ -99,7 +99,7 @@ describe('Authentication API', () => {
 
       const { message } = nonceResponse.body.data;
       const messageBytes = Buffer.from(message, 'utf8');
-      const signature = sign.detached(messageBytes, testWallet.secretKey);
+      const signature = nacl.sign.detached(messageBytes, testWallet.secretKey);
       const signatureBase58 = bs58.encode(signature);
 
       // Login
@@ -159,7 +159,7 @@ describe('Authentication API', () => {
 
       const { message } = nonceResponse.body.data;
       const messageBytes = Buffer.from(message, 'utf8');
-      const signature = sign.detached(messageBytes, testWallet.secretKey);
+      const signature = nacl.sign.detached(messageBytes, testWallet.secretKey);
 
       const loginResponse = await request(app)
         .post('/api/auth/login')

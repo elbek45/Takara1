@@ -350,7 +350,7 @@ describe('Auth Middleware', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(403);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: false,
-        message: expect.stringContaining('Forbidden'),
+        message: 'Access forbidden',
       });
       expect(nextFunction).not.toHaveBeenCalled();
     });

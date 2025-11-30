@@ -6,9 +6,9 @@
  */
 
 import Web3 from 'web3';
-import pino from 'pino';
+import { getLogger } from '../config/logger';
 
-const logger = pino({ name: 'ethereum-service' });
+const logger = getLogger('ethereum-service');
 
 // ERC-20 ABI for USDT token (minimal interface)
 const USDT_ABI = [
