@@ -13,6 +13,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
 import { AuthenticatedRequest, AdminRequest, JWTPayload, AdminJWTPayload } from '../types';
 import { ERROR_MESSAGES } from '../config/constants';
+import { getEnv } from '../config/env';
 
 /**
  * Verify JWT token from Authorization header
@@ -55,7 +56,7 @@ export async function authenticateUser(
     // Verify JWT
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET!
+      getEnv().JWT_SECRET
     ) as JWTPayload;
 
     // Fetch user from database
@@ -129,7 +130,7 @@ export async function authenticateAdmin(
     // Verify JWT
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET!
+      getEnv().JWT_SECRET
     ) as AdminJWTPayload;
 
     // Fetch admin from database
@@ -222,7 +223,7 @@ export async function optionalAuth(
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET!
+      getEnv().JWT_SECRET
     ) as JWTPayload;
 
     const user = await prisma.user.findUnique({

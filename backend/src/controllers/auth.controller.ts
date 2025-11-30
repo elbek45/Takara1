@@ -14,24 +14,13 @@ import bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { prisma } from '../config/database';
 import { verifyWalletSignature, generateSignatureMessage, isValidSolanaAddress } from '../services/solana.service';
+import { setNonce as storeNonce, getNonce as retrieveNonce, deleteNonce as removeNonce } from '../services/redis.service';
 import { LoginResponse, AdminLoginResponse } from '../types';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/constants';
+import { getEnv } from '../config/env';
 import pino from 'pino';
 
 const logger = pino({ name: 'auth-controller' });
-
-// In-memory nonce storage (use Redis in production)
-const nonces = new Map<string, { nonce: string; expiresAt: Date }>();
-
-// Clean expired nonces every 5 minutes
-setInterval(() => {
-  const now = new Date();
-  for (const [key, value] of nonces.entries()) {
-    if (value.expiresAt < now) {
-      nonces.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
 
 /**
  * GET /api/auth/nonce
@@ -60,12 +49,14 @@ export async function getNonce(req: Request, res: Response): Promise<void> {
     // Generate random nonce
     const nonce = randomBytes(32).toString('hex');
 
-    // Store nonce with 5 minute expiration
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-    nonces.set(walletAddress, { nonce, expiresAt });
+    // Store nonce in Redis with 5 minute expiration
+    await storeNonce(walletAddress, nonce);
 
     // Generate message to sign
     const message = generateSignatureMessage(nonce);
+
+    // Calculate expiration time
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     res.json({
       success: true,
@@ -100,9 +91,9 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Get stored nonce
-    const stored = nonces.get(walletAddress);
-    if (!stored) {
+    // Get stored nonce from Redis
+    const storedNonce = await retrieveNonce(walletAddress);
+    if (!storedNonce) {
       res.status(400).json({
         success: false,
         message: 'Nonce not found or expired. Please request a new nonce.'
@@ -110,18 +101,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Check if nonce expired
-    if (stored.expiresAt < new Date()) {
-      nonces.delete(walletAddress);
-      res.status(400).json({
-        success: false,
-        message: 'Nonce expired. Please request a new nonce.'
-      });
-      return;
-    }
-
     // Verify signature
-    const message = generateSignatureMessage(stored.nonce);
+    const message = generateSignatureMessage(storedNonce);
     const isValid = verifyWalletSignature(walletAddress, signature, message);
 
     if (!isValid) {
@@ -132,8 +113,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Delete used nonce
-    nonces.delete(walletAddress);
+    // Delete used nonce from Redis
+    await removeNonce(walletAddress);
 
     // Find or create user
     let user = await prisma.user.findUnique({
@@ -159,16 +140,15 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     // Generate JWT
-    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         userId: user.id,
         walletAddress: user.walletAddress,
         role: user.role
       },
-      process.env.JWT_SECRET!,
+      getEnv().JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        expiresIn: getEnv().JWT_EXPIRES_IN
       }
     );
 
@@ -243,16 +223,15 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
     });
 
     // Generate JWT
-    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         adminId: admin.id,
         username: admin.username,
         role: admin.role
       },
-      process.env.JWT_SECRET!,
+      getEnv().JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        expiresIn: getEnv().JWT_EXPIRES_IN
       }
     );
 
@@ -358,16 +337,15 @@ export async function registerWithPassword(req: Request, res: Response): Promise
     logger.info({ username }, 'New user registered with password');
 
     // Generate JWT
-    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         userId: user.id,
         username: user.username!,
         role: user.role
       },
-      process.env.JWT_SECRET!,
+      getEnv().JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        expiresIn: getEnv().JWT_EXPIRES_IN
       }
     );
 
@@ -450,16 +428,15 @@ export async function loginWithPassword(req: Request, res: Response): Promise<vo
     logger.info({ username }, 'User logged in with password');
 
     // Generate JWT
-    // @ts-expect-error - JWT type definitions have overload resolution issues
     const token = jwt.sign(
       {
         userId: user.id,
         username: user.username!,
         role: user.role
       },
-      process.env.JWT_SECRET!,
+      getEnv().JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        expiresIn: getEnv().JWT_EXPIRES_IN
       }
     );
 

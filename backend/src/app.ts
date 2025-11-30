@@ -42,10 +42,44 @@ app.set('trust proxy', '127.0.0.1');
 app.use(helmet());
 
 // CORS configuration
-const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'];
+const allowedOrigins = [
+  ...(process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || []),
+  // Development origins (only in non-production)
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:5173', 'http://localhost:3000']
+    : []
+  )
+];
+
+// Ensure at least one origin is configured in production
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+  logger.error('CRITICAL: No CORS origins configured in production. Set CORS_ORIGIN environment variable.');
+  process.exit(1);
+}
+
 app.use(cors({
-  origin: corsOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    // But only in development
+    if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('Request without origin blocked in production');
+        return callback(new Error('Not allowed by CORS'));
+      }
+      return callback(null, true);
+    }
+
+    // Check if origin is in whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn({ origin, allowedOrigins }, 'Origin not allowed by CORS');
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
   credentials: CORS_CONFIG.CREDENTIALS,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   maxAge: CORS_CONFIG.MAX_AGE
 }));
 
@@ -161,7 +195,7 @@ async function startServer() {
     app.listen(PORT, () => {
       logger.info(`🚀 ${APP_CONFIG.NAME} v${APP_CONFIG.VERSION} running on port ${PORT}`);
       logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`🌐 CORS origins: ${corsOrigins.join(', ')}`);
+      logger.info(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
     });
   } catch (error) {
     logger.error({ error }, '❌ Failed to start server');
