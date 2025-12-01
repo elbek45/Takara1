@@ -5,6 +5,7 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
 import * as adminAuthController from '../controllers/admin-auth.controller';
+import * as adminAdvancedController from '../controllers/admin-advanced.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware';
 
@@ -32,10 +33,22 @@ router.get('/investments', adminController.getInvestments);
 router.get('/withdrawals', adminController.getWithdrawals);
 router.put('/withdrawals/:id/process', adminController.processWithdrawal);
 
-// Vault management (super admin only)
-router.put('/vaults/:id/toggle', requireSuperAdmin, adminController.toggleVaultStatus);
+// Mining Statistics (Enhanced)
+router.get('/mining-stats', adminAdvancedController.getMiningStats);
+router.get('/stats/mining', adminController.getMiningStats); // Legacy endpoint
 
-// Statistics
-router.get('/stats/mining', adminController.getMiningStats);
+// Wallet Management (Super Admin Only)
+router.get('/wallets', requireSuperAdmin, adminAdvancedController.getWallets);
+router.put('/wallets', requireSuperAdmin, adminAdvancedController.updateWallet);
+
+// Vault Management (Enhanced - Super Admin Only)
+router.get('/vaults', requireSuperAdmin, adminAdvancedController.getVaults);
+router.post('/vaults', requireSuperAdmin, adminAdvancedController.createVault);
+router.put('/vaults/:id', requireSuperAdmin, adminAdvancedController.updateVault);
+router.delete('/vaults/:id', requireSuperAdmin, adminAdvancedController.deleteVault);
+router.get('/vaults/:id/stats', requireSuperAdmin, adminAdvancedController.getVaultStats);
+
+// Legacy vault toggle (kept for compatibility)
+router.put('/vaults/:id/toggle', requireSuperAdmin, adminController.toggleVaultStatus);
 
 export default router;

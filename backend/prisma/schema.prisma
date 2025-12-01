@@ -145,6 +145,15 @@ model Investment {
   // Solana Transaction
   depositTxSignature  String?             // Initial deposit transaction
 
+  // 2-Step Process (MetaMask USDT → Phantom LAIKA/TAKARA)
+  usdtTxHash          String?             // Ethereum/TRON USDT transaction hash (Step 1)
+  laikaTxHash         String?             // Solana LAIKA transaction hash (Step 2, optional)
+  takaraTxHash        String?             // Solana TAKARA transaction hash (Step 2, if required)
+  step1CompletedAt    DateTime?           // When USDT payment confirmed
+  step2CompletedAt    DateTime?           // When tokens deposited and NFT minted
+  paymentChain        String?             // 'ethereum' or 'tron'
+  tokenChain          String?             @default("solana") // Always 'solana' for now
+
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
@@ -152,10 +161,13 @@ model Investment {
   @@index([vaultId, status])
   @@index([status])
   @@index([nftMintAddress])
+  @@index([usdtTxHash])
   @@map("investments")
 }
 
 enum InvestmentStatus {
+  PENDING_USDT    // Step 1: Waiting for USDT payment (MetaMask)
+  PENDING_TOKENS  // Step 2: USDT paid, waiting for LAIKA/TAKARA (Phantom)
   PENDING         // Waiting for activation (72h timer)
   ACTIVE          // Currently earning
   COMPLETED       // Ended successfully
