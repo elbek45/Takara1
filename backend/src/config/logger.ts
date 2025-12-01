@@ -74,31 +74,12 @@ export function createLogger(name?: string) {
     });
   }
 
-  // Production: write to rotating files
-  const logFile = path.join(logsDir, 'app.log');
-  const errorLogFile = path.join(logsDir, 'error.log');
-
-  // Create rotating file stream
-  const stream = pinoms({
-    file: logFile,
-    frequency: 'daily',      // Rotate daily
-    size: '10M',             // Max 10MB per file
-    dateFormat: 'yyyy-MM-dd' // Date format in filename
-  });
-
-  // Create error log stream
-  const errorStream = pinoms({
-    file: errorLogFile,
-    frequency: 'daily',
-    size: '10M',
-    dateFormat: 'yyyy-MM-dd'
-  });
-
-  // Use single stream for simplicity (all logs go to app.log)
+  // Production: write to stdout (for now)
+  // TODO: Re-enable file rotation once pino-roll compatibility is fixed
   return pino({
     ...pinoConfig,
     name: name || 'takara-gold'
-  }, stream);
+  });
 }
 
 /**
