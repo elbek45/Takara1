@@ -9,7 +9,8 @@
 
 const { Keypair } = require('@solana/web3.js');
 const { Wallet } = require('ethers');
-const bs58 = require('bs58');
+const bs58lib = require('bs58');
+const bs58 = bs58lib.default || bs58lib;
 const fs = require('fs');
 const path = require('path');
 
