@@ -14,8 +14,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:blockchain": "jest --testPathPattern=blockchain",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "testnet:setup": "node scripts/setup-testnet.js",
+    "testnet:db:push": "DATABASE_URL=postgresql://takara:takara_password@localhost:5432/takara_testnet npx prisma db push",
+    "testnet:dev": "cp .env.testnet .env && npm run dev",
+    "deploy:prod": "./deploy.sh"
   },
   "keywords": [
     "solana",

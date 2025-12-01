@@ -30,6 +30,9 @@ describe('Authentication API', () => {
         .post('/api/auth/register')
         .send(mockUsers.validUser);
 
+      if (response.status !== 201) {
+        console.log('Response body:', JSON.stringify(response.body, null, 2));
+      }
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('user');
