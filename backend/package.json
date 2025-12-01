@@ -20,6 +20,7 @@
     "testnet:setup": "node scripts/setup-testnet.js",
     "testnet:db:push": "DATABASE_URL=postgresql://takara:takara_password@localhost:5432/takara_testnet npx prisma db push",
     "testnet:dev": "cp .env.testnet .env && npm run dev",
+    "testnet:balance": "node scripts/check-balance.js",
     "deploy:prod": "./deploy.sh"
   },
   "keywords": [
