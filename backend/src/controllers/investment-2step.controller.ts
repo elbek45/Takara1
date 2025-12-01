@@ -11,13 +11,13 @@
  * - GET  /api/investments/:id/step-status - Check current step status
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/database';
 import { getLogger } from '../config/logger';
+import { AuthenticatedRequest } from '../types';
 import { verifyUSDTTransaction } from '../services/ethereum.service';
 import { verifyTransaction } from '../services/solana.service';
-import { mintInvestmentNFT } from '../services/nft.service';
 import { PublicKey } from '@solana/web3.js';
 
 const logger = getLogger('investment-2step-controller');
@@ -35,7 +35,7 @@ const logger = getLogger('investment-2step-controller');
  *   paymentChain: 'ethereum' | 'tron'
  * }
  */
-export async function step1CreateInvestmentUSDT(req: Request, res: Response) {
+export async function step1CreateInvestmentUSDT(req: AuthenticatedRequest, res: Response) {
   try {
     const schema = z.object({
       vaultId: z.string().uuid(),
@@ -185,7 +185,7 @@ export async function step1CreateInvestmentUSDT(req: Request, res: Response) {
  *   walletAddress: string     // User's Solana wallet address
  * }
  */
-export async function step2DepositTokens(req: Request, res: Response) {
+export async function step2DepositTokens(req: AuthenticatedRequest, res: Response) {
   try {
     const schema = z.object({
       laikaAmount: z.number().optional(),
@@ -247,7 +247,7 @@ export async function step2DepositTokens(req: Request, res: Response) {
         // TODO: Implement full Solana transaction verification
         // For now, verify the transaction exists on-chain
         const txInfo = await verifyTransaction(data.takaraTxHash);
-        if (txInfo.confirmed) {
+        if (txInfo && txInfo.confirmed) {
           takaraVerified = true;
           logger.info({ takaraTxHash: data.takaraTxHash }, 'TAKARA transaction confirmed');
         } else {
@@ -280,7 +280,7 @@ export async function step2DepositTokens(req: Request, res: Response) {
       try {
         // TODO: Implement full Solana transaction verification
         const txInfo = await verifyTransaction(data.laikaTxHash);
-        if (!txInfo.confirmed) {
+        if (!txInfo || !txInfo.confirmed) {
           throw new Error('LAIKA transaction not confirmed');
         }
 
@@ -316,33 +316,14 @@ export async function step2DepositTokens(req: Request, res: Response) {
     }
 
     // 4. Mint NFT on Solana
-    logger.info({ investmentId }, 'Minting investment NFT');
+    // TODO: Re-enable NFT minting once platform wallet is properly configured
+    logger.info({ investmentId }, 'NFT minting disabled for initial deployment');
 
     let nftMint = null;
     let nftMetadataUri = null;
 
-    try {
-      const nftResult = await mintInvestmentNFT({
-        investmentId: investment.id,
-        ownerAddress: data.walletAddress,
-        vaultName: investment.vault.name,
-        usdtAmount: Number(investment.usdtAmount),
-        apy: finalAPY,
-        duration: investment.vault.duration
-      });
-
-      nftMint = nftResult.mintAddress;
-      nftMetadataUri = nftResult.metadataUri;
-
-      logger.info({
-        investmentId,
-        nftMint
-      }, 'NFT minted successfully');
-
-    } catch (error) {
-      logger.error({ error }, 'NFT minting failed');
-      // Continue - can mint NFT later
-    }
+    // NFT minting temporarily disabled
+    // Will be enabled in next phase with proper platform wallet setup
 
     // 5. Update investment to PENDING (72h activation)
     const updatedInvestment = await prisma.investment.update({
@@ -416,7 +397,7 @@ export async function step2DepositTokens(req: Request, res: Response) {
  *
  * GET /api/investments/:id/step-status
  */
-export async function getStepStatus(req: Request, res: Response) {
+export async function getStepStatus(req: AuthenticatedRequest, res: Response) {
   try {
     const investmentId = req.params.id;
     const userId = req.user?.id;
