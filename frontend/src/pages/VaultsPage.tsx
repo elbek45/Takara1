@@ -6,6 +6,7 @@ import { VaultTier } from '../types'
 export default function VaultsPage() {
   const [selectedTier, setSelectedTier] = useState<VaultTier | 'ALL'>('ALL')
   const [selectedDuration, setSelectedDuration] = useState<number | 'ALL'>('ALL')
+  const [takaraFilter, setTakaraFilter] = useState<'ALL' | 'WITH' | 'WITHOUT'>('ALL')
 
   const { data: vaultsResponse, isLoading, error } = useQuery({
     queryKey: ['vaults', selectedTier, selectedDuration],
@@ -17,7 +18,13 @@ export default function VaultsPage() {
       }),
   })
 
-  const vaults = vaultsResponse?.data || []
+  // Apply TAKARA filter on the client side
+  const allVaults = vaultsResponse?.data || []
+  const vaults = allVaults.filter((vault) => {
+    if (takaraFilter === 'WITH') return vault.requireTAKARA
+    if (takaraFilter === 'WITHOUT') return !vault.requireTAKARA
+    return true
+  })
 
   return (
     <div className="min-h-screen py-12">
@@ -34,7 +41,7 @@ export default function VaultsPage() {
 
         {/* Filters */}
         <div className="bg-background-card rounded-xl p-6 mb-8 border border-green-900/20">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Tier Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-3">
@@ -78,6 +85,32 @@ export default function VaultsPage() {
                 ))}
               </div>
             </div>
+
+            {/* TAKARA Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Filter by TAKARA
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'ALL', label: 'All' },
+                  { value: 'WITH', label: 'With TAKARA' },
+                  { value: 'WITHOUT', label: 'Without TAKARA' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setTakaraFilter(option.value as 'ALL' | 'WITH' | 'WITHOUT')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      takaraFilter === option.value
+                        ? 'bg-gold-500 text-background-primary'
+                        : 'bg-background-elevated text-gray-300 hover:bg-green-900/20'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -102,9 +135,16 @@ export default function VaultsPage() {
                 key={vault.id}
                 className="bg-background-card rounded-xl p-6 border border-green-900/20 card-glow hover:border-gold-500/50 transition-all"
               >
-                {/* Tier Badge */}
-                <div className={`tier-${vault.tier.toLowerCase()} inline-block mb-4`}>
-                  {vault.tier}
+                {/* Header with Tier Badge and TAKARA Badge */}
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className={`tier-${vault.tier.toLowerCase()} inline-block`}>
+                    {vault.tier}
+                  </div>
+                  {vault.requireTAKARA && (
+                    <div className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-gold-500/20 border border-gold-500/40 rounded-lg text-xs font-semibold text-gold-400">
+                      TAKARA Required
+                    </div>
+                  )}
                 </div>
 
                 {/* Vault Name */}
