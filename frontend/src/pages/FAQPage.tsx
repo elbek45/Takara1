@@ -76,7 +76,8 @@ export default function FAQPage() {
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">3</div>
                 <div>
                   <p className="font-semibold text-white mb-1">Enter USDT Amount</p>
-                  <p className="text-sm text-gray-400">Minimum: $100 (Starter) to $5,000 (Elite)</p>
+                  <p className="text-sm text-gray-400">Minimum: $100 (Starter), $1,000 (Pro), $5,000 (Elite)</p>
+                  <p className="text-sm text-green-400 mt-1">No maximum limit - stack as much as you want!</p>
                 </div>
               </div>
             </div>
@@ -134,7 +135,12 @@ export default function FAQPage() {
             <p className="font-semibold text-purple-400 mb-2">Step 2: TAKARA + LAIKA (Phantom)</p>
             <p className="text-sm text-gray-300">Pay required TAKARA tokens on <strong>Solana Mainnet</strong></p>
             <p className="text-sm text-gray-300 mt-1">If you chose boost: pay LAIKA tokens</p>
-            <p className="text-sm text-gray-400 mt-2">💡 Pro/Elite tiers require TAKARA (30-50 per 100 USDT)</p>
+            <p className="text-sm text-gray-400 mt-2">💡 <strong>TAKARA Requirements:</strong></p>
+            <ul className="text-xs text-gray-400 mt-1 ml-4 space-y-1">
+              <li>• 12M vaults: STARTER/PRO - No TAKARA | ELITE - 25 per 100 USDT</li>
+              <li>• 30M/36M vaults: ALL tiers require TAKARA (20-50 per 100 USDT)</li>
+              <li>• Higher APY = More TAKARA needed</li>
+            </ul>
           </div>
 
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-3">
@@ -199,7 +205,8 @@ export default function FAQPage() {
             <p className="font-semibold text-white mb-2">How it works:</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• You can deposit up to 90% of your USDT value in LAIKA</li>
-              <li>• Each LAIKA token adds extra APY to your vault (up to +4%)</li>
+              <li>• Boost increases your APY up to the vault's Max APY</li>
+              <li>• <strong>Max boost by tier:</strong> STARTER +2% | PRO +2.5-3% | ELITE +3-4%</li>
               <li>• Your LAIKA is returned at the end of the term</li>
               <li>• During the term, you earn the boosted APY on your USDT</li>
             </ul>
