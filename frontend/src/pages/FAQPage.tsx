@@ -19,7 +19,7 @@ export default function FAQPage() {
           <p>Takara 宝 is a premium DeFi platform on Solana that offers three ways to earn:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Base APY:</strong> 4-8% on USDT deposits</li>
-            <li><strong>LAIKA Boost:</strong> Up to +12% additional APY</li>
+            <li><strong>LAIKA Boost:</strong> Up to +4% additional APY</li>
             <li><strong>TAKARA Mining:</strong> Daily token rewards based on vault mining power</li>
           </ul>
         </div>
@@ -87,7 +87,7 @@ export default function FAQPage() {
                 <div>
                   <p className="font-semibold text-white mb-1">Optional: Add LAIKA Boost</p>
                   <p className="text-sm text-gray-400">Use slider to add LAIKA tokens for extra APY</p>
-                  <p className="text-sm text-green-400 mt-1">🎁 Get 10% discount on LAIKA value!</p>
+                  <p className="text-sm text-green-400 mt-1">Boost your returns up to +4% additional APY!</p>
                 </div>
               </div>
             </div>
@@ -192,17 +192,11 @@ export default function FAQPage() {
         <div className="space-y-3">
           <p>LAIKA boost is an optional feature that increases your APY:</p>
 
-          <div className="bg-laika-purple/10 border border-laika-purple/30 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-laika-purple">🎁 Special Offer: 10% Discount</p>
-            <p className="text-sm text-gray-300">When you use LAIKA for boost, we value it at <strong>10% less than market price</strong></p>
-            <p className="text-sm text-gray-400">Example: If LAIKA is $1.00, we count it as $0.90 for boost calculation</p>
-          </div>
-
           <div className="bg-background-elevated rounded-lg p-4">
             <p className="font-semibold text-white mb-2">How it works:</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• You can deposit up to 90% of your USDT value in LAIKA</li>
-              <li>• Each LAIKA token adds extra APY to your vault</li>
+              <li>• Each LAIKA token adds extra APY to your vault (up to +4%)</li>
               <li>• Your LAIKA is returned at the end of the term</li>
               <li>• During the term, you earn the boosted APY on your USDT</li>
             </ul>
@@ -329,25 +323,70 @@ export default function FAQPage() {
       question: 'What is a Wexel?',
       answer: (
         <div className="space-y-3">
-          <p>A <strong>Wexel</strong> is your stacking position represented as an NFT on Solana.</p>
+          <p>A <strong>Wexel</strong> is a tokenized representation of your stacking position on the Solana blockchain. Think of it as a digital certificate of your investment.</p>
 
           <div className="bg-background-elevated rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-white">Wexel contains:</p>
+            <p className="font-semibold text-white mb-2">Your Wexel contains:</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• Your USDT deposit amount</li>
               <li>• Vault tier and duration</li>
-              <li>• APY (base + LAIKA boost)</li>
-              <li>• Mining power</li>
+              <li>• Current APY (base + LAIKA boost)</li>
+              <li>• Mining power for TAKARA rewards</li>
               <li>• All accrued earnings (USDT + TAKARA)</li>
-              <li>• LAIKA boost details (if any)</li>
+              <li>• LAIKA boost details (if applicable)</li>
+              <li>• Vault activation status and maturity date</li>
             </ul>
           </div>
 
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <p className="font-semibold text-purple-400 mb-2">Trade on Marketplace</p>
-            <p className="text-sm text-gray-300">You can sell your Wexel before vault maturity</p>
-            <p className="text-sm text-gray-400 mt-1">Buyer takes over your position with all earnings and obligations</p>
-            <p className="text-sm text-gray-400 mt-1">Platform fee: 3%</p>
+            <p className="font-semibold text-purple-400 mb-2">✨ Key Benefits of Wexel</p>
+            <ul className="text-sm text-gray-300 space-y-1">
+              <li>• <strong>Tradeable:</strong> Sell your stacking position before maturity on the marketplace</li>
+              <li>• <strong>Transferable:</strong> Send to another wallet address</li>
+              <li>• <strong>Transparent:</strong> All data visible on Solana blockchain</li>
+              <li>• <strong>Secure:</strong> Stored in your Phantom wallet, you control it</li>
+            </ul>
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+            <p className="font-semibold text-blue-400 mb-2">📍 Where to find your Wexel</p>
+            <p className="text-sm text-gray-300">View in your Portfolio → Each investment shows a "View Wexel" link</p>
+            <p className="text-sm text-gray-400 mt-1">Click to see it on Solana Explorer</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      category: 'Wexel & Marketplace',
+      question: 'How do I trade my Wexel?',
+      answer: (
+        <div className="space-y-3">
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+            <p className="font-semibold text-purple-400 mb-2">Selling Your Wexel</p>
+            <p className="text-sm text-gray-300 mb-2">From your Portfolio, click "List for Sale" on any active investment</p>
+            <ul className="text-sm text-gray-300 space-y-1">
+              <li>• Set your price in USDT</li>
+              <li>• Platform suggests 5% markup above original</li>
+              <li>• 3% platform fee deducted from sale price</li>
+              <li>• Cancel listing anytime before it sells</li>
+            </ul>
+          </div>
+
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+            <p className="font-semibold text-green-400 mb-2">Buying a Wexel</p>
+            <p className="text-sm text-gray-300 mb-2">Browse the Marketplace to find listings</p>
+            <ul className="text-sm text-gray-300 space-y-1">
+              <li>• See all vault details and earnings</li>
+              <li>• Pay via Phantom wallet</li>
+              <li>• Wexel transfers to your wallet immediately</li>
+              <li>• You take over all earnings and obligations</li>
+            </ul>
+          </div>
+
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+            <p className="text-sm text-yellow-400">
+              💡 <strong>Why sell?</strong> Exit early if you need liquidity, take profit, or rebalance your portfolio
+            </p>
           </div>
         </div>
       )

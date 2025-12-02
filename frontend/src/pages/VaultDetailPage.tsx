@@ -309,7 +309,7 @@ export default function VaultDetailPage() {
                     </div>
                   ) : laikaAmountLKI === 0 ? (
                     <div className="text-xs text-gray-400 italic mt-2">
-                      💡 Drag the slider to add LAIKA boost and increase your APY! You'll get 10% discount on LAIKA value.
+                      💡 Drag the slider to add LAIKA boost and increase your APY!
                     </div>
                   ) : null}
                 </div>

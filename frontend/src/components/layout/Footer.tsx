@@ -30,7 +30,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="/marketplace" className="text-sm text-gray-400 hover:text-gold-400 transition-colors">
-                  NFT Marketplace
+                  Wexel Marketplace
                 </a>
               </li>
               <li>

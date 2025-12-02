@@ -100,7 +100,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">LAIKA Boost 🎁</h3>
               <p className="text-gray-400">
-                Get 10% discount on LAIKA! Boost APY up to +12%. Deposit up to 90% of USDT value. LAIKA returned at term end.
+                Boost APY up to +4%. Deposit up to 90% of USDT value in LAIKA. LAIKA returned at term end.
               </p>
             </div>
 
