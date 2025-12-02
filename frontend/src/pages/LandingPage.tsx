@@ -73,12 +73,12 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Feature 1 */}
             <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gradient-gold rounded-lg flex items-center justify-center mb-4">
-                <TrendingUp className="h-6 w-6 text-background-primary" />
+              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
+                <TrendingUp className="h-6 w-6 text-gold-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">High APY</h3>
               <p className="text-gray-400">
-                Earn 4-16% base APY on USDT deposits, plus up to 12% additional APY with LAIKA boost
+                Earn up to 4-8% base APY on USDT deposits, plus up to 4% additional APY with boost
               </p>
             </div>
 
