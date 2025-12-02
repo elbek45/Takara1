@@ -117,7 +117,7 @@ export default function Header() {
                   Logout
                 </button>
               </>
-            ) : !connected && (
+            ) : (
               <button
                 onClick={() => setAuthModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:opacity-90 transition-opacity"
@@ -125,19 +125,6 @@ export default function Header() {
                 <LogIn className="h-4 w-4" />
                 <span className="hidden lg:inline">Login</span>
               </button>
-            )}
-
-            {(connected || isAuthenticated) && !currentUser?.data && (
-              <Link
-                to="/profile"
-                className={`p-2.5 rounded-lg transition-colors ${
-                  location.pathname === '/profile'
-                    ? 'bg-green-900/20 text-gold-500'
-                    : 'text-gray-300 hover:bg-green-900/10 hover:text-gold-400'
-                }`}
-              >
-                <User className="h-5 w-5" />
-              </Link>
             )}
 
             {/* Wallet Buttons - Only show if authenticated */}

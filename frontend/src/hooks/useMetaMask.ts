@@ -206,24 +206,8 @@ export function useMetaMask() {
   }, [state.address, disconnect])
 
   /**
-   * Auto-connect if previously connected
+   * Auto-connect disabled - users must manually connect wallets after login
    */
-  useEffect(() => {
-    const autoConnect = async () => {
-      if (!ethereumService.isMetaMaskInstalled()) return
-
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-        if (accounts && accounts.length > 0) {
-          await connect()
-        }
-      } catch (error) {
-        console.error('Auto-connect failed:', error)
-      }
-    }
-
-    autoConnect()
-  }, [connect])
 
   return {
     ...state,

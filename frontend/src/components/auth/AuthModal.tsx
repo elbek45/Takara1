@@ -209,10 +209,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </button>
           </div>
 
-          {/* Wallet Login Alternative */}
+          {/* Info Message */}
           <div className="mt-4 pt-4 border-t border-green-900/20">
             <p className="text-xs text-center text-gray-500">
-              You can also connect with your crypto wallet for instant access
+              After login, you can connect your crypto wallets in the header
             </p>
           </div>
         </div>
