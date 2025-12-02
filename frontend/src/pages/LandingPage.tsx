@@ -63,7 +63,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              Why Choose Takara Gold?
+              Why Choose Takara <span className="text-gold-500">宝</span>?
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
               Experience the next generation of DeFi investment vaults with multiple earning opportunities

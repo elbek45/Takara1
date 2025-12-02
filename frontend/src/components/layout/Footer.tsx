@@ -14,7 +14,7 @@ export default function Footer() {
                 <span className="text-xl font-bold text-background-primary">T</span>
               </div>
               <span className="text-lg font-bold text-gradient-gold">
-                Takara Gold
+                Takara <span className="text-gold-500">宝</span>
               </span>
             </div>
             <p className="text-sm text-gray-400">
@@ -90,7 +90,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-8 border-t border-green-900/20">
           <p className="text-center text-sm text-gray-500">
-            © {currentYear} Takara Gold. All rights reserved.
+            © {currentYear} Takara <span className="text-gold-500">宝</span>. All rights reserved.
           </p>
         </div>
       </div>

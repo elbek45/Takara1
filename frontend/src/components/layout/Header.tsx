@@ -69,7 +69,7 @@ export default function Header() {
                 <span className="text-xl font-bold text-background-primary">T</span>
               </div>
               <span className="text-xl font-bold text-gradient-gold">
-                Takara Gold
+                Takara <span className="text-gold-500">宝</span>
               </span>
             </Link>
           </div>

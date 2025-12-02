@@ -305,7 +305,7 @@ export default function AdminDeploymentPage() {
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-blue-400 mb-2">Deployment Details</h3>
                 <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Token: Takara Gold (TAKARA)</li>
+                  <li>• Token: Takara <span className="text-gold-500">宝</span> (TAKARA)</li>
                   <li>• Decimals: 9</li>
                   <li>• Initial Mint: 60,000,000 TAKARA (10% of total supply)</li>
                   <li>• Cost: ~1 SOL (~$200)</li>

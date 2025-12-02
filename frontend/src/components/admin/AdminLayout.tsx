@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-              <p className="text-sm text-gray-400">Takara Gold v2.2 - LAIKA Boost</p>
+              <p className="text-sm text-gray-400">Takara <span className="text-gold-500">宝</span> v2.2 - LAIKA Boost</p>
             </div>
             <button
               onClick={handleLogout}
