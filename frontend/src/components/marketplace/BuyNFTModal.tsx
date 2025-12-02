@@ -43,7 +43,7 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-green-900/20">
           <h2 className="text-2xl font-bold text-white">
-            {isSuccess ? 'Purchase Successful!' : 'Purchase NFT'}
+            {isSuccess ? 'Purchase Successful!' : 'Purchase Wexel'}
           </h2>
           {!buyNFT.isPending && (
             <button
@@ -61,9 +61,9 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
             <div className="text-center py-8 space-y-6">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">NFT Purchased!</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Wexel Purchased!</h3>
                 <p className="text-gray-400 mb-4">
-                  The investment NFT has been transferred to your wallet.
+                  The investment Wexel has been transferred to your wallet.
                 </p>
               </div>
               <div className="flex gap-4">
@@ -128,7 +128,7 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
               {/* Price Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between text-lg">
-                  <span className="text-gray-300">NFT Price</span>
+                  <span className="text-gray-300">Wexel Price</span>
                   <span className="text-white font-semibold">
                     ${listing.priceUSDT.toLocaleString()}
                   </span>
@@ -171,7 +171,7 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
               {/* Warning */}
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                 <div className="text-sm text-yellow-400">
-                  ⚠️ By purchasing this NFT, you will assume ownership of the investment and all
+                  ⚠️ By purchasing this Wexel, you will assume ownership of the investment and all
                   associated rewards.
                 </div>
               </div>

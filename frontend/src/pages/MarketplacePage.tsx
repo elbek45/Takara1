@@ -49,9 +49,9 @@ export default function MarketplacePage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center space-y-4 mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white">NFT Marketplace</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white">Wexel Marketplace</h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Trade investment NFTs before term maturity. Buy active investments or list yours for sale.
+            Trade investment Wexels before term maturity. Buy active investments or list yours for sale.
           </p>
         </div>
 
@@ -278,7 +278,7 @@ export default function MarketplacePage() {
         )}
       </div>
 
-      {/* Buy NFT Modal */}
+      {/* Buy Wexel Modal */}
       {selectedListing && (
         <BuyNFTModal
           isOpen={isBuyModalOpen}

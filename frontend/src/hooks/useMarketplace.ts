@@ -12,13 +12,13 @@ export function useListNFT() {
       return api.listNFT(investmentId, priceUSDT)
     },
     onSuccess: () => {
-      toast.success('NFT listed successfully!')
+      toast.success('Wexel listed successfully!')
       queryClient.invalidateQueries({ queryKey: ['marketplace'] })
       queryClient.invalidateQueries({ queryKey: ['myListings'] })
       queryClient.invalidateQueries({ queryKey: ['myInvestments'] })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to list NFT')
+      toast.error(error.response?.data?.message || 'Failed to list Wexel')
     },
   })
 }
@@ -50,13 +50,13 @@ export function useBuyNFT() {
       return api.purchaseNFT(listingId, txSignature)
     },
     onSuccess: () => {
-      toast.success('NFT purchased successfully!')
+      toast.success('Wexel purchased successfully!')
       queryClient.invalidateQueries({ queryKey: ['marketplace'] })
       queryClient.invalidateQueries({ queryKey: ['myInvestments'] })
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to purchase NFT')
+      toast.error(error.response?.data?.message || 'Failed to purchase Wexel')
     },
   })
 }

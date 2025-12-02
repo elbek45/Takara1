@@ -50,7 +50,7 @@ export default function ListNFTModal({ isOpen, onClose, investment }: ListNFTMod
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-green-900/20">
           <h2 className="text-2xl font-bold text-white">
-            {isSuccess ? 'Listed Successfully!' : 'List NFT for Sale'}
+            {isSuccess ? 'Listed Successfully!' : 'List Wexel for Sale'}
           </h2>
           {!listNFT.isPending && (
             <button
@@ -68,9 +68,9 @@ export default function ListNFTModal({ isOpen, onClose, investment }: ListNFTMod
             <div className="text-center py-8 space-y-6">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">NFT Listed!</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Wexel Listed!</h3>
                 <p className="text-gray-400 mb-4">
-                  Your investment NFT is now available on the marketplace.
+                  Your investment Wexel is now available on the marketplace.
                 </p>
               </div>
               <div className="flex gap-4">
@@ -196,7 +196,7 @@ export default function ListNFTModal({ isOpen, onClose, investment }: ListNFTMod
               {/* Warning */}
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                 <div className="text-sm text-yellow-400">
-                  ⚠️ Once listed, the NFT will be available for purchase immediately. You can
+                  ⚠️ Once listed, the Wexel will be available for purchase immediately. You can
                   cancel the listing at any time before it's sold.
                 </div>
               </div>

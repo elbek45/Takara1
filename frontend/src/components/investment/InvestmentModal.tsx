@@ -96,9 +96,9 @@ export default function InvestmentModal({
 
       setTxSignature(usdtSignature)
 
-      // Final Step: Create investment record and NFT on Solana
+      // Final Step: Create investment record and Wexel on Solana
       const totalSteps = (calculation.investment.requiredTAKARA > 0 ? 1 : 0) + (laikaAmountLKI > 0 ? 1 : 0) + 2
-      toast.info(`Step ${stepNumber}/${totalSteps}: Creating investment and minting NFT on Solana...`)
+      toast.info(`Step ${stepNumber}/${totalSteps}: Creating investment and minting Wexel on Solana...`)
       const response = await api.createInvestment({
         vaultId,
         usdtAmount,
@@ -217,10 +217,10 @@ export default function InvestmentModal({
                     </div>
                   </div>
 
-                  {/* Auto NFT */}
+                  {/* Auto Wexel */}
                   <div className="bg-purple-500/10 rounded p-3 text-center">
                     <div className="text-sm text-purple-400">
-                      ✨ <strong>Investment NFT</strong> will be minted automatically after payment
+                      ✨ <strong>Investment Wexel</strong> will be minted automatically after payment
                     </div>
                   </div>
                 </div>

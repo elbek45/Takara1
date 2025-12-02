@@ -238,7 +238,7 @@ export default function ProfilePage() {
                   <div>
                     <div className="text-white font-medium">Marketplace Activity</div>
                     <div className="text-sm text-gray-400">
-                      Notify about NFT sales and offers
+                      Notify about Wexel sales and offers
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">

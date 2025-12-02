@@ -161,7 +161,7 @@ export default function PortfolioPage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sm text-gold-500 hover:text-gold-400 transition-colors"
                     >
-                      View NFT
+                      View Wexel
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
@@ -302,7 +302,7 @@ export default function PortfolioPage() {
         )}
       </div>
 
-      {/* List NFT Modal */}
+      {/* List Wexel Modal */}
       {selectedInvestment && (
         <ListNFTModal
           isOpen={isListModalOpen}
