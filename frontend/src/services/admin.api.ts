@@ -105,6 +105,71 @@ export const adminApiService = {
   },
 
   /**
+   * Get All Vaults (Admin View)
+   */
+  getVaults: async () => {
+    const response = await adminApi.get('/admin/vaults')
+    return response.data
+  },
+
+  /**
+   * Create New Vault
+   */
+  createVault: async (data: {
+    name: string
+    tier: 'STARTER' | 'PRO' | 'ELITE'
+    duration: number
+    payoutSchedule: 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM'
+    minInvestment: number
+    maxInvestment: number
+    baseAPY: number
+    maxAPY: number
+    miningPower: number
+    requireTAKARA: boolean
+    takaraRatio?: number
+    totalCapacity?: number
+    isActive: boolean
+  }) => {
+    const response = await adminApi.post('/admin/vaults', data)
+    return response.data
+  },
+
+  /**
+   * Update Vault
+   */
+  updateVault: async (id: string, data: {
+    name?: string
+    minInvestment?: number
+    maxInvestment?: number
+    baseAPY?: number
+    maxAPY?: number
+    miningPower?: number
+    requireTAKARA?: boolean
+    takaraRatio?: number
+    totalCapacity?: number
+    isActive?: boolean
+  }) => {
+    const response = await adminApi.put(`/admin/vaults/${id}`, data)
+    return response.data
+  },
+
+  /**
+   * Delete Vault (Deactivate)
+   */
+  deleteVault: async (id: string) => {
+    const response = await adminApi.delete(`/admin/vaults/${id}`)
+    return response.data
+  },
+
+  /**
+   * Get Vault Statistics
+   */
+  getVaultStats: async (id: string) => {
+    const response = await adminApi.get(`/admin/vaults/${id}/stats`)
+    return response.data
+  },
+
+  /**
    * Get Mining Stats
    */
   getMiningStats: async () => {
