@@ -24,9 +24,9 @@ export default function AdminDeploymentPage() {
   const { data: statusData, isLoading, refetch } = useQuery({
     queryKey: ['deploymentStatus'],
     queryFn: () => adminApiService.getDeploymentStatus(),
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Poll every 2 seconds if deployment in progress
-      return data?.data?.deployment?.inProgress ? 2000 : false
+      return query?.state?.data?.data?.deployment?.inProgress ? 2000 : false
     }
   })
 

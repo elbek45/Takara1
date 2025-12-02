@@ -98,6 +98,18 @@ export interface InvestmentCalculation {
     laikaBoostUSD: number
     lkiToUsdtRate?: number
     laikaValueUSD?: number
+    // v2.2 - LAIKA price and discount fields
+    laikaAmountLKI?: number
+    laikaPrice?: number
+    laikaMarketValueUSD?: number
+    laikaDiscountPercent?: number
+    laikaDiscountAmount?: number
+    laikaDiscountedValueUSD?: number
+  }
+  laika?: {
+    // LAIKA boost details
+    maxBoostValue?: number
+    currentBoostPercent?: number
   }
   earnings: {
     baseAPY: number
