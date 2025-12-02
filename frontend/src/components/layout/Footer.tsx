@@ -46,17 +46,7 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-gold-500 mb-3">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm text-gray-400 hover:text-gold-400 transition-colors">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-gray-400 hover:text-gold-400 transition-colors">
-                  Whitepaper
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-gray-400 hover:text-gold-400 transition-colors">
+                <a href="/faq" className="text-sm text-gray-400 hover:text-gold-400 transition-colors">
                   FAQ
                 </a>
               </li>

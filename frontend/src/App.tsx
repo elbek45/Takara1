@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage'
 import PortfolioPage from './pages/PortfolioPage'
 import MarketplacePage from './pages/MarketplacePage'
 import ProfilePage from './pages/ProfilePage'
+import FAQPage from './pages/FAQPage'
 
 // Admin Pages
 import AdminLoginPage from './pages/admin/AdminLoginPage'
@@ -35,6 +36,7 @@ function App() {
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="faq" element={<FAQPage />} />
         </Route>
 
         {/* Admin Routes (No Layout) */}
