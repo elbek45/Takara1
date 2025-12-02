@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket } from 'lucide-react'
+import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket, Network } from 'lucide-react'
 import { adminApiService } from '../../services/admin.api'
 import { toast } from 'sonner'
 
@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Vaults', href: '/admin/vaults', icon: Package },
   { name: 'Mining Stats', href: '/admin/mining', icon: TrendingUp },
   { name: 'Deployment', href: '/admin/deployment', icon: Rocket },
+  { name: 'Network', href: '/admin/network', icon: Network },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -234,27 +234,28 @@ export default function VaultDetailPage() {
                     </div>
                   </div>
 
-                  {/* Slider */}
+                  {/* Input Field */}
                   <div className="mb-3">
+                    <label className="block text-xs text-gray-400 mb-2">
+                      LAIKA Amount (Max: {maxLaikaBoostLKI.toLocaleString()} LKI)
+                    </label>
                     <input
-                      type="range"
+                      type="number"
                       min="0"
                       max={maxLaikaBoostLKI}
-                      step={maxLaikaBoostLKI > 1000 ? 1000 : 100}
-                      value={laikaAmountLKI}
-                      onChange={(e) => setLaikaAmountLKI(parseFloat(e.target.value))}
-                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-laika"
-                      style={{
-                        background: `linear-gradient(to right, #7c3aed ${(laikaAmountLKI / maxLaikaBoostLKI) * 100}%, #374151 ${(laikaAmountLKI / maxLaikaBoostLKI) * 100}%)`
+                      step="100"
+                      value={laikaAmountLKI || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0
+                        setLaikaAmountLKI(Math.min(value, maxLaikaBoostLKI))
                       }}
+                      placeholder="Enter LAIKA amount (0 for no boost)"
+                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
+                      className="w-full px-4 py-3 bg-background-elevated border border-laika-purple/30 focus:border-laika-purple rounded-lg text-white placeholder-gray-500 focus:outline-none"
                     />
-                    <div className="flex justify-between text-xs text-gray-500 mt-2">
-                      <span>0 LKI (No boost)</span>
-                      <span className="text-laika-purple font-medium">
-                        Max: {maxLaikaBoostLKI.toLocaleString()} LKI
-                      </span>
-                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter 0 for no boost, or up to {maxLaikaBoostLKI.toLocaleString()} LKI for maximum boost
+                    </p>
                   </div>
 
                   {/* Boost Preview */}

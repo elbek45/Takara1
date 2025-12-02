@@ -9,7 +9,7 @@ import { api } from '../../services/api'
 import { toast } from 'sonner'
 
 export function SolanaWalletSync() {
-  const { publicKey, connected } = useWallet()
+  const { publicKey, connected, wallet } = useWallet()
   const previousPublicKey = useRef<string | null>(null)
   const isSyncing = useRef(false)
 
@@ -17,10 +17,17 @@ export function SolanaWalletSync() {
     const syncWalletAddress = async () => {
       if (!connected || !publicKey) {
         previousPublicKey.current = null
+        // Clear wallet name from localStorage when disconnected
+        localStorage.removeItem('walletName')
         return
       }
 
       const walletAddress = publicKey.toBase58()
+
+      // Store wallet name in localStorage for auto-reconnect
+      if (wallet?.adapter?.name) {
+        localStorage.setItem('walletName', wallet.adapter.name)
+      }
 
       // Only sync if this is a new connection or different wallet
       if (walletAddress === previousPublicKey.current) {

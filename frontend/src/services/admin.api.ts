@@ -214,6 +214,41 @@ export const adminApiService = {
     const response = await adminApi.post('/admin/deployment/verify-takara')
     return response.data
   },
+
+  // ==================== NETWORK CONFIGURATION ====================
+
+  /**
+   * Get Network Configuration
+   */
+  getNetworkConfig: async () => {
+    const response = await adminApi.get('/admin/network')
+    return response.data
+  },
+
+  /**
+   * Update Network Configuration
+   */
+  updateNetworkConfig: async (data: {
+    solana?: {
+      network: 'testnet' | 'devnet' | 'mainnet-beta'
+      rpcUrl: string
+      platformWallet?: string
+      platformWalletPrivateKey?: string
+      takaraTokenMint?: string
+      laikaTokenMint?: string
+      usdtTokenMint?: string
+    }
+    ethereum?: {
+      network: 'sepolia' | 'mainnet'
+      rpcUrl: string
+      platformAddress?: string
+      platformPrivateKey?: string
+      usdtContractAddress?: string
+    }
+  }) => {
+    const response = await adminApi.put('/admin/network', data)
+    return response.data
+  },
 }
 
 export default adminApiService

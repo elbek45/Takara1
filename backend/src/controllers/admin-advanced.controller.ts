@@ -664,3 +664,114 @@ export async function getVaultStats(req: Request, res: Response) {
     });
   }
 }
+
+// ==================== NETWORK CONFIGURATION ====================
+
+/**
+ * Get Network Configuration
+ *
+ * GET /api/admin/network
+ *
+ * Returns current network configuration (testnet/mainnet)
+ */
+export async function getNetworkConfig(req: Request, res: Response) {
+  try {
+    logger.info('Fetching network configuration');
+
+    const config = {
+      // Solana Configuration
+      solana: {
+        network: process.env.SOLANA_NETWORK || 'testnet',
+        rpcUrl: process.env.SOLANA_RPC_URL || '',
+        platformWallet: process.env.PLATFORM_WALLET || '',
+        takaraTokenMint: process.env.TAKARA_TOKEN_MINT || '',
+        laikaTokenMint: process.env.LAIKA_TOKEN_MINT || '',
+        usdtTokenMint: process.env.USDT_TOKEN_MINT || '',
+      },
+      // Ethereum Configuration
+      ethereum: {
+        network: process.env.ETHEREUM_NETWORK || 'sepolia',
+        rpcUrl: process.env.ETHEREUM_RPC_URL || '',
+        platformAddress: process.env.PLATFORM_ETHEREUM_ADDRESS || '',
+        usdtContractAddress: process.env.USDT_CONTRACT_ADDRESS || '',
+      },
+      // General
+      nodeEnv: process.env.NODE_ENV || 'development',
+      appVersion: process.env.APP_VERSION || '2.1.1',
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: config
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to fetch network configuration');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch network configuration'
+    });
+  }
+}
+
+/**
+ * Update Network Configuration
+ *
+ * PUT /api/admin/network
+ *
+ * Updates network configuration and restarts backend
+ */
+export async function updateNetworkConfig(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      solana: z.object({
+        network: z.enum(['testnet', 'devnet', 'mainnet-beta']),
+        rpcUrl: z.string().url(),
+        platformWallet: z.string().optional(),
+        platformWalletPrivateKey: z.string().optional(),
+        takaraTokenMint: z.string().optional(),
+        laikaTokenMint: z.string().optional(),
+        usdtTokenMint: z.string().optional(),
+      }).optional(),
+      ethereum: z.object({
+        network: z.enum(['sepolia', 'mainnet']),
+        rpcUrl: z.string().url(),
+        platformAddress: z.string().optional(),
+        platformPrivateKey: z.string().optional(),
+        usdtContractAddress: z.string().optional(),
+      }).optional(),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    logger.info({ config: validatedData }, 'Updating network configuration');
+
+    // In production, this would:
+    // 1. Write to .env file or database
+    // 2. Restart the backend service
+    // 3. Update configuration
+
+    // For now, we'll return a message that manual update is required
+    return res.status(200).json({
+      success: true,
+      message: 'Network configuration received. Manual server restart required to apply changes.',
+      data: validatedData,
+      note: 'Configuration must be manually updated in .env.production file and server must be restarted'
+    });
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+
+    logger.error({ error }, 'Failed to update network configuration');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update network configuration'
+    });
+  }
+}

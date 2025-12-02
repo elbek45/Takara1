@@ -22,6 +22,7 @@ import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
 import AdminVaultsPage from './pages/admin/AdminVaultsPage'
 import AdminMiningStatsPage from './pages/admin/AdminMiningStatsPage'
 import AdminDeploymentPage from './pages/admin/AdminDeploymentPage'
+import AdminNetworkPage from './pages/admin/AdminNetworkPage'
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/admin/vaults" element={<AdminVaultsPage />} />
         <Route path="/admin/mining" element={<AdminMiningStatsPage />} />
         <Route path="/admin/deployment" element={<AdminDeploymentPage />} />
+        <Route path="/admin/network" element={<AdminNetworkPage />} />
       </Routes>
 
       <Toaster

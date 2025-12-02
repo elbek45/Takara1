@@ -58,4 +58,8 @@ router.post('/deployment/deploy-takara', requireSuperAdmin, adminDeploymentContr
 router.post('/deployment/update-env', requireSuperAdmin, adminDeploymentController.updateEnvironment);
 router.post('/deployment/verify-takara', requireSuperAdmin, adminDeploymentController.verifyTakaraToken);
 
+// Network Configuration (Super Admin Only) - NEW v2.2 LAIKA Boost
+router.get('/network', requireSuperAdmin, adminAdvancedController.getNetworkConfig);
+router.put('/network', requireSuperAdmin, adminAdvancedController.updateNetworkConfig);
+
 export default router;
