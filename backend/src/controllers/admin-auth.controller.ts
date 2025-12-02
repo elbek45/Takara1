@@ -105,6 +105,7 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
       success: true,
       message: 'Login successful',
       data: {
+        token,
         admin: {
           id: admin.id,
           username: admin.username,
