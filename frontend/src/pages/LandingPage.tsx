@@ -134,7 +134,7 @@ export default function LandingPage() {
             {/* Starter Tier */}
             <div className="bg-background-card p-8 rounded-xl border border-blue-500/30">
               <div className="tier-starter inline-block mb-4">STARTER</div>
-              <h3 className="text-2xl font-bold text-white mb-2">$100 - $50,000</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">From $100</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 4-6% Base APY
@@ -145,8 +145,11 @@ export default function LandingPage() {
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 50-150 Mining Power
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 3 Vault Options
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-blue-400">•</span> 12M: No TAKARA needed
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-green-400">•</span> 30M/36M: 20-35 TAKARA
                 </p>
               </div>
             </div>
@@ -154,7 +157,7 @@ export default function LandingPage() {
             {/* Pro Tier */}
             <div className="bg-background-card p-8 rounded-xl border border-purple-500/30">
               <div className="tier-pro inline-block mb-4">PRO</div>
-              <h3 className="text-2xl font-bold text-white mb-2">$1,000 - $100,000</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">From $1,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 4.5-7% Base APY
@@ -165,8 +168,11 @@ export default function LandingPage() {
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 120-200 Mining Power
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 3 Vault Options
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-blue-400">•</span> 12M: No TAKARA needed
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-green-400">•</span> 30M/36M: 30-45 TAKARA
                 </p>
               </div>
             </div>
@@ -174,7 +180,7 @@ export default function LandingPage() {
             {/* Elite Tier */}
             <div className="bg-background-card p-8 rounded-xl border border-gold-500/30">
               <div className="tier-elite inline-block mb-4">ELITE</div>
-              <h3 className="text-2xl font-bold text-white mb-2">$5,000 - $1,000,000</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">From $5,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 5-8% Base APY
@@ -185,8 +191,11 @@ export default function LandingPage() {
                 <p className="flex items-center gap-2">
                   <span className="text-gold-500">✓</span> 250-350 Mining Power
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 3 Vault Options
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-gold-400">⚡</span> ALL require TAKARA
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <span className="text-green-400">•</span> 25-50 per 100 USDT
                 </p>
               </div>
             </div>

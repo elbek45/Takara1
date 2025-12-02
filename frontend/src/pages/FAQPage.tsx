@@ -151,35 +151,38 @@ export default function FAQPage() {
       answer: (
         <div className="space-y-3">
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-            <p className="font-semibold text-blue-400 mb-2">STARTER ($100 - $50,000)</p>
+            <p className="font-semibold text-blue-400 mb-2">STARTER (From $100, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4-6% Base APY</li>
               <li>• Up to 8% Max APY (with LAIKA boost)</li>
               <li>• 50-150 Mining Power</li>
-              <li>• ✓ No TAKARA required (all durations)</li>
-              <li>• 3 vaults: 12M, 30M, 36M</li>
+              <li>• ✓ 12M: No TAKARA required</li>
+              <li>• ⚡ 30M: 20 TAKARA per 100 USDT</li>
+              <li>• ⚡ 36M: 35 TAKARA per 100 USDT</li>
             </ul>
           </div>
 
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <p className="font-semibold text-purple-400 mb-2">PRO ($1,000 - $100,000)</p>
+            <p className="font-semibold text-purple-400 mb-2">PRO (From $1,000, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4.5-7% Base APY</li>
               <li>• Up to 10% Max APY (with LAIKA boost)</li>
               <li>• 120-200 Mining Power</li>
-              <li>• ⚡ 30M/36M require 30 TAKARA per 100 USDT</li>
-              <li>• ✓ 12M vault: no TAKARA required</li>
+              <li>• ✓ 12M: No TAKARA required</li>
+              <li>• ⚡ 30M: 30 TAKARA per 100 USDT</li>
+              <li>• ⚡ 36M: 45 TAKARA per 100 USDT</li>
             </ul>
           </div>
 
           <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4">
-            <p className="font-semibold text-gold-400 mb-2">ELITE ($5,000 - $1,000,000)</p>
+            <p className="font-semibold text-gold-400 mb-2">ELITE (From $5,000, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 5-8% Base APY</li>
               <li>• Up to 12% Max APY (with LAIKA boost)</li>
               <li>• 250-350 Mining Power</li>
-              <li>• ⚡ 30M/36M require 50 TAKARA per 100 USDT</li>
-              <li>• ✓ 12M vault: no TAKARA required</li>
+              <li>• ⚡ 12M: 25 TAKARA per 100 USDT (premium tier)</li>
+              <li>• ⚡ 30M: 40 TAKARA per 100 USDT</li>
+              <li>• ⚡ 36M: 50 TAKARA per 100 USDT (highest)</li>
             </ul>
           </div>
         </div>

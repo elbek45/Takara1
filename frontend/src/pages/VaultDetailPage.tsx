@@ -132,21 +132,14 @@ export default function VaultDetailPage() {
               <div className="mt-6 p-4 bg-background-elevated rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="h-5 w-5 text-gold-500" />
-                  <span className="text-sm font-medium text-gray-300">Investment Range</span>
+                  <span className="text-sm font-medium text-gray-300">Minimum Investment</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-xs text-gray-500">Minimum</div>
-                    <div className="text-lg font-bold text-white">
-                      ${vault.minInvestment.toLocaleString()}
-                    </div>
+                <div className="flex flex-col space-y-1">
+                  <div className="text-2xl font-bold text-white">
+                    ${vault.minInvestment.toLocaleString()}
                   </div>
-                  <div className="text-gray-600">—</div>
-                  <div>
-                    <div className="text-xs text-gray-500">Maximum</div>
-                    <div className="text-lg font-bold text-white">
-                      ${vault.maxInvestment.toLocaleString()}
-                    </div>
+                  <div className="text-xs text-gray-500">
+                    No maximum limit
                   </div>
                 </div>
               </div>
@@ -210,22 +203,10 @@ export default function VaultDetailPage() {
                   type="number"
                   value={usdtAmount}
                   onChange={(e) => setUsdtAmount(e.target.value)}
-                  placeholder={`Min: ${vault.minInvestment}`}
+                  placeholder={`Min: ${vault.minInvestment} (no max limit)`}
                   min={vault.minInvestment}
-                  max={vault.maxInvestment}
-                  className={`w-full px-4 py-3 bg-background-elevated border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
-                    usdtAmount && parseFloat(usdtAmount) > vault.maxInvestment
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-green-900/30 focus:border-gold-500'
-                  }`}
+                  className="w-full px-4 py-3 bg-background-elevated border border-green-900/30 focus:border-gold-500 rounded-lg text-white placeholder-gray-500 focus:outline-none"
                 />
-                {usdtAmount && parseFloat(usdtAmount) > vault.maxInvestment && (
-                  <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-sm text-red-400">
-                      <strong>⚠️ Amount exceeds maximum!</strong> Maximum investment for this vault is <strong>${vault.maxInvestment.toLocaleString()} USDT</strong>. Please enter a lower amount.
-                    </p>
-                  </div>
-                )}
                 {usdtAmount && parseFloat(usdtAmount) < vault.minInvestment && parseFloat(usdtAmount) > 0 && (
                   <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <p className="text-sm text-yellow-400">

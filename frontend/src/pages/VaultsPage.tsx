@@ -188,12 +188,6 @@ export default function VaultsPage() {
                       ${vault.minInvestment.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Max Investment</span>
-                    <span className="text-sm font-medium text-white">
-                      ${vault.maxInvestment.toLocaleString()}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Payout Schedule */}
