@@ -39,15 +39,15 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12">
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-gradient-gold">9</div>
-                <div className="text-sm text-gray-400">Premium Vaults</div>
+                <div className="text-sm text-gray-400">Takara Vaults</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">4-16%</div>
+                <div className="text-3xl font-bold text-gradient-gold">4-8%</div>
                 <div className="text-sm text-gray-400">Base APY Range</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">+12%</div>
-                <div className="text-sm text-gray-400">Max LAIKA Boost</div>
+                <div className="text-3xl font-bold text-gradient-gold">Up to +12%</div>
+                <div className="text-sm text-gray-400">Max Boost</div>
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-gradient-gold">100%</div>
