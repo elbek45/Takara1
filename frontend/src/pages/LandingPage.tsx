@@ -11,13 +11,12 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <div className="text-center space-y-8">
             <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-              <span className="block text-white">Premium Investment Vaults</span>
-              <span className="block text-gradient-gold">on Solana Blockchain</span>
+              <span className="block text-gradient-gold">Premium Takara Vaults</span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg sm:text-xl text-gray-300">
-              Invest USDT (Ethereum) in our 9 premium vaults. Boost APY with LAIKA (Solana) and earn TAKARA tokens.
-              Simple 2-step payment process with MetaMask + Phantom.
+              Stake USDT in Takara treasury premium vaults, boost APY and earn TAKARA tokens through mining.
+              Secured on Solana blockchain.
             </p>
 
             {/* Quick 2-Step Process */}
