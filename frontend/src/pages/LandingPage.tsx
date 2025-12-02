@@ -84,8 +84,8 @@ export default function LandingPage() {
 
             {/* Feature 2 */}
             <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gradient-green rounded-lg flex items-center justify-center mb-4">
-                <Coins className="h-6 w-6 text-background-primary" />
+              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
+                <Coins className="h-6 w-6 text-gold-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">TAKARA Mining</h3>
               <p className="text-gray-400">
@@ -95,8 +95,8 @@ export default function LandingPage() {
 
             {/* Feature 3 */}
             <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gradient-laika rounded-lg flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-background-primary" />
+              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
+                <Zap className="h-6 w-6 text-gold-500" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">LAIKA Boost 🎁</h3>
               <p className="text-gray-400">
@@ -109,9 +109,9 @@ export default function LandingPage() {
               <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-gold-500" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">NFT Marketplace</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Marketplace</h3>
               <p className="text-gray-400">
-                Trade your investment NFTs on the marketplace before term maturity
+                Trade your Wexel on the marketplace before maturity term
               </p>
             </div>
           </div>
