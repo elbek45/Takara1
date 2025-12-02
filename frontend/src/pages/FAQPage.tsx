@@ -154,9 +154,9 @@ export default function FAQPage() {
             <p className="font-semibold text-blue-400 mb-2">STARTER ($100 - $50,000)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4-6% Base APY</li>
-              <li>• Up to 8% Max APY with boost</li>
+              <li>• Up to 8% Max APY (with LAIKA boost)</li>
               <li>• 50-150 Mining Power</li>
-              <li>• No TAKARA tokens required</li>
+              <li>• ✓ No TAKARA required (all durations)</li>
               <li>• 3 vaults: 12M, 30M, 36M</li>
             </ul>
           </div>
@@ -165,10 +165,10 @@ export default function FAQPage() {
             <p className="font-semibold text-purple-400 mb-2">PRO ($1,000 - $100,000)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4.5-7% Base APY</li>
-              <li>• Up to 10% Max APY with boost</li>
+              <li>• Up to 10% Max APY (with LAIKA boost)</li>
               <li>• 120-200 Mining Power</li>
-              <li>• Requires 30 TAKARA per 100 USDT</li>
-              <li>• 3 vaults: 12M, 30M, 36M</li>
+              <li>• ⚡ 30M/36M require 30 TAKARA per 100 USDT</li>
+              <li>• ✓ 12M vault: no TAKARA required</li>
             </ul>
           </div>
 
@@ -176,10 +176,10 @@ export default function FAQPage() {
             <p className="font-semibold text-gold-400 mb-2">ELITE ($5,000 - $1,000,000)</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 5-8% Base APY</li>
-              <li>• Up to 12% Max APY with boost</li>
+              <li>• Up to 12% Max APY (with LAIKA boost)</li>
               <li>• 250-350 Mining Power</li>
-              <li>• Requires 50 TAKARA per 100 USDT</li>
-              <li>• 3 vaults: 12M, 30M, 36M</li>
+              <li>• ⚡ 30M/36M require 50 TAKARA per 100 USDT</li>
+              <li>• ✓ 12M vault: no TAKARA required</li>
             </ul>
           </div>
         </div>

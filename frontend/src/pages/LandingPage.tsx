@@ -78,7 +78,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">High APY</h3>
               <p className="text-gray-400">
-                Earn up to 4-8% base APY on USDT deposits, plus up to 4% additional APY with boost
+                Earn 4-8% base APY on USDT deposits, up to 12% max APY with optional LAIKA boost
               </p>
             </div>
 

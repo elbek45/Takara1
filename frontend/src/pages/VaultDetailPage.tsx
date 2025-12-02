@@ -155,10 +155,13 @@ export default function VaultDetailPage() {
               {vault.requireTAKARA && vault.takaraRatio && (
                 <div className="mt-6 p-4 bg-green-900/10 border border-green-900/30 rounded-lg">
                   <div className="text-sm text-green-400 font-medium mb-1">
-                    TAKARA Required
+                    ⚡ TAKARA Required
                   </div>
-                  <div className="text-gray-300">
-                    {vault.takaraRatio}:1 ratio (${vault.takaraRatio} TAKARA per $1 USDT)
+                  <div className="text-gray-300 text-sm">
+                    <span className="font-semibold text-gold-400">{vault.takaraRatio} TAKARA</span> per <span className="font-semibold">$100 USDT</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Example: $1,000 investment requires {(vault.takaraRatio * 10).toLocaleString()} TAKARA tokens
                   </div>
                 </div>
               )}

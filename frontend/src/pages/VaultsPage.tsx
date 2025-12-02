@@ -163,11 +163,19 @@ export default function VaultsPage() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Max APY (with boost)</span>
+                    <span className="text-sm text-gray-400">Max APY</span>
                     <span className="text-lg font-semibold text-gradient-gold">
                       {vault.maxAPY}%
                     </span>
                   </div>
+                  {vault.requireTAKARA && vault.takaraRatio && (
+                    <div className="flex justify-between items-center bg-green-900/10 -mx-2 px-2 py-2 rounded">
+                      <span className="text-sm text-gray-400">TAKARA Required</span>
+                      <span className="text-sm font-semibold text-gold-400">
+                        {vault.takaraRatio} per 100 USDT
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">Mining Power</span>
                     <span className="text-lg font-semibold text-green-400">
