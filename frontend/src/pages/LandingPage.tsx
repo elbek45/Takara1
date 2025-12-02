@@ -66,7 +66,7 @@ export default function LandingPage() {
               Why Choose Takara <span className="text-gold-500">宝</span>?
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Experience the next generation of DeFi investment vaults with multiple earning opportunities
+              Experience the next generation of DeFi vaults with multiple earning opportunities
             </p>
           </div>
 
