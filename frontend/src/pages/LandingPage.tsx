@@ -19,30 +19,6 @@ export default function LandingPage() {
               Secured on Solana blockchain.
             </p>
 
-            {/* Quick 2-Step Process */}
-            <div className="mx-auto max-w-3xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6 mt-8">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="text-xl">💳</span>
-                <h3 className="text-lg font-bold text-white">Simple 2-Step Investment Process</h3>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-black/20 rounded-lg p-4 border border-gold-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
-                    <span className="font-bold text-white">USDT via MetaMask</span>
-                  </div>
-                  <p className="text-sm text-gray-400 pl-9">Deposit your investment on Ethereum Mainnet</p>
-                </div>
-                <div className="bg-black/20 rounded-lg p-4 border border-green-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 bg-green-500 text-black rounded-full flex items-center justify-center font-bold">2</div>
-                    <span className="font-bold text-white">TAKARA + LAIKA via Phantom</span>
-                  </div>
-                  <p className="text-sm text-gray-400 pl-9">Pay vault requirements on Solana (if needed)</p>
-                </div>
-              </div>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/vaults"
