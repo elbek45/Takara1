@@ -170,30 +170,58 @@ export default function InvestmentModal({
           {step === 'review' && (
             <div className="space-y-6">
               {/* Payment Flow Information */}
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <div className="text-sm font-medium text-blue-400 mb-3">
-                  💳 Payment Process
-                </div>
-                <div className="text-sm text-gray-300 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-blue-400 font-bold">1.</span>
-                    <span><strong>USDT Payment</strong> via MetaMask (Ethereum Mainnet)</span>
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-2 border-blue-500/40 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">💳</span>
+                  <div className="text-lg font-bold text-blue-400">
+                    2-Step Payment Process
                   </div>
-                  {calculation.investment.requiredTAKARA > 0 && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-blue-400 font-bold">2.</span>
-                      <span><strong>TAKARA Payment</strong> via Phantom (Solana) - Required for this vault</span>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Step 1: USDT */}
+                  <div className="bg-black/20 rounded-lg p-4 border border-gold-500/30">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold text-lg">1</div>
+                      <div className="font-bold text-white text-base">USDT Payment (MetaMask)</div>
                     </div>
-                  )}
-                  {laikaAmountLKI > 0 && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-blue-400 font-bold">{calculation.investment.requiredTAKARA > 0 ? '3' : '2'}.</span>
-                      <span><strong>LKI Boost</strong> via Phantom (Solana) - Optional APY boost</span>
+                    <div className="pl-11 space-y-1 text-sm">
+                      <div className="text-gray-300">Network: <span className="text-blue-400 font-medium">Ethereum Mainnet</span></div>
+                      <div className="text-gray-300">Amount: <span className="text-gold-500 font-bold">${usdtAmount.toLocaleString()} USDT</span></div>
+                      <div className="text-gray-400 text-xs italic">Main investment deposit</div>
                     </div>
-                  )}
-                  <div className="flex items-start gap-2">
-                    <span className="text-blue-400 font-bold">{calculation.investment.requiredTAKARA > 0 ? (laikaAmountLKI > 0 ? '4' : '3') : (laikaAmountLKI > 0 ? '3' : '2')}.</span>
-                    <span><strong>NFT Creation</strong> on Solana - Automatic</span>
+                  </div>
+
+                  {/* Step 2: TAKARA + LAIKA */}
+                  <div className="bg-black/20 rounded-lg p-4 border border-green-500/30">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-shrink-0 w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center font-bold text-lg">2</div>
+                      <div className="font-bold text-white text-base">TAKARA + LAIKA (Phantom)</div>
+                    </div>
+                    <div className="pl-11 space-y-2 text-sm">
+                      <div className="text-gray-300">Network: <span className="text-purple-400 font-medium">Solana Mainnet</span></div>
+                      {calculation.investment.requiredTAKARA > 0 && (
+                        <div className="bg-green-500/10 border border-green-500/20 rounded p-2">
+                          <div className="text-green-400 font-medium">✓ TAKARA Required: <span className="font-bold">{calculation.investment.requiredTAKARA.toLocaleString()} TAKARA</span></div>
+                        </div>
+                      )}
+                      {laikaAmountLKI > 0 && (
+                        <div className="bg-laika-purple/10 border border-laika-purple/20 rounded p-2">
+                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmountLKI.toLocaleString()} LKI</span></div>
+                          <div className="text-laika-green text-xs">Extra APY: +{calculation.earnings.laikaBoostAPY}% (with 10% discount!)</div>
+                        </div>
+                      )}
+                      {!calculation.investment.requiredTAKARA && !laikaAmountLKI && (
+                        <div className="text-gray-400 text-xs italic">No TAKARA or LAIKA required for this investment</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Auto NFT */}
+                  <div className="bg-purple-500/10 rounded p-3 text-center">
+                    <div className="text-sm text-purple-400">
+                      ✨ <strong>Investment NFT</strong> will be minted automatically after payment
+                    </div>
                   </div>
                 </div>
               </div>

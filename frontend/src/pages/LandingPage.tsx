@@ -16,9 +16,33 @@ export default function LandingPage() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg sm:text-xl text-gray-300">
-              Stake USDT in our 9 premium vaults, boost APY with LAIKA, and earn TAKARA tokens through mining.
-              Your investments are secured on Solana blockchain.
+              Invest USDT (Ethereum) in our 9 premium vaults. Boost APY with LAIKA (Solana) and earn TAKARA tokens.
+              Simple 2-step payment process with MetaMask + Phantom.
             </p>
+
+            {/* Quick 2-Step Process */}
+            <div className="mx-auto max-w-3xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6 mt-8">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="text-xl">💳</span>
+                <h3 className="text-lg font-bold text-white">Simple 2-Step Investment Process</h3>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-black/20 rounded-lg p-4 border border-gold-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
+                    <span className="font-bold text-white">USDT via MetaMask</span>
+                  </div>
+                  <p className="text-sm text-gray-400 pl-9">Deposit your investment on Ethereum Mainnet</p>
+                </div>
+                <div className="bg-black/20 rounded-lg p-4 border border-green-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 bg-green-500 text-black rounded-full flex items-center justify-center font-bold">2</div>
+                    <span className="font-bold text-white">TAKARA + LAIKA via Phantom</span>
+                  </div>
+                  <p className="text-sm text-gray-400 pl-9">Pay vault requirements on Solana (if needed)</p>
+                </div>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -99,9 +123,9 @@ export default function LandingPage() {
               <div className="h-12 w-12 bg-gradient-laika rounded-lg flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6 text-background-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">LAIKA Boost</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">LAIKA Boost 🎁</h3>
               <p className="text-gray-400">
-                Optional LAIKA deposit (up to 90% of USDT) boosts your APY. LAIKA returned at term end
+                Get 10% discount on LAIKA! Boost APY up to +12%. Deposit up to 90% of USDT value. LAIKA returned at term end.
               </p>
             </div>
 

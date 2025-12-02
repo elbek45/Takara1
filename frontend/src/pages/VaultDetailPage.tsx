@@ -167,6 +167,34 @@ export default function VaultDetailPage() {
 
           {/* Right Column - Investment Calculator */}
           <div className="space-y-6">
+            {/* 2-Step Payment Process Info */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-10 w-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">💳</span>
+                </div>
+                <h3 className="text-lg font-bold text-white">2-Step Payment Process</h3>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
+                  <div>
+                    <div className="font-semibold text-white">USDT Payment (MetaMask - Ethereum)</div>
+                    <div className="text-gray-400">Main investment amount via MetaMask wallet</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-black rounded-full flex items-center justify-center font-bold">2</div>
+                  <div>
+                    <div className="font-semibold text-white">TAKARA + LAIKA (Phantom - Solana)</div>
+                    <div className="text-gray-400">
+                      {vault.requireTAKARA ? 'Required TAKARA tokens' : 'No TAKARA required'} + optional LAIKA boost for extra APY
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-background-card rounded-xl p-8 border border-green-900/20">
               <h2 className="text-2xl font-bold text-white mb-6">Investment Calculator</h2>
 
@@ -206,32 +234,84 @@ export default function VaultDetailPage() {
 
               {/* LAIKA Boost Slider */}
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-gray-300">
-                    LAIKA Boost (Optional)
-                  </label>
-                  <div className="text-right">
-                    <span className="text-sm text-gold-500 font-medium block">
-                      {laikaAmountLKI.toLocaleString()} LKI
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      ≈ ${(laikaAmountLKI * lkiToUsdtRate).toFixed(2)} USDT
-                    </span>
+                <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-sm font-bold text-laika-purple flex items-center gap-2">
+                      <span className="text-lg">🚀</span>
+                      LAIKA Boost (Optional - Get 10% Discount!)
+                    </label>
+                    <div className="text-right">
+                      <span className="text-lg text-laika-purple font-bold block">
+                        {laikaAmountLKI.toLocaleString()} LKI
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        Market: ${(laikaAmountLKI * (calculation?.investment?.laikaPrice || lkiToUsdtRate)).toFixed(2)} USDT
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max={maxLaikaBoostLKI}
-                  step="100"
-                  value={laikaAmountLKI}
-                  onChange={(e) => setLaikaAmountLKI(parseFloat(e.target.value))}
-                  disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0 LKI</span>
-                  <span>Max: {maxLaikaBoostLKI.toLocaleString()} LKI (≈ ${maxLaikaBoostUSD.toFixed(2)} USDT)</span>
+
+                  {/* Slider */}
+                  <div className="mb-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max={maxLaikaBoostLKI}
+                      step={maxLaikaBoostLKI > 1000 ? 1000 : 100}
+                      value={laikaAmountLKI}
+                      onChange={(e) => setLaikaAmountLKI(parseFloat(e.target.value))}
+                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-laika"
+                      style={{
+                        background: `linear-gradient(to right, #7c3aed ${(laikaAmountLKI / maxLaikaBoostLKI) * 100}%, #374151 ${(laikaAmountLKI / maxLaikaBoostLKI) * 100}%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-2">
+                      <span>0 LKI (No boost)</span>
+                      <span className="text-laika-purple font-medium">
+                        Max: {maxLaikaBoostLKI.toLocaleString()} LKI
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Boost Preview */}
+                  {laikaAmountLKI > 0 && calculation && (
+                    <div className="bg-black/20 rounded p-3 space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Market Value:</span>
+                        <span className="text-white">
+                          ${calculation.investment.laikaMarketValueUSD?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-green-400">
+                        <span className="font-medium">🎁 Platform Discount (10%):</span>
+                        <span className="font-bold">
+                          -${calculation.investment.laikaDiscountAmount?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-t border-gray-700 pt-2">
+                        <span className="text-laika-purple font-bold">Effective Boost Value:</span>
+                        <span className="text-laika-purple font-bold text-sm">
+                          ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-laika-green font-bold">Extra APY:</span>
+                        <span className="text-laika-green font-bold text-sm">
+                          +{calculation.earnings.laikaBoostAPY || 0}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!usdtAmount || parseFloat(usdtAmount) === 0 ? (
+                    <div className="text-xs text-gray-500 italic mt-2">
+                      💡 Enter USDT amount first to enable LAIKA boost
+                    </div>
+                  ) : laikaAmountLKI === 0 ? (
+                    <div className="text-xs text-gray-400 italic mt-2">
+                      💡 Drag the slider to add LAIKA boost and increase your APY! You'll get 10% discount on LAIKA value.
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
