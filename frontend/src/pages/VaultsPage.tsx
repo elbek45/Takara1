@@ -140,9 +140,10 @@ export default function VaultsPage() {
                   <div className={`tier-${vault.tier.toLowerCase()} inline-block`}>
                     {vault.tier}
                   </div>
-                  {vault.requireTAKARA && (
-                    <div className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-gold-500/20 border border-gold-500/40 rounded-lg text-xs font-semibold text-gold-400">
-                      TAKARA Required
+                  {vault.requireTAKARA && vault.takaraRatio && (
+                    <div className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-gold-500/20 border border-gold-500/40 rounded-lg text-xs font-semibold text-gold-400 text-center">
+                      <div className="whitespace-nowrap">{vault.takaraRatio} TAKARA</div>
+                      <div className="text-[10px] text-gold-500/70">per 100 USDT</div>
                     </div>
                   )}
                 </div>

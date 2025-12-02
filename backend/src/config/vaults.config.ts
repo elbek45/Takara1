@@ -2,9 +2,14 @@
  * Takara Gold v2.1.1 - Vault Configuration
  *
  * Defines all 9 Vault types across 3 tiers:
- * - Tier 1 (STARTER): USDT only
- * - Tier 2 (PRO): USDT + 30 TAKARA per 100 USDT
- * - Tier 3 (ELITE): USDT + 50 TAKARA per 100 USDT
+ * - 12M vaults: USDT only (no TAKARA required)
+ * - 30M/36M PRO: USDT + 30 TAKARA per 100 USDT
+ * - 30M/36M ELITE: USDT + 50 TAKARA per 100 USDT
+ *
+ * Max boost increases with tier and duration:
+ * - STARTER: +2% to +2% (consistent across durations)
+ * - PRO: +2.5% to +3% (increases with duration)
+ * - ELITE: +3% to +4% (max boost for longest lock-up)
  */
 
 export enum VaultTier {
@@ -49,7 +54,7 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 100,
     maxInvestment: 10000,
     baseAPY: 4.0,
-    maxAPY: 8.0, // With full LAIKA boost
+    maxAPY: 6.0, // +2% max LAIKA boost
     miningPower: 50,
     requireTAKARA: false,
     takaraRatio: null,
@@ -64,7 +69,7 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 100,
     maxInvestment: 30000,
     baseAPY: 5.0,
-    maxAPY: 8.0,
+    maxAPY: 7.0, // +2% max LAIKA boost
     miningPower: 100, // Baseline
     requireTAKARA: false,
     takaraRatio: null,
@@ -79,7 +84,7 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 100,
     maxInvestment: 50000,
     baseAPY: 6.0,
-    maxAPY: 8.0,
+    maxAPY: 8.0, // +2% max LAIKA boost
     miningPower: 150,
     requireTAKARA: false,
     takaraRatio: null,
@@ -96,11 +101,11 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 1000,
     maxInvestment: 50000,
     baseAPY: 4.5,
-    maxAPY: 10.0,
+    maxAPY: 7.0, // +2.5% max LAIKA boost
     miningPower: 120,
-    requireTAKARA: true,
-    takaraRatio: 30, // 30 TAKARA per 100 USDT
-    description: 'Pro 12-month vault requiring TAKARA tokens with boosted mining'
+    requireTAKARA: false, // 12M vaults don't require TAKARA
+    takaraRatio: null,
+    description: 'Pro 12-month vault with monthly payouts and boosted mining'
   },
   {
     id: 5,
@@ -111,11 +116,11 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 1000,
     maxInvestment: 75000,
     baseAPY: 5.5,
-    maxAPY: 10.0,
+    maxAPY: 8.5, // +3% max LAIKA boost
     miningPower: 170,
     requireTAKARA: true,
-    takaraRatio: 30,
-    description: 'Pro 30-month vault with superior mining power'
+    takaraRatio: 30, // 30 TAKARA per 100 USDT
+    description: 'Pro 30-month vault with superior mining power, requires TAKARA'
   },
   {
     id: 6,
@@ -126,11 +131,11 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 1000,
     maxInvestment: 100000,
     baseAPY: 7.0,
-    maxAPY: 10.0,
+    maxAPY: 10.0, // +3% max LAIKA boost
     miningPower: 200,
     requireTAKARA: true,
-    takaraRatio: 30,
-    description: 'Long-term Pro vault with double mining power'
+    takaraRatio: 30, // 30 TAKARA per 100 USDT
+    description: 'Long-term Pro vault with double mining power, requires TAKARA'
   },
 
   // ==================== TIER 3: ELITE ====================
@@ -143,10 +148,10 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 5000,
     maxInvestment: 500000,
     baseAPY: 5.0,
-    maxAPY: 12.0,
+    maxAPY: 8.0, // +3% max LAIKA boost
     miningPower: 250,
-    requireTAKARA: true,
-    takaraRatio: 50, // 50 TAKARA per 100 USDT
+    requireTAKARA: false, // 12M vaults don't require TAKARA
+    takaraRatio: null,
     description: 'Elite 12-month vault for serious investors with premium mining'
   },
   {
@@ -158,11 +163,11 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 5000,
     maxInvestment: 750000,
     baseAPY: 6.5,
-    maxAPY: 12.0,
+    maxAPY: 10.0, // +3.5% max LAIKA boost
     miningPower: 300,
     requireTAKARA: true,
-    takaraRatio: 50,
-    description: 'Elite 30-month vault with triple mining power'
+    takaraRatio: 50, // 50 TAKARA per 100 USDT
+    description: 'Elite 30-month vault with triple mining power, requires TAKARA'
   },
   {
     id: 9,
@@ -173,11 +178,11 @@ export const VAULTS: VaultConfig[] = [
     minInvestment: 5000,
     maxInvestment: 1000000,
     baseAPY: 8.0,
-    maxAPY: 12.0, // MAXIMUM 12% APY - THE ULTIMATE VAULT
+    maxAPY: 12.0, // +4% max LAIKA boost - MAXIMUM BOOST
     miningPower: 350, // MAXIMUM MINING POWER
     requireTAKARA: true,
-    takaraRatio: 50,
-    description: 'Ultimate Elite vault with maximum APY potential and mining power'
+    takaraRatio: 50, // 50 TAKARA per 100 USDT
+    description: 'Ultimate Elite vault with maximum APY and mining power, requires TAKARA'
   }
 ];
 

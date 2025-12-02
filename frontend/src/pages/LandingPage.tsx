@@ -46,8 +46,8 @@ export default function LandingPage() {
                 <div className="text-sm text-gray-400">Base APY Range</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">Up to +12%</div>
-                <div className="text-sm text-gray-400">Max Boost</div>
+                <div className="text-3xl font-bold text-gradient-gold">Up to 12%</div>
+                <div className="text-sm text-gray-400">Max APY</div>
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold text-gradient-gold">100%</div>
