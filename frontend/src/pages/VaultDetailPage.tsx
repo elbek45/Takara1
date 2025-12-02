@@ -222,14 +222,14 @@ export default function VaultDetailPage() {
                   <div className="flex justify-between items-center mb-3">
                     <label className="text-sm font-bold text-laika-purple flex items-center gap-2">
                       <span className="text-lg">🚀</span>
-                      LAIKA Boost (Optional - Get 10% Discount!)
+                      LAIKA Boost (Optional)
                     </label>
                     <div className="text-right">
                       <span className="text-lg text-laika-purple font-bold block">
                         {laikaAmountLKI.toLocaleString()} LKI
                       </span>
                       <span className="text-xs text-gray-400">
-                        Market: ${(laikaAmountLKI * (calculation?.investment?.laikaPrice || lkiToUsdtRate)).toFixed(2)} USDT
+                        ≈ ${(laikaAmountLKI * (calculation?.investment?.laikaPrice || lkiToUsdtRate)).toFixed(2)} USDT
                       </span>
                     </div>
                   </div>
@@ -260,25 +260,19 @@ export default function VaultDetailPage() {
                   {/* Boost Preview */}
                   {laikaAmountLKI > 0 && calculation && (
                     <div className="bg-black/20 rounded p-3 space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Market Value:</span>
-                        <span className="text-white">
-                          ${calculation.investment.laikaMarketValueUSD?.toFixed(2) || '0.00'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-green-400">
-                        <span className="font-medium">🎁 Platform Discount (10%):</span>
-                        <span className="font-bold">
-                          -${calculation.investment.laikaDiscountAmount?.toFixed(2) || '0.00'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between border-t border-gray-700 pt-2">
-                        <span className="text-laika-purple font-bold">Effective Boost Value:</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">LAIKA Boost Value:</span>
                         <span className="text-laika-purple font-bold text-sm">
-                          ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'}
+                          ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'} USDT
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">1 LAIKA Price:</span>
+                        <span className="text-white font-medium text-sm">
+                          ${(calculation?.investment?.laikaPrice || lkiToUsdtRate).toFixed(4)} USDT
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-gray-700 pt-2">
                         <span className="text-laika-green font-bold">Extra APY:</span>
                         <span className="text-laika-green font-bold text-sm">
                           +{calculation.earnings.laikaBoostAPY || 0}%
