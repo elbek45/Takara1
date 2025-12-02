@@ -126,7 +126,7 @@ export default function LandingPage() {
               Choose Your Vault
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              9 vaults across 3 tiers: Starter, Pro, and Elite. Select based on your investment amount and duration.
+              9 vaults across 3 tiers: Starter, Pro, and Elite. Select based on your amount and duration.
             </p>
           </div>
 
