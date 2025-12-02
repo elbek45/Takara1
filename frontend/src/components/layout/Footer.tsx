@@ -9,16 +9,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-gold flex items-center justify-center">
-                <span className="text-xl font-bold text-background-primary">T</span>
-              </div>
+            <div>
               <span className="text-lg font-bold text-gradient-gold">
                 Takara <span className="text-gold-500">宝</span>
               </span>
             </div>
             <p className="text-sm text-gray-400">
-              Premium investment vaults on Solana with TAKARA mining rewards.
+              Premium stacking vaults on Solana with TAKARA mining rewards.
             </p>
           </div>
 
