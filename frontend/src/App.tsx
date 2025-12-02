@@ -20,6 +20,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage'
 import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
 import AdminVaultsPage from './pages/admin/AdminVaultsPage'
 import AdminMiningStatsPage from './pages/admin/AdminMiningStatsPage'
+import AdminDeploymentPage from './pages/admin/AdminDeploymentPage'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
         <Route path="/admin/vaults" element={<AdminVaultsPage />} />
         <Route path="/admin/mining" element={<AdminMiningStatsPage />} />
+        <Route path="/admin/deployment" element={<AdminDeploymentPage />} />
       </Routes>
 
       <Toaster

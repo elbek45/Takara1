@@ -111,6 +111,44 @@ export const adminApiService = {
     const response = await adminApi.get('/admin/stats/mining')
     return response.data
   },
+
+  /**
+   * Get Deployment Status
+   */
+  getDeploymentStatus: async () => {
+    const response = await adminApi.get('/admin/deployment/status')
+    return response.data
+  },
+
+  /**
+   * Deploy TAKARA Token
+   */
+  deployTakara: async () => {
+    const response = await adminApi.post('/admin/deployment/deploy-takara', {
+      confirm: true
+    })
+    return response.data
+  },
+
+  /**
+   * Update Environment Variables
+   */
+  updateEnvironment: async (data: {
+    takaraTokenMint?: string
+    infuraApiKey?: string
+    solanaRpcUrl?: string
+  }) => {
+    const response = await adminApi.post('/admin/deployment/update-env', data)
+    return response.data
+  },
+
+  /**
+   * Verify TAKARA Token
+   */
+  verifyTakara: async () => {
+    const response = await adminApi.post('/admin/deployment/verify-takara')
+    return response.data
+  },
 }
 
 export default adminApiService

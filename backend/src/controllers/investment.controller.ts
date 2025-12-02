@@ -139,7 +139,7 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
         baseAPY: Number(vault.baseAPY),
         tier: vault.tier as VaultTier,
         usdtInvested: usdtAmount,
-        laikaValueUSD: laikaBoost.laikaValueUSD
+        laikaMarketValueUSD: laikaBoost.laikaValueUSD
       });
 
       finalAPY = boostResult.finalAPY;

@@ -6,6 +6,7 @@ import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
 import * as adminAuthController from '../controllers/admin-auth.controller';
 import * as adminAdvancedController from '../controllers/admin-advanced.controller';
+import * as adminDeploymentController from '../controllers/admin-deployment.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware';
 
@@ -50,5 +51,11 @@ router.get('/vaults/:id/stats', requireSuperAdmin, adminAdvancedController.getVa
 
 // Legacy vault toggle (kept for compatibility)
 router.put('/vaults/:id/toggle', requireSuperAdmin, adminController.toggleVaultStatus);
+
+// Deployment Management (Super Admin Only) - NEW v2.2
+router.get('/deployment/status', requireSuperAdmin, adminDeploymentController.getDeploymentStatus);
+router.post('/deployment/deploy-takara', requireSuperAdmin, adminDeploymentController.deployTakaraToken);
+router.post('/deployment/update-env', requireSuperAdmin, adminDeploymentController.updateEnvironment);
+router.post('/deployment/verify-takara', requireSuperAdmin, adminDeploymentController.verifyTakaraToken);
 
 export default router;

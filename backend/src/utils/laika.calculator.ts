@@ -1,18 +1,23 @@
 /**
- * LAIKA Boost Calculator
+ * LAIKA Boost Calculator v2.2
  *
- * Implements the LAIKA boost mechanism as per specification v2.1.1
+ * Implements the LAIKA boost mechanism with platform discount
  *
  * Key Rules:
- * 1. LAIKA cost = USDT investment × 0.90 (max 90% of investment)
- * 2. Max APY by tier:
+ * 1. LAIKA market value = laikaAmount × laikaPrice (USDT)
+ * 2. Platform applies 10% DISCOUNT: discounted value = market value × 0.90
+ * 3. Max discounted value = USDT investment × 0.90 (max 90% of investment)
+ * 4. Max APY by tier:
  *    - Tier 1 (Starter): 8% APY
  *    - Tier 2 (Pro): 10% APY
  *    - Tier 3 (Elite): 12% APY
- * 3. LAIKA is returned to NFT owner at end of term
+ * 5. LAIKA is returned to NFT owner at end of term
  */
 
 import { VaultTier } from '../config/vaults.config';
+
+// Platform discount on LAIKA value
+export const LAIKA_DISCOUNT_PERCENT = 10;
 
 // Maximum APY achievable with full LAIKA boost
 export const MAX_APY_BY_TIER = {
@@ -25,12 +30,16 @@ export interface LaikaBoostInput {
   baseAPY: number; // Base APY from vault
   tier: VaultTier; // Vault tier
   usdtInvested: number; // USDT investment amount
-  laikaValueUSD: number; // USD value of LAIKA deposited
+  laikaMarketValueUSD: number; // Market USD value of LAIKA deposited (before discount)
 }
 
 export interface LaikaBoostResult {
+  laikaMarketValueUSD: number; // Market value of LAIKA (before discount)
+  laikaDiscountPercent: number; // Platform discount percent (10%)
+  laikaDiscountAmount: number; // Discount amount in USD
+  laikaDiscountedValueUSD: number; // Value after 10% discount
   maxLaikaValueUSD: number; // Maximum LAIKA allowed (90% of USDT)
-  effectiveLaikaValueUSD: number; // Actual LAIKA used (min of deposited and max)
+  effectiveLaikaValueUSD: number; // Actual LAIKA used for boost (min of discounted and max)
   boostFillPercent: number; // How much of max boost is filled (0-100%)
   maxAPY: number; // Maximum APY for this tier
   boostRange: number; // APY range available for boost
@@ -42,26 +51,33 @@ export interface LaikaBoostResult {
 /**
  * Calculate the final APY with LAIKA boost
  *
- * Formula:
- * 1. max_laika_value = usdt_invested × 0.90
- * 2. effective_laika = min(laika_deposited, max_laika_value)
- * 3. boost_fill_percent = (effective_laika / max_laika_value) × 100
- * 4. boost_range = MAX_APY[tier] - base_apy
- * 5. additional_apy = (boost_range × boost_fill_percent) / 100
- * 6. final_apy = base_apy + additional_apy
- * 7. final_apy = min(final_apy, MAX_APY[tier])
+ * Updated Formula (v2.2 with 10% discount):
+ * 1. laika_discount = laika_market_value × 0.10 (10% platform discount)
+ * 2. laika_discounted_value = laika_market_value - laika_discount
+ * 3. max_laika_value = usdt_invested × 0.90 (max 90% of investment)
+ * 4. effective_laika = min(laika_discounted_value, max_laika_value)
+ * 5. boost_fill_percent = (effective_laika / max_laika_value) × 100
+ * 6. boost_range = MAX_APY[tier] - base_apy
+ * 7. additional_apy = (boost_range × boost_fill_percent) / 100
+ * 8. final_apy = base_apy + additional_apy
+ * 9. final_apy = min(final_apy, MAX_APY[tier])
  */
 export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
-  const { baseAPY, tier, usdtInvested, laikaValueUSD } = input;
+  const { baseAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
 
   // Get maximum APY for this tier
   const maxAPY = MAX_APY_BY_TIER[tier];
 
+  // Apply 10% platform discount to LAIKA value
+  const laikaDiscountPercent = LAIKA_DISCOUNT_PERCENT;
+  const laikaDiscountAmount = laikaMarketValueUSD * (laikaDiscountPercent / 100);
+  const laikaDiscountedValueUSD = laikaMarketValueUSD - laikaDiscountAmount;
+
   // Maximum LAIKA value = 90% of USDT investment
   const maxLaikaValueUSD = usdtInvested * 0.90;
 
-  // Effective LAIKA (cannot exceed maximum)
-  const effectiveLaikaValueUSD = Math.min(laikaValueUSD, maxLaikaValueUSD);
+  // Effective LAIKA (discounted value cannot exceed maximum)
+  const effectiveLaikaValueUSD = Math.min(laikaDiscountedValueUSD, maxLaikaValueUSD);
 
   // Boost fill percentage (0-100%)
   const boostFillPercent = maxLaikaValueUSD > 0
@@ -82,8 +98,12 @@ export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
   const isFullBoost = finalAPY >= maxAPY;
 
   return {
-    maxLaikaValueUSD,
-    effectiveLaikaValueUSD,
+    laikaMarketValueUSD: Number(laikaMarketValueUSD.toFixed(6)),
+    laikaDiscountPercent,
+    laikaDiscountAmount: Number(laikaDiscountAmount.toFixed(6)),
+    laikaDiscountedValueUSD: Number(laikaDiscountedValueUSD.toFixed(6)),
+    maxLaikaValueUSD: Number(maxLaikaValueUSD.toFixed(2)),
+    effectiveLaikaValueUSD: Number(effectiveLaikaValueUSD.toFixed(6)),
     boostFillPercent: Number(boostFillPercent.toFixed(2)),
     maxAPY,
     boostRange: Number(boostRange.toFixed(2)),
@@ -134,7 +154,7 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
   error?: string;
   warning?: string;
 } {
-  const { baseAPY, tier, usdtInvested, laikaValueUSD } = input;
+  const { baseAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
 
   // Validate base APY
   const maxAPY = MAX_APY_BY_TIER[tier];
@@ -154,19 +174,21 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
   }
 
   // Validate LAIKA amount
-  if (laikaValueUSD < 0) {
+  if (laikaMarketValueUSD < 0) {
     return {
       valid: false,
       error: 'LAIKA value cannot be negative'
     };
   }
 
-  // Warning if LAIKA exceeds maximum
+  // Apply discount and check against maximum
+  const laikaDiscountedValueUSD = laikaMarketValueUSD * 0.90; // After 10% discount
   const maxLaikaValueUSD = usdtInvested * 0.90;
-  if (laikaValueUSD > maxLaikaValueUSD) {
+
+  if (laikaDiscountedValueUSD > maxLaikaValueUSD) {
     return {
       valid: true,
-      warning: `LAIKA value ($${laikaValueUSD}) exceeds maximum ($${maxLaikaValueUSD.toFixed(2)}). Only $${maxLaikaValueUSD.toFixed(2)} will be used for boost.`
+      warning: `LAIKA discounted value ($${laikaDiscountedValueUSD.toFixed(2)}) exceeds maximum ($${maxLaikaValueUSD.toFixed(2)}). Only $${maxLaikaValueUSD.toFixed(2)} will be used for boost.`
     };
   }
 
@@ -213,9 +235,15 @@ export function getBoostRecommendation(
  */
 export function formatBoostResult(result: LaikaBoostResult): string {
   const lines = [
-    `Base APY: ${result.finalAPY - result.additionalAPY}%`,
-    `LAIKA Boost: +${result.additionalAPY}%`,
-    `Final APY: ${result.finalAPY}%`,
+    `💎 LAIKA Market Value: $${result.laikaMarketValueUSD.toFixed(2)}`,
+    `🎁 Platform Discount: -${result.laikaDiscountPercent}% ($${result.laikaDiscountAmount.toFixed(2)})`,
+    `💰 Discounted Value: $${result.laikaDiscountedValueUSD.toFixed(2)}`,
+    ``,
+    `📊 APY Boost:`,
+    `   Base APY: ${result.finalAPY - result.additionalAPY}%`,
+    `   LAIKA Boost: +${result.additionalAPY}%`,
+    `   Final APY: ${result.finalAPY}%`,
+    ``,
     `Boost Fill: ${result.boostFillPercent}%`,
     `Max APY: ${result.maxAPY}%`,
     result.isFullBoost ? '✅ FULL BOOST ACHIEVED!' : `⚡ ${(100 - result.boostFillPercent).toFixed(2)}% more boost available`

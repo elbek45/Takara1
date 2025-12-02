@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket } from 'lucide-react'
 import { adminApiService } from '../../services/admin.api'
 import { toast } from 'sonner'
 
@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Withdrawals', href: '/admin/withdrawals', icon: DollarSign },
   { name: 'Vaults', href: '/admin/vaults', icon: Package },
   { name: 'Mining Stats', href: '/admin/mining', icon: TrendingUp },
+  { name: 'Deployment', href: '/admin/deployment', icon: Rocket },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-              <p className="text-sm text-gray-400">Takara Gold v2.1.1</p>
+              <p className="text-sm text-gray-400">Takara Gold v2.2 - LAIKA Boost</p>
             </div>
             <button
               onClick={handleLogout}

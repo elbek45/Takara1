@@ -291,24 +291,45 @@ export default function InvestmentModal({
               {laikaAmountLKI > 0 && (
                 <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
                   <div className="text-sm text-laika-purple font-medium mb-2">
-                    LAIKA Boost
+                    🚀 LAIKA Boost (with 10% Platform Discount)
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-gray-400">Amount</div>
-                      <div className="text-white font-semibold">
-                        {laikaAmountLKI.toLocaleString()} LKI
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-400">LAIKA Amount</div>
+                        <div className="text-white font-semibold">
+                          {laikaAmountLKI.toLocaleString()} LKI
+                        </div>
                       </div>
-                       <div className="text-xs text-gray-500">
-                        {/* @ts-ignore - Type definitions need updating */}
-                        ≈ ${calculation.investment.laikaValueUSD?.toFixed(2) || 0} USDT
+                      <div>
+                        <div className="text-xs text-gray-400">Boost APY</div>
+                        <div className="text-laika-green font-semibold">
+                          +{calculation.earnings.laikaBoostAPY}%
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Boost APY</div>
-                      <div className="text-laika-green font-semibold">
-                        +{calculation.earnings.laikaBoostAPY}%
+
+                    <div className="bg-black/20 rounded p-3 space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Market Value:</span>
+                        <span className="text-white">
+                          ${calculation.investment.laikaMarketValueUSD?.toFixed(2) || '0.00'}
+                        </span>
                       </div>
+                      <div className="flex justify-between text-green-400">
+                        <span>Platform Discount (10%):</span>
+                        <span>-${calculation.investment.laikaDiscountAmount?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-gray-700 pt-2">
+                        <span className="text-gray-300 font-medium">Final Value:</span>
+                        <span className="text-white font-semibold">
+                          ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'} USDT
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-gray-400 italic">
+                      💡 Your LAIKA is valued at 10% less for boost calculation, making it more cost-effective!
                     </div>
                   </div>
                 </div>

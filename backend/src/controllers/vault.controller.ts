@@ -17,6 +17,7 @@ import { calculateMining } from '../utils/mining.calculator';
 import { calculateEarnings } from '../utils/apy.calculator';
 import { VaultTier } from '../config/vaults.config';
 import { getLogger } from '../config/logger';
+import { getLaikaPrice, calculateLaikaValueWithDiscount } from '../services/price.service';
 
 const logger = getLogger('vault-controller');
 
@@ -257,19 +258,23 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
       ? (usdtAmount / 100) * Number(vault.takaraRatio)
       : 0;
 
-    // Get LKI to USDT exchange rate
-    const lkiToUsdtRate = parseFloat(process.env.LKI_TO_USDT_RATE || '0.01');
+    // Get current LAIKA price from Jupiter API (v2.2 - real-time price)
+    const laikaPrice = await getLaikaPrice();
+    logger.info({ laikaPrice }, 'Fetched LAIKA price for calculation');
 
-    // Convert LKI amount to USD value
+    // Convert LKI amount to USD market value
     const laikaAmountLKIValue = laikaAmountLKI || 0;
-    const laikaValueUSD = laikaAmountLKIValue * lkiToUsdtRate;
+    const laikaMarketValueUSD = laikaAmountLKIValue * laikaPrice;
 
-    // Calculate LAIKA boost
+    // Calculate discounted value with 10% platform discount
+    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountLKIValue);
+
+    // Calculate LAIKA boost (uses market value, applies 10% discount internally)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
       tier: vault.tier as VaultTier,
       usdtInvested: usdtAmount,
-      laikaValueUSD: laikaValueUSD
+      laikaMarketValueUSD: laikaMarketValueUSD
     });
 
     // Calculate USDT earnings
@@ -310,8 +315,20 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           usdtAmount,
           requiredTAKARA,
           laikaAmountLKI: laikaAmountLKIValue,
-          laikaValueUSD: laikaValueUSD,
-          lkiToUsdtRate: lkiToUsdtRate
+          laikaPrice: laikaPrice, // Real-time price from Jupiter
+          laikaMarketValueUSD: laikaMarketValueUSD, // Market value before discount
+          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // 10%
+          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // USD discount
+          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // After 10% discount
+          // For backward compatibility
+          laikaValueUSD: laikaDiscountInfo.finalValue,
+          lkiToUsdtRate: laikaPrice
+        },
+        laika: {
+          // Detailed LAIKA info for UI
+          ...boostResult,
+          maxBoostValue: usdtAmount * 0.90, // Max LAIKA value allowed (90% of USDT)
+          currentBoostPercent: boostResult.boostFillPercent
         },
         earnings: {
           baseAPY: Number(vault.baseAPY),
@@ -331,7 +348,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           totalTAKARA: miningResult.totalTakaraExpected
         },
         summary: {
-          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaValueUSD,
+          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaDiscountInfo.finalValue,
           totalUSDTReturn: usdtAmount + earningsResult.totalEarnings,
           totalTAKARAMined: miningResult.totalTakaraExpected,
           roi: ((earningsResult.totalEarnings / usdtAmount) * 100).toFixed(2) + '%'
