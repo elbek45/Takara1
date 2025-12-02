@@ -211,7 +211,7 @@ export default function LandingPage() {
             Ready to Start Earning?
           </h2>
           <p className="text-xl text-gray-300">
-            Connect your Solana wallet and start investing in premium vaults today
+            Connect your Solana and Ethereum wallet and start stacking in Takara vaults today
           </p>
           <Link
             to="/vaults"
