@@ -44,9 +44,15 @@ class ApiClient {
       (response) => response,
       (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-          // Clear token and redirect to login
-          localStorage.removeItem('auth_token')
-          window.location.href = '/'
+          // Don't redirect if it's a login/register request (expected 401 for wrong credentials)
+          const isAuthRequest = error.config?.url?.includes('/auth/login') ||
+                                error.config?.url?.includes('/auth/register')
+
+          if (!isAuthRequest) {
+            // Clear token and redirect to home only for protected endpoints
+            localStorage.removeItem('auth_token')
+            window.location.href = '/'
+          }
         }
         return Promise.reject(error)
       }

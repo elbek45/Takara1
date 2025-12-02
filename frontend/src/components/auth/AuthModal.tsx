@@ -32,11 +32,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setError('')
       onSuccess?.()
       onClose()
+      // Reload page to fetch user data and show wallet buttons
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || 'Login failed'
       setError(errorMessage)
-      toast.error(errorMessage)
+      // Don't show toast - error is already visible in modal
       console.error('Login error:', error)
     },
   })
@@ -54,11 +58,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setError('')
       onSuccess?.()
       onClose()
+      // Reload page to fetch user data and show wallet buttons
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || 'Registration failed'
       setError(errorMessage)
-      toast.error(errorMessage)
+      // Don't show toast - error is already visible in modal
       console.error('Registration error:', error)
     },
   })
