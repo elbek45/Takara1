@@ -18,26 +18,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
 
   const loginMutation = useMutation({
     mutationFn: async () => {
+      setError('')
       return await api.loginWithPassword(username, password)
     },
     onSuccess: () => {
       toast.success('Login successful!')
       setUsername('')
       setPassword('')
+      setError('')
       onSuccess?.()
       onClose()
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Login failed')
+      const errorMessage = error.response?.data?.message || 'Login failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
       console.error('Login error:', error)
     },
   })
 
   const registerMutation = useMutation({
     mutationFn: async () => {
+      setError('')
       return await api.register(username, password, email || undefined)
     },
     onSuccess: () => {
@@ -45,11 +51,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setUsername('')
       setPassword('')
       setEmail('')
+      setError('')
       onSuccess?.()
       onClose()
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Registration failed')
+      const errorMessage = error.response?.data?.message || 'Registration failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
       console.error('Registration error:', error)
     },
   })
@@ -74,9 +83,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setUsername('')
       setPassword('')
       setEmail('')
+      setError('')
       setMode('login')
       onClose()
     }
+  }
+
+  const handleModeToggle = () => {
+    setMode(mode === 'login' ? 'register' : 'login')
+    setError('')
   }
 
   if (!isOpen) return null
@@ -116,7 +131,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value)
+                    setError('')
+                  }}
                   className="w-full pl-10 pr-4 py-3 bg-background-elevated border border-green-900/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
                   placeholder="Enter your username"
                   disabled={isPending}
@@ -139,7 +157,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError('')
+                  }}
                   className="w-full px-4 py-3 bg-background-elevated border border-green-900/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
                   placeholder="your@email.com"
                   disabled={isPending}
@@ -159,7 +180,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError('')
+                  }}
                   className="w-full pl-10 pr-4 py-3 bg-background-elevated border border-green-900/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
                   placeholder="Enter your password"
                   disabled={isPending}
@@ -172,6 +196,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 </p>
               )}
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <p className="text-sm text-red-400 text-center">{error}</p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
@@ -193,7 +224,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           {/* Toggle Mode */}
           <div className="mt-6 text-center">
             <button
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              onClick={handleModeToggle}
               disabled={isPending}
               className="text-sm text-gray-400 hover:text-gold-500 transition-colors disabled:opacity-50"
             >
