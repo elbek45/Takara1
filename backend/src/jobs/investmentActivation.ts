@@ -80,7 +80,7 @@ export async function processInvestmentActivation(): Promise<void> {
 
         // Mint WEXEL NFT for investment
         let nftData = null;
-        if (platformWallet) {
+        if (platformWallet && investment.user.walletAddress) {
           try {
             nftData = await mintInvestmentNFT(
               {
