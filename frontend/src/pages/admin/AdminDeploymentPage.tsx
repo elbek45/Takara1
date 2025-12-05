@@ -44,18 +44,6 @@ export default function AdminDeploymentPage() {
     }
   })
 
-  // Deploy WEXEL mutation
-  const deployWexelMutation = useMutation({
-    mutationFn: () => adminApiService.deployWexel(),
-    onSuccess: () => {
-      toast.success('WEXEL deployment started!')
-      queryClient.invalidateQueries({ queryKey: ['deploymentStatus'] })
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Deployment failed')
-    }
-  })
-
   // Update environment mutation
   const updateEnvMutation = useMutation({
     mutationFn: (data: { takaraTokenMint?: string; infuraApiKey?: string; solanaRpcUrl?: string }) =>
@@ -77,13 +65,6 @@ export default function AdminDeploymentPage() {
       return
     }
     deployTakaraMutation.mutate()
-  }
-
-  const handleDeployWexel = () => {
-    if (!confirm('Are you sure you want to deploy WEXEL token? This will cost ~1 SOL (~$200).')) {
-      return
-    }
-    deployWexelMutation.mutate()
   }
 
   const handleUpdateEnv = () => {
@@ -133,7 +114,7 @@ export default function AdminDeploymentPage() {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* TAKARA Status */}
           <div className={`bg-background-card rounded-xl border p-6 ${
             deploymentStatus?.takaraDeployed ? 'border-green-900/20' : 'border-yellow-900/20'
@@ -174,36 +155,6 @@ export default function AdminDeploymentPage() {
             {config?.laikaTokenMint && (
               <a
                 href={`https://solscan.io/token/${config.laikaTokenMint}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-400 hover:text-blue-300 mt-2 flex items-center gap-1"
-              >
-                View on Solscan
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-
-          {/* WEXEL Status */}
-          <div className={`bg-background-card rounded-xl border p-6 ${
-            deploymentStatus?.wexelConfigured ? 'border-green-900/20' : 'border-yellow-900/20'
-          }`}>
-            <div className="flex items-center gap-3 mb-3">
-              {deploymentStatus?.wexelConfigured ? (
-                <CheckCircle className="h-6 w-6 text-green-400" />
-              ) : (
-                <AlertCircle className="h-6 w-6 text-yellow-400" />
-              )}
-              <span className="text-sm font-medium text-gray-300">WEXEL Token</span>
-            </div>
-            <div className={`text-2xl font-bold ${
-              deploymentStatus?.wexelConfigured ? 'text-green-400' : 'text-yellow-400'
-            }`}>
-              {deploymentStatus?.wexelConfigured ? 'Deployed' : 'Not Deployed'}
-            </div>
-            {config?.wexelTokenMint && config.wexelTokenMint !== 'TO_BE_DEPLOYED' && (
-              <a
-                href={`https://solscan.io/token/${config.wexelTokenMint}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-blue-400 hover:text-blue-300 mt-2 flex items-center gap-1"
@@ -389,74 +340,6 @@ export default function AdminDeploymentPage() {
                   <>
                     <Rocket className="h-5 w-5" />
                     Deploy TAKARA Token
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Deploy WEXEL Section */}
-        {!deploymentStatus?.wexelConfigured && (
-          <div className="bg-background-card rounded-xl border border-purple-900/20 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Rocket className="h-6 w-6 text-purple-400" />
-              <div>
-                <h2 className="text-xl font-semibold text-white">Deploy WEXEL Token</h2>
-                <p className="text-sm text-gray-400">Deploy WEXEL utility token to Solana mainnet</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-400 mb-2">Deployment Details</h3>
-                <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Token: Wexel (WXL)</li>
-                  <li>• Decimals: 9</li>
-                  <li>• Total Supply: 10,000,000,000 WXL</li>
-                  <li>• Initial Mint: 2,000,000,000 WXL (20% of total supply)</li>
-                  <li>• Cost: ~1 SOL (~$200)</li>
-                  <li>• Network: Solana Mainnet</li>
-                </ul>
-              </div>
-
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-purple-400 mb-2">💡 Use Cases</h3>
-                <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Governance rights</li>
-                  <li>• Platform fee discounts</li>
-                  <li>• Staking rewards</li>
-                  <li>• Premium features access</li>
-                </ul>
-              </div>
-
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-yellow-400 mb-2">⚠️ Prerequisites</h3>
-                <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Wallets must be generated ({deploymentStatus?.walletsGenerated ? '✅' : '❌'})</li>
-                  <li>• Solana wallet must have at least 1 SOL</li>
-                  <li>• Cannot be undone</li>
-                </ul>
-              </div>
-
-              <button
-                onClick={handleDeployWexel}
-                disabled={!deploymentStatus?.walletsGenerated || deployment?.inProgress || deployWexelMutation.isPending}
-                className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                  !deploymentStatus?.walletsGenerated || deployment?.inProgress || deployWexelMutation.isPending
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
-                }`}
-              >
-                {deployWexelMutation.isPending || deployment?.inProgress ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Deploying...
-                  </>
-                ) : (
-                  <>
-                    <Rocket className="h-5 w-5" />
-                    Deploy WEXEL Token
                   </>
                 )}
               </button>

@@ -196,16 +196,6 @@ export const adminApiService = {
   },
 
   /**
-   * Deploy WEXEL Token
-   */
-  deployWexel: async () => {
-    const response = await adminApi.post('/admin/deployment/deploy-wexel', {
-      confirm: true
-    })
-    return response.data
-  },
-
-  /**
    * Update Environment Variables
    */
   updateEnvironment: async (data: {

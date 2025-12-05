@@ -63,7 +63,7 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
   } = input;
 
   // Generate unique NFT name
-  const nftName = `Takara Gold ${vaultTier} #${investmentId.slice(0, 8)}`;
+  const nftName = `WEXEL ${vaultTier} #${investmentId.slice(0, 8)}`;
 
   // Create attributes
   const attributes = [
@@ -77,14 +77,14 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
   ];
 
   // Generate description
-  const description = `Takara Gold Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${miningPower}% TAKARA mining power. This NFT can be traded on the Takara Gold marketplace.`;
+  const description = `WEXEL Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${miningPower}% TAKARA mining power. This NFT represents ownership of the investment and can be traded on the Takara Gold marketplace.`;
 
   // TODO: Replace with actual IPFS image URL
   const imageUrl = `https://placeholder.takaragold.io/nft/${vaultTier.toLowerCase()}.png`;
 
   return {
     name: nftName,
-    symbol: 'TAKARA-INV',
+    symbol: 'WXL',
     description,
     image: imageUrl,
     attributes,
