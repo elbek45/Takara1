@@ -38,8 +38,8 @@ export default function VaultDetailPage() {
 
   const calculation = calculationResponse?.data
 
-  // Calculate max LKI based on 90% of USDT amount
-  // Using exchange rate: 1 LKI = 0.01 USDT, so 1 USDT = 100 LKI
+  // Calculate max LAIKA based on 90% of USDT amount
+  // Using exchange rate: 1 LAIKA = 0.01 USDT, so 1 USDT = 100 LAIKA
   // @ts-ignore - Type definitions need updating
   const lkiToUsdtRate = calculation?.investment?.lkiToUsdtRate || 0.01
   const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.9 : 0
@@ -112,9 +112,9 @@ export default function VaultDetailPage() {
                 <div className="bg-background-elevated rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Coins className="h-5 w-5 text-green-400" />
-                    <span className="text-sm text-gray-400">Mining Power</span>
+                    <span className="text-sm text-gray-400">Takara APY</span>
                   </div>
-                  <div className="text-2xl font-bold text-green-400">{vault.miningPower}</div>
+                  <div className="text-2xl font-bold text-green-400">up to {vault.takaraAPY}%</div>
                 </div>
 
                 <div className="bg-background-elevated rounded-lg p-4">
@@ -226,7 +226,7 @@ export default function VaultDetailPage() {
                     </label>
                     <div className="text-right">
                       <span className="text-lg text-laika-purple font-bold block">
-                        {laikaAmountLKI.toLocaleString()} LKI
+                        {laikaAmountLKI.toLocaleString()} LAIKA
                       </span>
                       <span className="text-xs text-gray-400">
                         ≈ ${(laikaAmountLKI * (calculation?.investment?.laikaPrice || lkiToUsdtRate)).toFixed(2)} USDT
@@ -237,7 +237,7 @@ export default function VaultDetailPage() {
                   {/* Input Field */}
                   <div className="mb-3">
                     <label className="block text-xs text-gray-400 mb-2">
-                      LAIKA Amount (Max: {maxLaikaBoostLKI.toLocaleString()} LKI)
+                      LAIKA Amount (Max: {maxLaikaBoostLKI.toLocaleString()} LAIKA)
                     </label>
                     <input
                       type="number"
@@ -254,7 +254,7 @@ export default function VaultDetailPage() {
                       className="w-full px-4 py-3 bg-background-elevated border border-laika-purple/30 focus:border-laika-purple rounded-lg text-white placeholder-gray-500 focus:outline-none"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Enter 0 for no boost, or up to {maxLaikaBoostLKI.toLocaleString()} LKI for maximum boost
+                      Enter 0 for no boost, or up to {maxLaikaBoostLKI.toLocaleString()} LAIKA for maximum boost
                     </p>
                   </div>
 

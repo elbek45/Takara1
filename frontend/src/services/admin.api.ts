@@ -124,7 +124,7 @@ export const adminApiService = {
     maxInvestment: number
     baseAPY: number
     maxAPY: number
-    miningPower: number
+    takaraAPY: number // v2.2: renamed from miningPower
     requireTAKARA: boolean
     takaraRatio?: number
     totalCapacity?: number
@@ -143,7 +143,7 @@ export const adminApiService = {
     maxInvestment?: number
     baseAPY?: number
     maxAPY?: number
-    miningPower?: number
+    takaraAPY?: number // v2.2: renamed from miningPower
     requireTAKARA?: boolean
     takaraRatio?: number
     totalCapacity?: number

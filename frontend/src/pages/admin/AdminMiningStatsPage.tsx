@@ -60,7 +60,7 @@ export default function AdminMiningStatsPage() {
               <div className="p-3 bg-gold-500/20 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-gold-500" />
               </div>
-              <span className="text-sm text-gray-400">Mining Power</span>
+              <span className="text-sm text-gray-400">Takara APY</span>
             </div>
             <div className="text-3xl font-bold text-white">
               {(stats?.totalMiningPower || 0).toLocaleString()}
@@ -151,7 +151,7 @@ export default function AdminMiningStatsPage() {
                     TAKARA Mined
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
-                    Mining Power
+                    Takara APY
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">
                     Investments
@@ -179,7 +179,7 @@ export default function AdminMiningStatsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-white">{miner.miningPower.toLocaleString()}</div>
+                      <div className="text-sm text-white">{miner.takaraAPY.toLocaleString()}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-gray-300">{miner.investments}</div>

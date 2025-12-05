@@ -177,9 +177,9 @@ export default function VaultsPage() {
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Mining Power</span>
+                    <span className="text-sm text-gray-400">Takara APY</span>
                     <span className="text-lg font-semibold text-green-400">
-                      {vault.miningPower}
+                      up to {vault.takaraAPY}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

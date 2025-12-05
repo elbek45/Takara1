@@ -4,6 +4,13 @@ import { ArrowRight, TrendingUp, Shield, Zap, Coins } from 'lucide-react'
 export default function LandingPage() {
   return (
     <div className="relative">
+      {/* Token Listing Banner - v2.2 */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-3 px-4 text-center">
+        <p className="text-white font-semibold text-sm sm:text-base">
+          🚀 Token listing will begin once all 21,000,000 TAKARA tokens are mined!
+        </p>
+      </div>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 to-transparent"></div>
@@ -143,7 +150,7 @@ export default function LandingPage() {
                   <span className="text-gold-500">✓</span> Up to 8% Max APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 50-150 Mining Power
+                  <span className="text-gold-500">✓</span> 50-150 Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-blue-400">•</span> 12M: No TAKARA needed
@@ -166,7 +173,7 @@ export default function LandingPage() {
                   <span className="text-gold-500">✓</span> Up to 10% Max APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 120-200 Mining Power
+                  <span className="text-gold-500">✓</span> 120-200 Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-blue-400">•</span> 12M: No TAKARA needed
@@ -189,7 +196,7 @@ export default function LandingPage() {
                   <span className="text-gold-500">✓</span> Up to 12% Max APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 250-350 Mining Power
+                  <span className="text-gold-500">✓</span> 250-350 Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-gold-400">⚡</span> ALL require TAKARA

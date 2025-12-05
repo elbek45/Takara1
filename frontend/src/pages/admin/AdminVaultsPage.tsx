@@ -15,7 +15,7 @@ interface VaultFormData {
   maxInvestment: number
   baseAPY: number
   maxAPY: number
-  miningPower: number
+  takaraAPY: number
   requireTAKARA: boolean
   takaraRatio: number
   totalCapacity: number
@@ -31,7 +31,7 @@ const initialFormData: VaultFormData = {
   maxInvestment: 999999999,
   baseAPY: 4,
   maxAPY: 6,
-  miningPower: 50,
+  takaraAPY: 50,
   requireTAKARA: false,
   takaraRatio: 0,
   totalCapacity: 10000000,
@@ -112,7 +112,7 @@ export default function AdminVaultsPage() {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      miningPower: vault.miningPower,
+      takaraAPY: vault.takaraAPY,
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: Number(vault.takaraRatio || 0),
       totalCapacity: Number(vault.totalCapacity || 10000000),
@@ -216,8 +216,8 @@ export default function AdminVaultsPage() {
                   <span className="text-gold-500 font-medium">{vault.maxAPY}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Mining Power:</span>
-                  <span className="text-green-400 font-medium">{vault.miningPower}</span>
+                  <span className="text-gray-400">Takara APY:</span>
+                  <span className="text-green-400 font-medium">{vault.takaraAPY}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Min Investment:</span>
@@ -479,11 +479,11 @@ function VaultForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Mining Power</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Takara APY</label>
           <input
             type="number"
-            value={formData.miningPower}
-            onChange={(e) => handleChange('miningPower', Number(e.target.value))}
+            value={formData.takaraAPY}
+            onChange={(e) => handleChange('takaraAPY', Number(e.target.value))}
             className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
             required
           />

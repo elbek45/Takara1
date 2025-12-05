@@ -161,7 +161,7 @@ export default function FAQPage() {
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4-6% Base APY</li>
               <li>• Up to 8% Max APY (with LAIKA boost)</li>
-              <li>• 50-150 Mining Power</li>
+              <li>• 50-150 Takara APY</li>
               <li>• ✓ 12M: No TAKARA required</li>
               <li>• ⚡ 30M: 20 TAKARA per 100 USDT</li>
               <li>• ⚡ 36M: 35 TAKARA per 100 USDT</li>
@@ -173,7 +173,7 @@ export default function FAQPage() {
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 4.5-7% Base APY</li>
               <li>• Up to 10% Max APY (with LAIKA boost)</li>
-              <li>• 120-200 Mining Power</li>
+              <li>• 120-200 Takara APY</li>
               <li>• ✓ 12M: No TAKARA required</li>
               <li>• ⚡ 30M: 30 TAKARA per 100 USDT</li>
               <li>• ⚡ 36M: 45 TAKARA per 100 USDT</li>
@@ -185,7 +185,7 @@ export default function FAQPage() {
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• 5-8% Base APY</li>
               <li>• Up to 12% Max APY (with LAIKA boost)</li>
-              <li>• 250-350 Mining Power</li>
+              <li>• 250-350 Takara APY</li>
               <li>• ⚡ 12M: 25 TAKARA per 100 USDT (premium tier)</li>
               <li>• ⚡ 30M: 40 TAKARA per 100 USDT</li>
               <li>• ⚡ 36M: 50 TAKARA per 100 USDT (highest)</li>
@@ -248,7 +248,7 @@ export default function FAQPage() {
           <p>Every vault has a mining power that determines how many TAKARA tokens you mine daily:</p>
 
           <div className="bg-background-elevated rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-white">Mining Power by Tier:</p>
+            <p className="font-semibold text-white">Takara APY by Tier:</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• <span className="text-blue-400">Starter:</span> 50-150 mining power</li>
               <li>• <span className="text-purple-400">Pro:</span> 120-200 mining power</li>

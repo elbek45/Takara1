@@ -82,7 +82,7 @@ export default function InvestmentModal({
       // Step 3: Transfer LAIKA if boosting (via Phantom/Solana)
       if (laikaAmountLKI > 0) {
         const totalSteps = calculation.investment.requiredTAKARA > 0 ? 4 : 3
-        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring LKI via Phantom (Solana) for APY boost...`)
+        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring LAIKA via Phantom (Solana) for APY boost...`)
         const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferLAIKA(
           publicKey!,
@@ -90,7 +90,7 @@ export default function InvestmentModal({
           laikaAmountLKI,
           signTransaction!
         )
-        toast.success('✓ LKI boost transferred successfully!')
+        toast.success('✓ LAIKA boost transferred successfully!')
         stepNumber++
       }
 
@@ -207,7 +207,7 @@ export default function InvestmentModal({
                       )}
                       {laikaAmountLKI > 0 && (
                         <div className="bg-laika-purple/10 border border-laika-purple/20 rounded p-2">
-                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmountLKI.toLocaleString()} LKI</span></div>
+                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmountLKI.toLocaleString()} LAIKA</span></div>
                           <div className="text-laika-green text-xs">Extra APY: +{calculation.earnings.laikaBoostAPY}%</div>
                         </div>
                       )}
@@ -326,7 +326,7 @@ export default function InvestmentModal({
                       <div>
                         <div className="text-xs text-gray-400">LAIKA Amount</div>
                         <div className="text-white font-semibold">
-                          {laikaAmountLKI.toLocaleString()} LKI
+                          {laikaAmountLKI.toLocaleString()} LAIKA
                         </div>
                       </div>
                       <div>
