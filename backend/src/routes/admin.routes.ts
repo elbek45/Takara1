@@ -7,6 +7,8 @@ import * as adminController from '../controllers/admin.controller';
 import * as adminAuthController from '../controllers/admin-auth.controller';
 import * as adminAdvancedController from '../controllers/admin-advanced.controller';
 import * as adminDeploymentController from '../controllers/admin-deployment.controller';
+import * as adminBoostController from '../controllers/admin-boost.controller';
+import * as adminTreasuryController from '../controllers/admin-treasury.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware';
 
@@ -62,5 +64,21 @@ router.post('/deployment/verify-takara', requireSuperAdmin, adminDeploymentContr
 // Network Configuration (Super Admin Only) - NEW v2.2 LAIKA Boost
 router.get('/network', requireSuperAdmin, adminAdvancedController.getNetworkConfig);
 router.put('/network', requireSuperAdmin, adminAdvancedController.updateNetworkConfig);
+
+// Boost Token Management (Super Admin Only) - NEW v2.2
+router.get('/boost-tokens', requireSuperAdmin, adminBoostController.getBoostTokens);
+router.get('/boost-tokens/statistics', requireSuperAdmin, adminBoostController.getBoostTokenStatistics);
+router.get('/boost-tokens/:symbol', requireSuperAdmin, adminBoostController.getBoostToken);
+router.post('/boost-tokens', requireSuperAdmin, adminBoostController.createBoostToken);
+router.put('/boost-tokens/:symbol', requireSuperAdmin, adminBoostController.updateBoostToken);
+router.delete('/boost-tokens/:symbol', requireSuperAdmin, adminBoostController.deleteBoostToken);
+
+// Treasury Management (Super Admin Only) - NEW v2.2
+router.get('/treasury/summary', requireSuperAdmin, adminTreasuryController.getTreasurySummary);
+router.get('/treasury/balances', requireSuperAdmin, adminTreasuryController.getTreasuryBalances);
+router.get('/treasury/balances/:symbol', requireSuperAdmin, adminTreasuryController.getTreasuryBalanceBySymbol);
+router.get('/treasury/statistics', requireSuperAdmin, adminTreasuryController.getStatistics);
+router.get('/treasury/tax-records', requireSuperAdmin, adminTreasuryController.getTaxRecords);
+router.post('/treasury/withdraw', requireSuperAdmin, adminTreasuryController.withdrawFromTreasury);
 
 export default router;

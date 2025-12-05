@@ -15,6 +15,7 @@ import { AdminRequest, DashboardStats, ProcessWithdrawalInput } from '../types';
 import { ERROR_MESSAGES } from '../config/constants';
 import { transferFromPlatform } from '../services/solana.service';
 import { transferUSDTFromPlatform } from '../services/ethereum.service';
+import { applyTakaraClaimTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 
 const logger = getLogger('admin-controller');
@@ -417,22 +418,61 @@ export async function processWithdrawal(req: Request, res: Response): Promise<vo
             return;
           }
 
+          // Apply 5% tax on TAKARA withdrawals (v2.2)
+          let amountToTransfer = Number(withdrawal.amount);
+          let taxAmount = 0;
+
+          if (withdrawal.tokenType === 'TAKARA') {
+            try {
+              const taxResult = await applyTakaraClaimTax({
+                userId: withdrawal.userId,
+                transactionId: id,
+                takaraAmount: Number(withdrawal.amount)
+                // Note: platformWallet would be needed for actual tax transfer
+              });
+
+              amountToTransfer = taxResult.amountAfterTax;
+              taxAmount = taxResult.taxAmount;
+
+              logger.info({
+                withdrawalId: id,
+                originalAmount: Number(withdrawal.amount),
+                taxAmount,
+                amountAfterTax: amountToTransfer
+              }, 'TAKARA withdrawal tax applied');
+            } catch (taxError: any) {
+              logger.error({
+                error: taxError,
+                withdrawalId: id
+              }, 'Failed to apply TAKARA tax');
+
+              res.status(500).json({
+                success: false,
+                message: `Tax application failed: ${taxError?.message || 'Unknown error'}`
+              });
+              return;
+            }
+          }
+
           if (process.env.ENABLE_REAL_TOKEN_TRANSFERS === 'true') {
             actualTxSignature = await transferFromPlatform(
               withdrawal.destinationWallet,
               tokenMint,
-              Number(withdrawal.amount)
+              amountToTransfer // Transfer amount AFTER tax
             );
 
             logger.info({
               withdrawalId: id,
               txSignature: actualTxSignature,
-              amount: Number(withdrawal.amount),
+              amountTransferred: amountToTransfer,
+              taxDeducted: taxAmount,
               blockchain: 'Solana'
             }, `${withdrawal.tokenType} transferred on Solana`);
           } else {
             logger.warn({
-              withdrawalId: id
+              withdrawalId: id,
+              amountToTransfer,
+              taxDeducted: taxAmount
             }, `${withdrawal.tokenType} transfer skipped (ENABLE_REAL_TOKEN_TRANSFERS not set to true)`);
           }
         }
