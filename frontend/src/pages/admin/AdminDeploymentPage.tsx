@@ -44,6 +44,18 @@ export default function AdminDeploymentPage() {
     }
   })
 
+  // Create WEXEL Collection mutation
+  const createWexelCollectionMutation = useMutation({
+    mutationFn: () => adminApiService.createWexelCollection(),
+    onSuccess: () => {
+      toast.success('WEXEL Collection creation started!')
+      queryClient.invalidateQueries({ queryKey: ['deploymentStatus'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Collection creation failed')
+    }
+  })
+
   // Update environment mutation
   const updateEnvMutation = useMutation({
     mutationFn: (data: { takaraTokenMint?: string; infuraApiKey?: string; solanaRpcUrl?: string }) =>
@@ -65,6 +77,13 @@ export default function AdminDeploymentPage() {
       return
     }
     deployTakaraMutation.mutate()
+  }
+
+  const handleCreateWexelCollection = () => {
+    if (!confirm('Are you sure you want to create WEXEL NFT Collection? This will cost ~0.01-0.02 SOL (~$2-4).')) {
+      return
+    }
+    createWexelCollectionMutation.mutate()
   }
 
   const handleUpdateEnv = () => {
@@ -155,6 +174,36 @@ export default function AdminDeploymentPage() {
             {config?.laikaTokenMint && (
               <a
                 href={`https://solscan.io/token/${config.laikaTokenMint}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 hover:text-blue-300 mt-2 flex items-center gap-1"
+              >
+                View on Solscan
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+
+          {/* WEXEL Collection Status */}
+          <div className={`bg-background-card rounded-xl border p-6 ${
+            deploymentStatus?.wexelCollectionDeployed ? 'border-green-900/20' : 'border-yellow-900/20'
+          }`}>
+            <div className="flex items-center gap-3 mb-3">
+              {deploymentStatus?.wexelCollectionDeployed ? (
+                <CheckCircle className="h-6 w-6 text-green-400" />
+              ) : (
+                <AlertCircle className="h-6 w-6 text-yellow-400" />
+              )}
+              <span className="text-sm font-medium text-gray-300">WEXEL Collection</span>
+            </div>
+            <div className={`text-2xl font-bold ${
+              deploymentStatus?.wexelCollectionDeployed ? 'text-green-400' : 'text-yellow-400'
+            }`}>
+              {deploymentStatus?.wexelCollectionDeployed ? 'Created' : 'Not Created'}
+            </div>
+            {status?.wexelCollectionAddress && status.wexelCollectionAddress !== 'TO_BE_DEPLOYED' && (
+              <a
+                href={`https://solscan.io/token/${status.wexelCollectionAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-blue-400 hover:text-blue-300 mt-2 flex items-center gap-1"
@@ -340,6 +389,73 @@ export default function AdminDeploymentPage() {
                   <>
                     <Rocket className="h-5 w-5" />
                     Deploy TAKARA Token
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Create WEXEL Collection Section */}
+        {!deploymentStatus?.wexelCollectionDeployed && (
+          <div className="bg-background-card rounded-xl border border-purple-900/20 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Rocket className="h-6 w-6 text-purple-500" />
+              <div>
+                <h2 className="text-xl font-semibold text-white">Create WEXEL NFT Collection</h2>
+                <p className="text-sm text-gray-400">Create Metaplex Collection for investment NFTs</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-blue-400 mb-2">Collection Details</h3>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>• Name: WEXEL Investment NFTs</li>
+                  <li>• Symbol: WXL</li>
+                  <li>• Royalty: 2.5%</li>
+                  <li>• Cost: ~0.01-0.02 SOL (~$2-4)</li>
+                  <li>• Network: Solana Mainnet</li>
+                </ul>
+              </div>
+
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-purple-400 mb-2">📝 What is a Collection?</h3>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>• Groups all WEXEL investment NFTs together</li>
+                  <li>• Enables unified display on marketplaces (Magic Eden, Solscan)</li>
+                  <li>• Allows collection-wide royalties</li>
+                  <li>• Each investment vault NFT will belong to this collection</li>
+                </ul>
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-yellow-400 mb-2">⚠️ Prerequisites</h3>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>• Wallets must be generated ({deploymentStatus?.walletsGenerated ? '✅' : '❌'})</li>
+                  <li>• Solana wallet must have at least 0.05 SOL</li>
+                  <li>• Create this before minting investment NFTs</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={handleCreateWexelCollection}
+                disabled={!deploymentStatus?.walletsGenerated || deployment?.inProgress || createWexelCollectionMutation.isPending}
+                className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                  !deploymentStatus?.walletsGenerated || deployment?.inProgress || createWexelCollectionMutation.isPending
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                }`}
+              >
+                {createWexelCollectionMutation.isPending || deployment?.inProgress ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Creating Collection...
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="h-5 w-5" />
+                    Create WEXEL Collection
                   </>
                 )}
               </button>

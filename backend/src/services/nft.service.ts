@@ -177,7 +177,11 @@ export async function mintInvestmentNFT(
     const metaplex = Metaplex.make(connection)
       .use(keypairIdentity(platformWallet));
 
-    const { nft, response } = await metaplex.nfts().create({
+    // Get WEXEL collection address
+    const wexelCollectionAddress = process.env.WEXEL_COLLECTION_ADDRESS;
+
+    // Build NFT creation options
+    const createOptions: any = {
       uri: metadataUri,
       name: metadata.name,
       symbol: metadata.symbol,
@@ -189,7 +193,17 @@ export async function mintInvestmentNFT(
           share: 100
         }
       ]
-    });
+    };
+
+    // Add collection if configured
+    if (wexelCollectionAddress && wexelCollectionAddress !== 'TO_BE_DEPLOYED') {
+      createOptions.collection = new PublicKey(wexelCollectionAddress);
+      logger.info({ collectionAddress: wexelCollectionAddress }, 'Minting NFT as part of WEXEL collection');
+    } else {
+      logger.warn('WEXEL_COLLECTION_ADDRESS not configured, minting without collection');
+    }
+
+    const { nft, response } = await metaplex.nfts().create(createOptions);
 
     const signature = response?.signature || 'unknown';
 

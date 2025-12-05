@@ -55,6 +55,7 @@ router.put('/vaults/:id/toggle', requireSuperAdmin, adminController.toggleVaultS
 // Deployment Management (Super Admin Only) - NEW v2.2
 router.get('/deployment/status', requireSuperAdmin, adminDeploymentController.getDeploymentStatus);
 router.post('/deployment/deploy-takara', requireSuperAdmin, adminDeploymentController.deployTakaraToken);
+router.post('/deployment/create-wexel-collection', requireSuperAdmin, adminDeploymentController.createWexelCollection);
 router.post('/deployment/update-env', requireSuperAdmin, adminDeploymentController.updateEnvironment);
 router.post('/deployment/verify-takara', requireSuperAdmin, adminDeploymentController.verifyTakaraToken);
 

@@ -215,6 +215,16 @@ export const adminApiService = {
     return response.data
   },
 
+  /**
+   * Create WEXEL NFT Collection
+   */
+  createWexelCollection: async () => {
+    const response = await adminApi.post('/admin/deployment/create-wexel-collection', {
+      confirm: true
+    })
+    return response.data
+  },
+
   // ==================== NETWORK CONFIGURATION ====================
 
   /**
