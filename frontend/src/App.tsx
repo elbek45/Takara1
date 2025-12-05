@@ -23,6 +23,8 @@ import AdminVaultsPage from './pages/admin/AdminVaultsPage'
 import AdminMiningStatsPage from './pages/admin/AdminMiningStatsPage'
 import AdminDeploymentPage from './pages/admin/AdminDeploymentPage'
 import AdminNetworkPage from './pages/admin/AdminNetworkPage'
+import AdminBoostTokensPage from './pages/admin/AdminBoostTokensPage'
+import AdminTreasuryPage from './pages/admin/AdminTreasuryPage'
 
 function App() {
   return (
@@ -50,6 +52,8 @@ function App() {
         <Route path="/admin/mining" element={<AdminMiningStatsPage />} />
         <Route path="/admin/deployment" element={<AdminDeploymentPage />} />
         <Route path="/admin/network" element={<AdminNetworkPage />} />
+        <Route path="/admin/boost-tokens" element={<AdminBoostTokensPage />} />
+        <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
       </Routes>
 
       <Toaster
