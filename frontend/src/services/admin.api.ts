@@ -259,6 +259,118 @@ export const adminApiService = {
     const response = await adminApi.put('/admin/network', data)
     return response.data
   },
+
+  // ========== Boost Tokens Management (v2.2) ==========
+
+  /**
+   * Get all boost tokens
+   */
+  getBoostTokens: async () => {
+    const response = await adminApi.get('/admin/boost-tokens')
+    return response.data
+  },
+
+  /**
+   * Get boost token statistics
+   */
+  getBoostTokenStatistics: async () => {
+    const response = await adminApi.get('/admin/boost-tokens/statistics')
+    return response.data
+  },
+
+  /**
+   * Create boost token
+   */
+  createBoostToken: async (data: {
+    tokenSymbol: string
+    tokenName: string
+    tokenMint: string
+    isEnabled?: boolean
+    maxBoostPercent?: number
+    displayOrder?: number
+  }) => {
+    const response = await adminApi.post('/admin/boost-tokens', data)
+    return response.data
+  },
+
+  /**
+   * Update boost token
+   */
+  updateBoostToken: async (symbol: string, data: {
+    isEnabled?: boolean
+    maxBoostPercent?: number
+    displayOrder?: number
+  }) => {
+    const response = await adminApi.put(`/admin/boost-tokens/${symbol}`, data)
+    return response.data
+  },
+
+  /**
+   * Delete boost token
+   */
+  deleteBoostToken: async (symbol: string) => {
+    const response = await adminApi.delete(`/admin/boost-tokens/${symbol}`)
+    return response.data
+  },
+
+  // ========== Treasury Management (v2.2) ==========
+
+  /**
+   * Get treasury summary
+   */
+  getTreasurySummary: async () => {
+    const response = await adminApi.get('/admin/treasury/summary')
+    return response.data
+  },
+
+  /**
+   * Get treasury balances
+   */
+  getTreasuryBalances: async () => {
+    const response = await adminApi.get('/admin/treasury/balances')
+    return response.data
+  },
+
+  /**
+   * Get tax statistics
+   */
+  getTaxStatistics: async (params?: {
+    startDate?: string
+    endDate?: string
+    sourceType?: 'TAKARA_CLAIM' | 'WEXEL_SALE'
+  }) => {
+    const response = await adminApi.get('/admin/treasury/statistics', { params })
+    return response.data
+  },
+
+  /**
+   * Get tax records
+   */
+  getTaxRecords: async (params?: {
+    page?: number
+    limit?: number
+    tokenSymbol?: string
+    sourceType?: 'TAKARA_CLAIM' | 'WEXEL_SALE'
+    startDate?: string
+    endDate?: string
+  }) => {
+    const response = await adminApi.get('/admin/treasury/tax-records', { params })
+    return response.data
+  },
+
+  /**
+   * Withdraw from treasury
+   */
+  withdrawFromTreasury: async (data: {
+    tokenSymbol: string
+    amount: number
+    destinationWallet: string
+    reason: string
+    txSignature?: string
+  }) => {
+    const response = await adminApi.post('/admin/treasury/withdraw', data)
+    return response.data
+  },
 }
 
 export default adminApiService
