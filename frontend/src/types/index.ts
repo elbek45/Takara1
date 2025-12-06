@@ -82,6 +82,18 @@ export interface Investment {
     additionalAPY: number
     isReturned: boolean
   }
+  // v2.2: TAKARA boost support
+  takaraBoost?: {
+    takaraAmount: number
+    takaraValueUSD: number
+    maxAllowedUSD: number
+    boostPercentage: number
+    additionalAPY: number
+    isReturned: boolean
+  }
+  // v2.2: Instant sale support
+  instantSalePrice?: number
+  isInstantSaleEnabled: boolean
   lastMiningDate?: string
 }
 

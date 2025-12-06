@@ -236,6 +236,76 @@ export default function PortfolioPage() {
                   </div>
                 )}
 
+                {/* TAKARA Boost Info - v2.2 */}
+                {investment.takaraBoost && (
+                  <div className="bg-green-900/10 border border-green-500/30 rounded-lg p-4 mb-6">
+                    <div className="text-sm text-green-400 font-medium mb-2">
+                      TAKARA Boost Active ⚡
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">TAKARA Amount</div>
+                        <div className="text-white font-semibold">
+                          {investment.takaraBoost.takaraAmount.toLocaleString()} TAKARA
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Value (USD)</div>
+                        <div className="text-white font-semibold">
+                          ${investment.takaraBoost.takaraValueUSD.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Additional APY</div>
+                        <div className="text-green-400 font-semibold">
+                          +{investment.takaraBoost.additionalAPY}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-gray-400">
+                      Boost: {investment.takaraBoost.boostPercentage}% of max allowed (${investment.takaraBoost.maxAllowedUSD})
+                    </div>
+                    {investment.takaraBoost.isReturned && (
+                      <div className="mt-2 text-sm text-green-400">✓ TAKARA returned</div>
+                    )}
+                  </div>
+                )}
+
+                {/* Instant Sale Info - v2.2 */}
+                {investment.status === 'ACTIVE' && investment.instantSalePrice && (
+                  <div className="bg-yellow-900/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm text-yellow-400 font-medium">
+                        Instant Sale {investment.isInstantSaleEnabled ? 'Enabled' : 'Disabled'}
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        investment.isInstantSaleEnabled
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {investment.isInstantSaleEnabled ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">Instant Sale Price</div>
+                        <div className="text-white font-semibold">
+                          ${investment.instantSalePrice.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Original Value</div>
+                        <div className="text-gray-300">
+                          ${investment.usdtAmount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-yellow-400">
+                      💡 20% discount for instant sale. Platform purchases at market value.
+                    </div>
+                  </div>
+                )}
+
                 {/* List / Cancel Listing Actions */}
                 {investment.status === 'ACTIVE' && (
                   <div className="border-t border-green-900/20 pt-4">
