@@ -7,12 +7,15 @@ import { Wallet, ExternalLink, Tag, X } from 'lucide-react'
 import { useClaimUSDT, useClaimTAKARA } from '../hooks/useInvestmentActions'
 import { useCancelListing } from '../hooks/useMarketplace'
 import ListNFTModal from '../components/marketplace/ListNFTModal'
+import TaxPreviewModal from '../components/TaxPreviewModal'
 
 export default function PortfolioPage() {
   const { connected } = useWallet()
   const [statusFilter, setStatusFilter] = useState<InvestmentStatus | 'ALL'>('ALL')
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null)
   const [isListModalOpen, setIsListModalOpen] = useState(false)
+  const [taxPreviewInvestment, setTaxPreviewInvestment] = useState<Investment | null>(null)
+  const [isTaxPreviewOpen, setIsTaxPreviewOpen] = useState(false)
   const claimUSDT = useClaimUSDT()
   const claimTAKARA = useClaimTAKARA()
   const cancelListing = useCancelListing()
@@ -55,6 +58,19 @@ export default function PortfolioPage() {
     const listingId = getListingId(investmentId)
     if (listingId) {
       await cancelListing.mutateAsync(listingId)
+    }
+  }
+
+  const handleTakaraClaimClick = (investment: Investment) => {
+    setTaxPreviewInvestment(investment)
+    setIsTaxPreviewOpen(true)
+  }
+
+  const handleConfirmTakaraClaim = async () => {
+    if (taxPreviewInvestment) {
+      await claimTAKARA.mutateAsync(taxPreviewInvestment.id)
+      setIsTaxPreviewOpen(false)
+      setTaxPreviewInvestment(null)
     }
   }
 
@@ -355,8 +371,11 @@ export default function PortfolioPage() {
                         <div className="text-xl font-bold text-green-400 mb-3">
                           {investment.pendingTAKARA.toFixed(2)}
                         </div>
+                        <div className="text-xs text-yellow-400 mb-2">
+                          ⚠️ 5% treasury tax will be applied
+                        </div>
                         <button
-                          onClick={() => claimTAKARA.mutate(investment.id)}
+                          onClick={() => handleTakaraClaimClick(investment)}
                           disabled={claimTAKARA.isPending}
                           className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white w-full py-2 rounded-lg font-medium text-sm transition-colors"
                         >
@@ -381,6 +400,21 @@ export default function PortfolioPage() {
             setSelectedInvestment(null)
           }}
           investment={selectedInvestment}
+        />
+      )}
+
+      {/* Tax Preview Modal */}
+      {taxPreviewInvestment && (
+        <TaxPreviewModal
+          isOpen={isTaxPreviewOpen}
+          onClose={() => {
+            setIsTaxPreviewOpen(false)
+            setTaxPreviewInvestment(null)
+          }}
+          onConfirm={handleConfirmTakaraClaim}
+          amount={taxPreviewInvestment.pendingTAKARA}
+          tokenSymbol="TAKARA"
+          isPending={claimTAKARA.isPending}
         />
       )}
     </div>
