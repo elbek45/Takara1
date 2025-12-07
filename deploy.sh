@@ -86,10 +86,10 @@ sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SER
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && pm2 start dist/app.js --name takara-backend"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "systemctl restart nginx"
 
-# Step 7: Health check
+# Step 7: Health check (via SSH to check localhost on server)
 echo -e "${YELLOW}🏥 Running health check...${NC}"
 sleep 5
-if curl -f http://${SERVER_IP}:3000/health; then
+if sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "curl -f http://localhost:3000/health"; then
   echo -e "${GREEN}✅ Backend is healthy${NC}"
 else
   echo -e "${RED}❌ Backend health check failed${NC}"
