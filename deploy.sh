@@ -64,14 +64,21 @@ ADMIN_RATE_LIMIT_MAX=5
 ENVEOF
 "
 
-# Step 4: Install dependencies and build
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm install && npm run build && npm prune --production"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/frontend && npm install && npm run build"
+# Step 4: Install dependencies, generate Prisma, migrate, and build
+echo -e "${YELLOW}📦 Installing backend dependencies...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm install"
 
-# Step 5: Database migrations
+echo -e "${YELLOW}🔧 Generating Prisma Client...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npx prisma generate"
+
 echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && npx prisma migrate deploy"
+
+echo -e "${YELLOW}🏗️  Building backend...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm run build && npm prune --production"
+
+echo -e "${YELLOW}📦 Installing and building frontend...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/frontend && npm install && npm run build"
 
 # Step 6: Restart services
 echo -e "${YELLOW}🔄 Restarting services...${NC}"
