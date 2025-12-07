@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../services/api'
 import { InvestmentStatus, Investment } from '../types'
-import { Wallet, ExternalLink, Tag, X } from 'lucide-react'
+import { Wallet, ExternalLink, Tag, X, Zap, DollarSign, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useClaimUSDT, useClaimTAKARA } from '../hooks/useInvestmentActions'
 import { useCancelListing } from '../hooks/useMarketplace'
 import ListNFTModal from '../components/marketplace/ListNFTModal'
 import TaxPreviewModal from '../components/TaxPreviewModal'
+import { toast } from 'react-hot-toast'
 
 export default function PortfolioPage() {
   const { connected } = useWallet()
+  const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<InvestmentStatus | 'ALL'>('ALL')
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null)
   const [isListModalOpen, setIsListModalOpen] = useState(false)
@@ -19,6 +21,19 @@ export default function PortfolioPage() {
   const claimUSDT = useClaimUSDT()
   const claimTAKARA = useClaimTAKARA()
   const cancelListing = useCancelListing()
+
+  // Instant Sale toggle mutation
+  const toggleInstantSaleMutation = useMutation({
+    mutationFn: ({ investmentId, enabled }: { investmentId: string; enabled: boolean }) =>
+      api.toggleInstantSale(investmentId, enabled),
+    onSuccess: (_, variables) => {
+      toast.success(`Instant sale ${variables.enabled ? 'enabled' : 'disabled'}`)
+      queryClient.invalidateQueries({ queryKey: ['myInvestments'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to toggle instant sale')
+    },
+  })
 
   const { data: investmentsResponse, isLoading } = useQuery({
     queryKey: ['myInvestments', statusFilter],
@@ -318,6 +333,53 @@ export default function PortfolioPage() {
                     </div>
                     <div className="mt-3 text-xs text-yellow-400">
                       💡 20% discount for instant sale. Platform purchases at market value.
+                    </div>
+                  </div>
+                )}
+
+                {/* Management Actions for Active Investments - v2.2 */}
+                {investment.status === 'ACTIVE' && (
+                  <div className="bg-background-elevated rounded-lg p-4 mb-6">
+                    <div className="text-sm font-semibold text-white mb-4">Investment Management</div>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {/* Instant Sale Toggle */}
+                      <button
+                        onClick={() => toggleInstantSaleMutation.mutate({
+                          investmentId: investment.id,
+                          enabled: !investment.isInstantSaleEnabled
+                        })}
+                        disabled={toggleInstantSaleMutation.isPending}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                          investment.isInstantSaleEnabled
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {investment.isInstantSaleEnabled ? (
+                          <ToggleRight className="h-5 w-5" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5" />
+                        )}
+                        {toggleInstantSaleMutation.isPending
+                          ? 'Processing...'
+                          : investment.isInstantSaleEnabled
+                          ? 'Disable Instant Sale'
+                          : 'Enable Instant Sale'}
+                      </button>
+
+                      {/* Add TAKARA Boost Button - disabled if already has boost */}
+                      <button
+                        disabled={!!investment.takaraBoost}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                          investment.takaraBoost
+                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title={investment.takaraBoost ? 'TAKARA boost already applied' : 'Apply TAKARA boost to increase APY'}
+                      >
+                        <Zap className="h-5 w-5" />
+                        {investment.takaraBoost ? 'Boost Applied' : 'Add TAKARA Boost'}
+                      </button>
                     </div>
                   </div>
                 )}
