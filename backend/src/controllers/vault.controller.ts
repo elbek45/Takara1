@@ -67,7 +67,7 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -164,7 +164,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -296,7 +296,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
 
     // Calculate TAKARA mining
     const miningResult = calculateMining({
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       usdtInvested: usdtAmount,
       currentDifficulty,
       durationMonths: vault.duration
@@ -341,7 +341,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           payoutAmount: earningsResult.payoutAmount
         },
         mining: {
-          miningPower: Number(vault.miningPower),
+          takaraAPY: Number(vault.takaraAPY),
           currentDifficulty,
           dailyTAKARA: miningResult.dailyTakaraFinal,
           monthlyTAKARA: miningResult.monthlyTakara,

@@ -41,7 +41,7 @@ export interface MintNFTInput {
   usdtAmount: number;
   finalAPY: number;
   duration: number;
-  miningPower: number;
+  takaraAPY: number;
   hasLaikaBoost: boolean;
   ownerWallet: string;
 }
@@ -57,7 +57,7 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
     usdtAmount,
     finalAPY,
     duration,
-    miningPower,
+    takaraAPY,
     hasLaikaBoost,
     ownerWallet
   } = input;
@@ -72,12 +72,12 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
     { trait_type: 'Investment Amount', value: `${usdtAmount} USDT` },
     { trait_type: 'APY', value: `${finalAPY}%` },
     { trait_type: 'Duration', value: `${duration} months` },
-    { trait_type: 'Mining Power', value: `${miningPower}%` },
+    { trait_type: 'Mining Power', value: `${takaraAPY}%` },
     { trait_type: 'LAIKA Boost', value: hasLaikaBoost ? 'Yes' : 'No' }
   ];
 
   // Generate description
-  const description = `WEXEL Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${miningPower}% TAKARA mining power. This NFT represents ownership of the investment and can be traded on the Takara Gold marketplace.`;
+  const description = `WEXEL Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${takaraAPY}% TAKARA mining power. This NFT represents ownership of the investment and can be traded on the Takara Gold marketplace.`;
 
   // TODO: Replace with actual IPFS image URL
   const imageUrl = `https://placeholder.takaragold.io/nft/${vaultTier.toLowerCase()}.png`;

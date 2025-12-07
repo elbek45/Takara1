@@ -93,7 +93,7 @@ export async function applyTakaraBoost(
     const boostInput: TakaraBoostInput = {
       baseAPY: Number(investment.finalAPY), // Current APY (may include LAIKA boost)
       maxAPY: Number(investment.vault.maxAPY),
-      tier: investment.vault.tier,
+      tier: investment.vault.tier as any, // Type cast to match VaultTier enum
       usdtInvested: Number(investment.usdtAmount),
       takaraMarketValueUSD
     };
@@ -120,7 +120,7 @@ export async function applyTakaraBoost(
     let depositTxSignature: string | undefined;
     if (platformWallet && TAKARA_TOKEN_MINT) {
       try {
-        depositTxSignature = await transferTakaraToPlat form(
+        depositTxSignature = await transferTakaraToPlatform(
           takaraAmount,
           userWallet,
           platformWallet
@@ -377,7 +377,7 @@ export async function getTakaraBoostStatistics() {
 /**
  * Transfer TAKARA tokens from user to platform
  */
-async function transferTakaraToPlat form(
+async function transferTakaraToPlatform(
   amount: number,
   fromWallet: string,
   platformWallet: Keypair

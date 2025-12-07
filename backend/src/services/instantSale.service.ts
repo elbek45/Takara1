@@ -245,6 +245,9 @@ export async function executeInstantSale(
     // Return TAKARA boost if exists
     if (investment.takaraBoost && !investment.takaraBoost.isReturned) {
       try {
+        if (!investment.user.walletAddress) {
+          throw new Error('User wallet address not found');
+        }
         await returnTakaraBoost({
           investmentId,
           userWallet: investment.user.walletAddress,

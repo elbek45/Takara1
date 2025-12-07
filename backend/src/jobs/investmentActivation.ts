@@ -90,7 +90,7 @@ export async function processInvestmentActivation(): Promise<void> {
                 usdtAmount: Number(investment.usdtAmount),
                 finalAPY: Number(investment.finalAPY),
                 duration: investment.vault.duration,
-                miningPower: Number(investment.vault.miningPower),
+                takaraAPY: Number(investment.vault.takaraAPY),
                 hasLaikaBoost: !!investment.laikaBoost,
                 ownerWallet: investment.user.walletAddress
               },

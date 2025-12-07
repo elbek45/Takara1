@@ -20,7 +20,7 @@ export const TAKARA_CONFIG = {
 } as const;
 
 export interface MiningInput {
-  miningPower: number; // From vault config (50, 100, 150, etc.)
+  takaraAPY: number; // From vault config (50, 100, 150, etc.)
   usdtInvested: number; // Investment amount
   currentDifficulty: number; // Current network difficulty
   durationMonths: number; // Vault duration
@@ -76,14 +76,14 @@ export function calculateDifficulty(factors: DifficultyFactors): number {
  * Where base_daily_rate is calculated to distribute total supply over mining period
  */
 export function calculateBaseMiningRate(
-  miningPower: number,
+  takaraAPY: number,
   usdtInvested: number
 ): number {
   // Base daily rate per $1000 invested at 100% mining power
   // This ensures fair distribution over 5 years
   const BASE_DAILY_PER_1000 = 10.0; // Adjustable
 
-  const powerMultiplier = miningPower / 100;
+  const powerMultiplier = takaraAPY / 100;
   const investmentMultiplier = usdtInvested / 1000;
 
   const dailyRaw = powerMultiplier * investmentMultiplier * BASE_DAILY_PER_1000;
@@ -95,10 +95,10 @@ export function calculateBaseMiningRate(
  * Calculate TAKARA mining rewards
  */
 export function calculateMining(input: MiningInput): MiningResult {
-  const { miningPower, usdtInvested, currentDifficulty, durationMonths } = input;
+  const { takaraAPY, usdtInvested, currentDifficulty, durationMonths } = input;
 
   // Calculate raw daily mining (before difficulty)
-  const dailyTakaraRaw = calculateBaseMiningRate(miningPower, usdtInvested);
+  const dailyTakaraRaw = calculateBaseMiningRate(takaraAPY, usdtInvested);
 
   // Apply difficulty
   const dailyTakaraFinal = dailyTakaraRaw / currentDifficulty;
@@ -125,17 +125,17 @@ export function calculateMining(input: MiningInput): MiningResult {
 export function compareMiningOptions(
   usdtInvested: number,
   currentDifficulty: number,
-  vaultOptions: Array<{ name: string; miningPower: number; duration: number }>
+  vaultOptions: Array<{ name: string; takaraAPY: number; duration: number }>
 ): Array<{
   name: string;
-  miningPower: number;
+  takaraAPY: number;
   duration: number;
   dailyTakara: number;
   totalTakara: number;
 }> {
   return vaultOptions.map(option => {
     const result = calculateMining({
-      miningPower: option.miningPower,
+      takaraAPY: option.takaraAPY,
       usdtInvested,
       currentDifficulty,
       durationMonths: option.duration
@@ -143,7 +143,7 @@ export function compareMiningOptions(
 
     return {
       name: option.name,
-      miningPower: option.miningPower,
+      takaraAPY: option.takaraAPY,
       duration: option.duration,
       dailyTakara: result.dailyTakaraFinal,
       totalTakara: result.totalTakaraExpected
@@ -178,13 +178,13 @@ export function projectFutureDifficulty(
  * Calculate mining efficiency score (TAKARA per USDT invested)
  */
 export function calculateMiningEfficiency(
-  miningPower: number,
+  takaraAPY: number,
   usdtInvested: number,
   currentDifficulty: number,
   durationMonths: number
 ): number {
   const result = calculateMining({
-    miningPower,
+    takaraAPY,
     usdtInvested,
     currentDifficulty,
     durationMonths
@@ -240,9 +240,9 @@ export function validateMiningInput(input: MiningInput): {
   valid: boolean;
   error?: string;
 } {
-  const { miningPower, usdtInvested, currentDifficulty, durationMonths } = input;
+  const { takaraAPY, usdtInvested, currentDifficulty, durationMonths } = input;
 
-  if (miningPower <= 0) {
+  if (takaraAPY <= 0) {
     return { valid: false, error: 'Mining power must be greater than 0' };
   }
 
