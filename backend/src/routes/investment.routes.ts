@@ -26,13 +26,13 @@ router.get('/:id', investmentController.getInvestmentById);
 router.post('/:id/claim-yield', investmentController.claimYield);
 router.post('/:id/claim-takara', investmentController.claimTakara);
 
-// TAKARA Boost (v2.2) - TODO: Implement controller functions
-// router.post('/:id/boost/takara', investmentController.applyTakaraBoost);
-// router.get('/:id/boost/takara', investmentController.getTakaraBoost);
+// TAKARA Boost (v2.2)
+router.post('/:id/boost/takara', investmentController.applyTakaraBoost);
+router.get('/:id/boost/takara', investmentController.getTakaraBoost);
 
-// Instant Sale (v2.2) - TODO: Implement controller functions
-// router.put('/:id/instant-sale', investmentController.toggleInstantSale);
-// router.post('/:id/instant-sale/execute', investmentController.executeInstantSale);
-// router.get('/:id/instant-sale/price', investmentController.getInstantSalePrice);
+// Instant Sale (v2.2)
+router.put('/:id/instant-sale', investmentController.toggleInstantSale);
+router.post('/:id/instant-sale/execute', investmentController.executeInstantSale);
+router.get('/:id/instant-sale/price', investmentController.getInstantSalePrice);
 
 export default router;
