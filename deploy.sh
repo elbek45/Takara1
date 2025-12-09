@@ -14,9 +14,15 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-SERVER_IP="159.203.104.235"
-SERVER_USER="root"
-SERVER_PASS="eLBEK451326a"
+# Load deployment credentials from deploy.env
+if [ -f "deploy.env" ]; then
+  source deploy.env
+else
+  echo "Error: deploy.env file not found!"
+  echo "Create deploy.env from deploy.env.example and fill in your credentials."
+  exit 1
+fi
+
 PROJECT_DIR="/var/www/takara-gold"
 BACKUP_DIR="/var/backups/takara-gold"
 
