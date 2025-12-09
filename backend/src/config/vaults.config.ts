@@ -55,8 +55,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 4.0,
-    maxAPY: 6.0, // +2% max LAIKA boost
+    baseAPY: 8.0,
+    maxAPY: 10.0, // +2% max LAIKA boost
     miningPower: 50,
     requireTAKARA: false,
     takaraRatio: null,
@@ -67,30 +67,30 @@ export const VAULTS: VaultConfig[] = [
     name: 'Starter Vault 30M',
     tier: VaultTier.STARTER,
     duration: 30,
-    payoutSchedule: PayoutSchedule.QUARTERLY,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 5.0,
-    maxAPY: 7.0, // +2% max LAIKA boost
+    baseAPY: 10.0,
+    maxAPY: 12.0, // +2% max LAIKA boost
     miningPower: 100, // Baseline
     requireTAKARA: true,
-    takaraRatio: 20, // 20 TAKARA per 100 USDT (5% base APY)
-    description: '30-month vault with quarterly payouts, requires 20 TAKARA per 100 USDT'
+    takaraRatio: 20, // 20 TAKARA per 100 USDT
+    description: '30-month vault with monthly payouts, requires 20 TAKARA per 100 USDT'
   },
   {
     id: 3,
     name: 'Starter Vault 36M',
     tier: VaultTier.STARTER,
     duration: 36,
-    payoutSchedule: PayoutSchedule.END_OF_TERM,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 6.0,
-    maxAPY: 8.0, // +2% max LAIKA boost
+    baseAPY: 12.0,
+    maxAPY: 14.0, // +2% max LAIKA boost
     miningPower: 150,
     requireTAKARA: true,
-    takaraRatio: 35, // 35 TAKARA per 100 USDT (6% base APY)
-    description: 'Long-term 36-month vault with end-of-term payout, requires 35 TAKARA per 100 USDT'
+    takaraRatio: 35, // 35 TAKARA per 100 USDT
+    description: 'Long-term 36-month vault with monthly payouts, requires 35 TAKARA per 100 USDT'
   },
 
   // ==================== TIER 2: PRO ====================
@@ -102,8 +102,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 4.5,
-    maxAPY: 7.0, // +2.5% max LAIKA boost
+    baseAPY: 12.0,
+    maxAPY: 14.5, // +2.5% max LAIKA boost
     miningPower: 120,
     requireTAKARA: false, // 12M Pro vault: no TAKARA required
     takaraRatio: null,
@@ -114,14 +114,14 @@ export const VAULTS: VaultConfig[] = [
     name: 'Pro Vault 30M',
     tier: VaultTier.PRO,
     duration: 30,
-    payoutSchedule: PayoutSchedule.QUARTERLY,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 5.5,
-    maxAPY: 8.5, // +3% max LAIKA boost
+    baseAPY: 20.5,
+    maxAPY: 23.5, // +3% max LAIKA boost
     miningPower: 170,
     requireTAKARA: true,
-    takaraRatio: 30, // 30 TAKARA per 100 USDT (5.5% base APY)
+    takaraRatio: 30, // 30 TAKARA per 100 USDT
     description: 'Pro 30-month vault with superior mining power, requires 30 TAKARA per 100 USDT'
   },
   {
@@ -129,14 +129,14 @@ export const VAULTS: VaultConfig[] = [
     name: 'Pro Vault 36M',
     tier: VaultTier.PRO,
     duration: 36,
-    payoutSchedule: PayoutSchedule.END_OF_TERM,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 7.0,
-    maxAPY: 10.0, // +3% max LAIKA boost
+    baseAPY: 25.0,
+    maxAPY: 28.0, // +3% max LAIKA boost
     miningPower: 200,
     requireTAKARA: true,
-    takaraRatio: 45, // 45 TAKARA per 100 USDT (7% base APY)
+    takaraRatio: 45, // 45 TAKARA per 100 USDT
     description: 'Long-term Pro vault with double mining power, requires 45 TAKARA per 100 USDT'
   },
 
@@ -149,11 +149,11 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 5.0,
-    maxAPY: 8.0, // +3% max LAIKA boost
+    baseAPY: 15.0,
+    maxAPY: 18.0, // +3% max LAIKA boost
     miningPower: 250,
     requireTAKARA: true, // Elite 12M REQUIRES TAKARA (exception!)
-    takaraRatio: 25, // 25 TAKARA per 100 USDT (5% base APY)
+    takaraRatio: 25, // 25 TAKARA per 100 USDT
     description: 'Elite 12-month vault for serious investors, requires 25 TAKARA per 100 USDT'
   },
   {
@@ -161,14 +161,14 @@ export const VAULTS: VaultConfig[] = [
     name: 'Elite Vault 30M',
     tier: VaultTier.ELITE,
     duration: 30,
-    payoutSchedule: PayoutSchedule.QUARTERLY,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 6.5,
-    maxAPY: 10.0, // +3.5% max LAIKA boost
+    baseAPY: 17.0,
+    maxAPY: 20.5, // +3.5% max LAIKA boost
     miningPower: 300,
     requireTAKARA: true,
-    takaraRatio: 40, // 40 TAKARA per 100 USDT (6.5% base APY)
+    takaraRatio: 40, // 40 TAKARA per 100 USDT
     description: 'Elite 30-month vault with triple mining power, requires 40 TAKARA per 100 USDT'
   },
   {
@@ -176,14 +176,14 @@ export const VAULTS: VaultConfig[] = [
     name: 'Elite Vault 36M',
     tier: VaultTier.ELITE,
     duration: 36,
-    payoutSchedule: PayoutSchedule.END_OF_TERM,
+    payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 8.0,
-    maxAPY: 12.0, // +4% max LAIKA boost - MAXIMUM BOOST
+    baseAPY: 19.0,
+    maxAPY: 23.0, // +4% max LAIKA boost - MAXIMUM BOOST
     miningPower: 350, // MAXIMUM MINING POWER
     requireTAKARA: true,
-    takaraRatio: 50, // 50 TAKARA per 100 USDT (8% base APY - highest)
+    takaraRatio: 50, // 50 TAKARA per 100 USDT
     description: 'Ultimate Elite vault with maximum APY and mining power, requires 50 TAKARA per 100 USDT'
   }
 ];

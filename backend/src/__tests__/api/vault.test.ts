@@ -216,7 +216,7 @@ describe('Vault API', () => {
         .post(`/api/vaults/${starterVaultId}/calculate`)
         .send({
           usdtAmount: 1000,
-          laikaAmountLKI: 50000 // Amount in LKI tokens (at 0.01 rate = 500 USD, 50% of USDT amount)
+          laikaAmountLKI: 50000 // Amount in LAIKA tokens (at 0.01 rate = 500 USD, 50% of USDT amount)
         });
 
       expect(response.status).toBe(200);

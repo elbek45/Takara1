@@ -19,6 +19,7 @@ import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calcul
 import { VaultTier } from '../config/vaults.config';
 import { verifyTransaction, transferTAKARAReward } from '../services/solana.service';
 import { verifyUSDTTransaction, transferUSDTFromPlatform } from '../services/ethereum.service';
+import { applyTakaraClaimTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 
 const logger = getLogger('investment-controller');
@@ -558,12 +559,19 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Transfer TAKARA to user's Solana wallet
+    // Apply 5% tax on TAKARA claim
+    const taxResult = await applyTakaraClaimTax({
+      userId,
+      transactionId: id,
+      takaraAmount: pendingAmount
+    });
+
+    // Transfer TAKARA to user's Solana wallet (after tax deduction)
     let txSignature: string;
     try {
-      txSignature = await transferTAKARAReward(user.walletAddress, pendingAmount);
+      txSignature = await transferTAKARAReward(user.walletAddress, taxResult.amountAfterTax);
     } catch (error: any) {
-      logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer TAKARA');
+      logger.error({ error, userId, amount: taxResult.amountAfterTax }, 'Failed to transfer TAKARA');
       res.status(500).json({
         success: false,
         message: 'Failed to transfer TAKARA. Please try again later.'
@@ -595,15 +603,19 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
     logger.info({
       investmentId: id,
       userId,
-      amount: pendingAmount,
+      amountBeforeTax: pendingAmount,
+      taxAmount: taxResult.taxAmount,
+      amountAfterTax: taxResult.amountAfterTax,
       txSignature
-    }, 'TAKARA claimed and transferred');
+    }, 'TAKARA claimed and transferred (with 5% tax)');
 
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.TAKARA_CLAIMED,
       data: {
-        amountClaimed: pendingAmount,
+        amountClaimed: taxResult.amountAfterTax,
+        amountBeforeTax: pendingAmount,
+        taxAmount: taxResult.taxAmount,
         totalMined: Number(investment.totalMinedTAKARA) + pendingAmount,
         txSignature
       }

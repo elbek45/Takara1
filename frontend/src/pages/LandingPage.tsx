@@ -13,7 +13,7 @@ export default function LandingPage() {
       {/* Token Listing Banner - v2.2 */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-3 px-4 text-center">
         <p className="text-white font-semibold text-sm sm:text-base">
-          🚀 Token listing will begin once all 21,000,000 TAKARA tokens are mined!
+          🚀 Листинг начнётся, когда намайнится все 21,000,000 TAKARA токенов!
         </p>
       </div>
 
@@ -55,16 +55,16 @@ export default function LandingPage() {
                 <div className="text-sm text-gray-400">Takara Vaults</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">4-8%</div>
+                <div className="text-3xl font-bold text-gradient-gold">12-25%</div>
                 <div className="text-sm text-gray-400">Base APY Range</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">Up to 12%</div>
-                <div className="text-sm text-gray-400">Max APY</div>
+                <div className="text-3xl font-bold text-gradient-gold">Up to 500%</div>
+                <div className="text-sm text-gray-400">Takara APY</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">100%</div>
-                <div className="text-sm text-gray-400">On Solana</div>
+                <div className="text-3xl font-bold text-gradient-gold">Monthly</div>
+                <div className="text-sm text-gray-400">Payouts</div>
               </div>
             </div>
           </div>
@@ -340,19 +340,19 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $100</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 4-6% Base APY
+                  <span className="text-gold-500">✓</span> 12M: 8% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> Up to 8% Max APY
+                  <span className="text-gold-500">✓</span> 30M: 10% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 50-150 Takara APY
+                  <span className="text-gold-500">✓</span> 36M: 12% Base APY
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-blue-400">⚡</span> Up to 500% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
-                  <span className="text-blue-400">•</span> 12M: No TAKARA needed
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> 30M/36M: 20-35 TAKARA
+                  <span className="text-green-400">•</span> Monthly payouts
                 </p>
               </div>
             </div>
@@ -363,19 +363,19 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $1,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 4.5-7% Base APY
+                  <span className="text-gold-500">✓</span> 12M: 12% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> Up to 10% Max APY
+                  <span className="text-gold-500">✓</span> 30M: 20.5% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 120-200 Takara APY
+                  <span className="text-gold-500">✓</span> 36M: 25% Base APY
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-purple-400">⚡</span> Up to 500% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
-                  <span className="text-blue-400">•</span> 12M: No TAKARA needed
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> 30M/36M: 30-45 TAKARA
+                  <span className="text-green-400">•</span> Monthly payouts
                 </p>
               </div>
             </div>
@@ -386,19 +386,19 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $5,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 5-8% Base APY
+                  <span className="text-gold-500">✓</span> 12M: 15% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> Up to 12% Max APY
+                  <span className="text-gold-500">✓</span> 30M: 17% Base APY
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 250-350 Takara APY
+                  <span className="text-gold-500">✓</span> 36M: 19% Base APY
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-gold-400">⚡</span> Up to 500% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
-                  <span className="text-gold-400">⚡</span> ALL require TAKARA
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> 25-50 per 100 USDT
+                  <span className="text-green-400">•</span> Monthly payouts
                 </p>
               </div>
             </div>

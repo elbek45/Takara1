@@ -262,7 +262,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     const laikaPrice = await getLaikaPrice();
     logger.info({ laikaPrice }, 'Fetched LAIKA price for calculation');
 
-    // Convert LKI amount to USD market value
+    // Convert LAIKA amount to USD market value
     const laikaAmountLKIValue = laikaAmountLKI || 0;
     const laikaMarketValueUSD = laikaAmountLKIValue * laikaPrice;
 
