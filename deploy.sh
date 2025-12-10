@@ -78,6 +78,9 @@ echo -e "${YELLOW}🔧 Generating Prisma Client...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npx prisma generate"
 
 echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
+# First, try to resolve any failed migrations
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && npx prisma migrate resolve --rolled-back 20251210_update_takara_apy 2>/dev/null || true"
+# Now run migrations
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && npx prisma migrate deploy"
 
 echo -e "${YELLOW}🏗️  Building backend...${NC}"

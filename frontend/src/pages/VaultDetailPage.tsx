@@ -13,7 +13,8 @@ export default function VaultDetailPage() {
   const { connected } = useWallet()
   const { isAuthenticated } = useAuth()
   const [usdtAmount, setUsdtAmount] = useState<string>('')
-  const [laikaAmountLKI, setLaikaAmountLKI] = useState<number>(0)
+  const [boostToken, setBoostToken] = useState<'LAIKA' | 'TAKARA'>('LAIKA')
+  const [laikaAmount, setLaikaAmount] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { data: vaultResponse, isLoading: vaultLoading } = useQuery({
@@ -25,13 +26,13 @@ export default function VaultDetailPage() {
   const vault = vaultResponse?.data?.vault
 
   const { data: calculationResponse, isLoading: calculating } = useQuery({
-    queryKey: ['calculate', id, usdtAmount, laikaAmountLKI],
+    queryKey: ['calculate', id, usdtAmount, laikaAmount],
     queryFn: () =>
       // @ts-ignore - Type definitions need updating
       api.calculateInvestment(id!, {
         usdtAmount: parseFloat(usdtAmount),
         // @ts-ignore - Type definitions need updating
-        laikaAmountLKI: laikaAmountLKI > 0 ? laikaAmountLKI : undefined,
+        laikaAmount: laikaAmount > 0 ? laikaAmount : undefined,
       }),
     enabled: !!id && !!usdtAmount && parseFloat(usdtAmount) > 0,
   })
@@ -41,9 +42,9 @@ export default function VaultDetailPage() {
   // Calculate max LAIKA based on 90% of USDT amount
   // Using exchange rate: 1 LAIKA = 0.01 USDT, so 1 USDT = 100 LAIKA
   // @ts-ignore - Type definitions need updating
-  const lkiToUsdtRate = calculation?.investment?.lkiToUsdtRate || 0.01
+  const laikaToUsdtRate = calculation?.investment?.laikaToUsdtRate || 0.01
   const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.9 : 0
-  const maxLaikaBoostLKI = maxLaikaBoostUSD / lkiToUsdtRate
+  const maxLaikaBoost = maxLaikaBoostUSD / laikaToUsdtRate
 
   if (vaultLoading) {
     return (
@@ -216,20 +217,67 @@ export default function VaultDetailPage() {
                 )}
               </div>
 
-              {/* LAIKA Boost Slider */}
+              {/* Boost Token Selector */}
+              <div className="mb-4">
+                <label className="text-sm font-semibold text-white mb-3 block">
+                  Choose Boost Token (Optional)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBoostToken('LAIKA')
+                      setLaikaAmount(0)
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      boostToken === 'LAIKA'
+                        ? 'bg-laika-purple/20 border-laika-purple shadow-lg shadow-laika-purple/20'
+                        : 'bg-background-elevated border-gray-700 hover:border-laika-purple/50'
+                    }`}
+                  >
+                    <div className="text-lg font-bold text-laika-purple mb-1">🐕 LAIKA</div>
+                    <div className="text-xs text-gray-400">Dog-themed meme token</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBoostToken('TAKARA')
+                      setLaikaAmount(0)
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      boostToken === 'TAKARA'
+                        ? 'bg-gold/20 border-gold shadow-lg shadow-gold/20'
+                        : 'bg-background-elevated border-gray-700 hover:border-gold/50'
+                    }`}
+                  >
+                    <div className="text-lg font-bold text-gold mb-1">💎 TAKARA</div>
+                    <div className="text-xs text-gray-400">Platform native token</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Boost Amount Input */}
               <div className="mb-6">
-                <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
+                <div className={`border rounded-lg p-4 ${
+                  boostToken === 'LAIKA'
+                    ? 'bg-gradient-laika/10 border-laika-purple/30'
+                    : 'bg-gold/5 border-gold/30'
+                }`}>
                   <div className="flex justify-between items-center mb-3">
-                    <label className="text-sm font-bold text-laika-purple flex items-center gap-2">
+                    <label className={`text-sm font-bold flex items-center gap-2 ${
+                      boostToken === 'LAIKA' ? 'text-laika-purple' : 'text-gold'
+                    }`}>
                       <span className="text-lg">🚀</span>
-                      LAIKA Boost (Optional)
+                      {boostToken} Boost (Optional)
                     </label>
                     <div className="text-right">
-                      <span className="text-lg text-laika-purple font-bold block">
-                        {laikaAmountLKI.toLocaleString()} LAIKA
+                      <span className={`text-lg font-bold block ${
+                        boostToken === 'LAIKA' ? 'text-laika-purple' : 'text-gold'
+                      }`}>
+                        {laikaAmount.toLocaleString()} {boostToken}
                       </span>
                       <span className="text-xs text-gray-400">
-                        ≈ ${(laikaAmountLKI * (calculation?.investment?.laikaPrice || lkiToUsdtRate)).toFixed(2)} USDT
+                        ≈ ${(laikaAmount * (calculation?.investment?.laikaPrice || laikaToUsdtRate)).toFixed(2)} USDT
                       </span>
                     </div>
                   </div>
@@ -237,40 +285,46 @@ export default function VaultDetailPage() {
                   {/* Input Field */}
                   <div className="mb-3">
                     <label className="block text-xs text-gray-400 mb-2">
-                      LAIKA Amount (Max: {maxLaikaBoostLKI.toLocaleString()} LAIKA)
+                      {boostToken} Amount (Max: {maxLaikaBoost.toLocaleString()} {boostToken})
                     </label>
                     <input
                       type="number"
                       min="0"
-                      max={maxLaikaBoostLKI}
+                      max={maxLaikaBoost}
                       step="100"
-                      value={laikaAmountLKI || ''}
+                      value={laikaAmount || ''}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0
-                        setLaikaAmountLKI(Math.min(value, maxLaikaBoostLKI))
+                        setLaikaAmount(Math.min(value, maxLaikaBoost))
                       }}
-                      placeholder="Enter LAIKA amount (0 for no boost)"
+                      placeholder={`Enter ${boostToken} amount (0 for no boost)`}
                       disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
-                      className="w-full px-4 py-3 bg-background-elevated border border-laika-purple/30 focus:border-laika-purple rounded-lg text-white placeholder-gray-500 focus:outline-none"
+                      className={`w-full px-4 py-3 bg-background-elevated border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                        boostToken === 'LAIKA'
+                          ? 'border-laika-purple/30 focus:border-laika-purple'
+                          : 'border-gold/30 focus:border-gold'
+                      }`}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Enter 0 for no boost, or up to {maxLaikaBoostLKI.toLocaleString()} LAIKA for maximum boost
+                      Enter 0 for no boost, or up to {maxLaikaBoost.toLocaleString()} {boostToken} for maximum boost
                     </p>
                   </div>
 
                   {/* Boost Preview */}
-                  {laikaAmountLKI > 0 && calculation && (
+                  {laikaAmount > 0 && calculation && (
                     <div className="bg-black/20 rounded p-3 space-y-2 text-xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-400">LAIKA Boost Value:</span>
-                        <span className="text-laika-purple font-bold text-sm">
+                        <span className="text-gray-400">{boostToken} Boost Value:</span>
+                        <span className={`font-bold text-sm ${
+                          boostToken === 'LAIKA' ? 'text-laika-purple' : 'text-gold'
+                        }`}>
                           ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'} USDT
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-400">1 LAIKA Price:</span>
+                        <span className="text-gray-400">1 {boostToken} Price:</span>
                         <span className="text-white font-medium text-sm">
-                          ${(calculation?.investment?.laikaPrice || lkiToUsdtRate).toFixed(4)} USDT
+                          ${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(4)} USDT
                         </span>
                       </div>
                       <div className="flex justify-between items-center border-t border-gray-700 pt-2">
@@ -284,11 +338,11 @@ export default function VaultDetailPage() {
 
                   {!usdtAmount || parseFloat(usdtAmount) === 0 ? (
                     <div className="text-xs text-gray-500 italic mt-2">
-                      💡 Enter USDT amount first to enable LAIKA boost
+                      💡 Enter USDT amount first to enable {boostToken} boost
                     </div>
-                  ) : laikaAmountLKI === 0 ? (
+                  ) : laikaAmount === 0 ? (
                     <div className="text-xs text-gray-400 italic mt-2">
-                      💡 Drag the slider to add LAIKA boost and increase your APY!
+                      💡 Enter {boostToken} amount to add boost and increase your APY!
                     </div>
                   ) : null}
                 </div>
@@ -406,7 +460,7 @@ export default function VaultDetailPage() {
           vaultId={id!}
           calculation={calculation}
           usdtAmount={parseFloat(usdtAmount)}
-          laikaAmountLKI={laikaAmountLKI}
+          laikaAmount={laikaAmount}
         />
       )}
     </div>

@@ -203,7 +203,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
 export async function calculateInvestment(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const { usdtAmount, laikaAmountLKI } = req.body;
+    const { usdtAmount, laikaAmount } = req.body;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -263,11 +263,11 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     logger.info({ laikaPrice }, 'Fetched LAIKA price for calculation');
 
     // Convert LAIKA amount to USD market value
-    const laikaAmountLKIValue = laikaAmountLKI || 0;
-    const laikaMarketValueUSD = laikaAmountLKIValue * laikaPrice;
+    const laikaAmountValue = laikaAmount || 0;
+    const laikaMarketValueUSD = laikaAmountValue * laikaPrice;
 
     // Calculate discounted value with 10% platform discount
-    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountLKIValue);
+    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountValue);
 
     // Calculate LAIKA boost (uses market value, applies 10% discount internally)
     const boostResult = calculateLaikaBoost({
@@ -314,7 +314,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
         investment: {
           usdtAmount,
           requiredTAKARA,
-          laikaAmountLKI: laikaAmountLKIValue,
+          laikaAmount: laikaAmountValue,
           laikaPrice: laikaPrice, // Real-time price from Jupiter
           laikaMarketValueUSD: laikaMarketValueUSD, // Market value before discount
           laikaDiscountPercent: laikaDiscountInfo.discountPercent, // 10%
@@ -322,7 +322,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // After 10% discount
           // For backward compatibility
           laikaValueUSD: laikaDiscountInfo.finalValue,
-          lkiToUsdtRate: laikaPrice
+          laikaToUsdtRate: laikaPrice
         },
         laika: {
           // Detailed LAIKA info for UI

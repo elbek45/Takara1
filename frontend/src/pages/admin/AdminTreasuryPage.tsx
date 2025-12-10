@@ -317,7 +317,7 @@ export default function AdminTreasuryPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">By Token</h3>
                 <div className="space-y-3">
-                  {stats.byToken.map((item) => (
+                  {(stats.byToken || []).map((item) => (
                     <div
                       key={item.tokenSymbol}
                       className="bg-background-elevated rounded-lg p-4 border border-gray-700/50"
@@ -339,7 +339,7 @@ export default function AdminTreasuryPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">By Source</h3>
                 <div className="space-y-3">
-                  {stats.bySource.map((item) => (
+                  {(stats.bySource || []).map((item) => (
                     <div
                       key={item.sourceType}
                       className="bg-background-elevated rounded-lg p-4 border border-gray-700/50"

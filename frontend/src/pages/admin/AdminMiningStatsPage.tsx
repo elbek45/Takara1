@@ -179,7 +179,7 @@ export default function AdminMiningStatsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-white">{miner.takaraAPY.toLocaleString()}</div>
+                      <div className="text-sm text-white">{miner.takaraAPY.toLocaleString()}%</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-gray-300">{miner.investments}</div>

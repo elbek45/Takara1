@@ -1,7 +1,33 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../services/api'
 import { VaultTier } from '../types'
+
+// Helper function to calculate TAKARA mining projection based on min investment
+const calculateTakaraProjection = (vault: any) => {
+  const minInvestment = vault.minInvestment
+  const takaraAPY = vault.takaraAPY
+  const duration = vault.duration
+
+  // Daily TAKARA mining rate (simplified)
+  const dailyRate = (takaraAPY / 100) / 365
+  const dailyTAKARA = minInvestment * dailyRate
+  const monthlyTAKARA = dailyTAKARA * 30
+  const totalTAKARA = dailyTAKARA * (duration * 30)
+
+  // Assuming TAKARA price of $0.05 (this could be fetched from API)
+  const takaraPrice = 0.05
+  const totalTAKARAValue = totalTAKARA * takaraPrice
+  const roi = ((totalTAKARAValue / minInvestment) * 100).toFixed(0)
+
+  return {
+    dailyTAKARA: dailyTAKARA.toFixed(2),
+    monthlyTAKARA: monthlyTAKARA.toFixed(2),
+    totalTAKARA: totalTAKARA.toFixed(0),
+    totalValue: totalTAKARAValue.toFixed(2),
+    roi
+  }
+}
 
 export default function VaultsPage() {
   const [selectedTier, setSelectedTier] = useState<VaultTier | 'ALL'>('ALL')
@@ -191,12 +217,43 @@ export default function VaultsPage() {
                 </div>
 
                 {/* Payout Schedule */}
-                <div className="mb-6 p-3 bg-background-elevated rounded-lg">
+                <div className="mb-4 p-3 bg-background-elevated rounded-lg">
                   <div className="text-xs text-gray-400 mb-1">Payout Schedule</div>
                   <div className="text-sm font-medium text-white">
                     {vault.payoutSchedule.replace('_', ' ')}
                   </div>
                 </div>
+
+                {/* TAKARA Mining Projection (based on min investment) */}
+                {(() => {
+                  const projection = calculateTakaraProjection(vault)
+                  return (
+                    <div className="mb-6 p-4 bg-gradient-to-br from-green-900/10 to-gold-500/5 border border-gold-500/20 rounded-lg">
+                      <div className="text-xs font-semibold text-gold-400 mb-3 flex items-center justify-between">
+                        <span>💎 TAKARA Mining Projection</span>
+                        <span className="text-[10px] text-gray-500">(Min: ${vault.minInvestment})</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-400">Daily Mining:</span>
+                          <span className="text-white font-semibold">{projection.dailyTAKARA} TAKARA</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-400">Total Mined:</span>
+                          <span className="text-green-400 font-semibold">{projection.totalTAKARA} TAKARA</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs pt-2 border-t border-gold-500/20">
+                          <span className="text-gray-400">Mining Value:</span>
+                          <span className="text-gold-400 font-bold">${projection.totalValue}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs bg-gold-500/10 -mx-2 px-2 py-1.5 rounded mt-2">
+                          <span className="text-gold-400 font-bold">Total ROI:</span>
+                          <span className="text-gold-400 font-bold text-sm">{projection.roi}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Active Investments */}
                 <div className="mb-6">

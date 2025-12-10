@@ -108,10 +108,10 @@ export interface InvestmentCalculation {
     usdtAmount: number
     requiredTAKARA: number
     laikaBoostUSD: number
-    lkiToUsdtRate?: number
+    laikaToUsdtRate?: number
     laikaValueUSD?: number
     // v2.2 - LAIKA price and discount fields
-    laikaAmountLKI?: number
+    laikaAmount?: number
     laikaPrice?: number
     laikaMarketValueUSD?: number
     laikaDiscountPercent?: number
@@ -256,5 +256,5 @@ export interface CreateInvestmentInput {
 export interface CalculateInvestmentInput {
   usdtAmount: number
   laikaBoostUSD?: number
-  laikaAmountLKI?: number
+  laikaAmount?: number
 }

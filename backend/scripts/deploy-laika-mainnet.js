@@ -120,9 +120,9 @@ async function deployLaikaToken() {
     console.log('');
 
     // Mint initial supply (50% = 500M for liquidity/distribution)
-    const initialMintAmount = BigInt(500_000_000) * BigInt(Math.pow(10, tokenSpecs.decimals)); // 500M LKI
+    const initialMintAmount = BigInt(500_000_000) * BigInt(Math.pow(10, tokenSpecs.decimals)); // 500M LAIKA
 
-    console.log('⏳ Minting initial supply (50% = 500M LKI)...');
+    console.log('⏳ Minting initial supply (50% = 500M LAIKA)...');
     const mintSignature = await mintTo(
       connection,
       platformWallet,
@@ -134,7 +134,7 @@ async function deployLaikaToken() {
 
     console.log('✅ Initial supply minted!');
     console.log('   Transaction: https://solscan.io/tx/' + mintSignature);
-    console.log('   Amount: ' + (Number(initialMintAmount) / Math.pow(10, tokenSpecs.decimals)).toLocaleString() + ' LKI');
+    console.log('   Amount: ' + (Number(initialMintAmount) / Math.pow(10, tokenSpecs.decimals)).toLocaleString() + ' LAIKA');
     console.log('');
 
     // Check final balance
@@ -188,8 +188,8 @@ async function deployLaikaToken() {
     console.log('⚠️  IMPORTANT:');
     console.log('   - Mint Authority: ' + mintInfo.mintAuthority.toBase58());
     console.log('   - Can mint additional LAIKA as needed');
-    console.log('   - Total planned supply: 1B LKI');
-    console.log('   - Currently minted: 500M LKI (50%)');
+    console.log('   - Total planned supply: 1B LAIKA');
+    console.log('   - Currently minted: 500M LAIKA (50%)');
     console.log('');
 
     return deploymentInfo;

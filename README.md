@@ -348,7 +348,5 @@ Contributions welcome! Please read CONTRIBUTING.md first.
 
 ---
 
-**Built with ❤️ using Claude Code**
-
 Version: 2.1.1
-Last Updated: November 2025
+Last Updated: December 2025

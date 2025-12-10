@@ -13,7 +13,7 @@ export default function LandingPage() {
       {/* Token Listing Banner - v2.2 */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-3 px-4 text-center">
         <p className="text-white font-semibold text-sm sm:text-base">
-          🚀 Листинг начнётся, когда намайнится все 21,000,000 TAKARA токенов!
+          🚀 Listing will start when all 21,000,000 TAKARA tokens are mined!
         </p>
       </div>
 
