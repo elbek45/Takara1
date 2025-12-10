@@ -14,7 +14,7 @@ interface InvestmentModalProps {
   vaultId: string
   calculation: InvestmentCalculation
   usdtAmount: number
-  laikaAmountLKI: number
+  laikaAmount: number
 }
 
 type Step = 'review' | 'transfer' | 'confirm' | 'success'
@@ -25,7 +25,7 @@ export default function InvestmentModal({
   vaultId,
   calculation,
   usdtAmount,
-  laikaAmountLKI,
+  laikaAmount,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
   const { transferUSDT, isConnected: metaMaskConnected, address: ethAddress } = useMetaMask()
@@ -44,7 +44,7 @@ export default function InvestmentModal({
         throw new Error('Phantom wallet must be connected for TAKARA payment. Your investment will be REJECTED without it!')
       }
 
-      if (laikaAmountLKI > 0 && (!publicKey || !signTransaction)) {
+      if (laikaAmount > 0 && (!publicKey || !signTransaction)) {
         throw new Error('Phantom wallet must be connected for LAIKA boost')
       }
 
@@ -66,7 +66,7 @@ export default function InvestmentModal({
       // Step 2: Transfer TAKARA if required (via Phantom/Solana)
       let stepNumber = 2
       if (calculation.investment.requiredTAKARA > 0) {
-        const totalSteps = laikaAmountLKI > 0 ? 4 : 3
+        const totalSteps = laikaAmount > 0 ? 4 : 3
         toast.info(`Step ${stepNumber}/${totalSteps}: Transferring TAKARA via Phantom (Solana)...`)
         const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferTAKARA(
@@ -80,14 +80,14 @@ export default function InvestmentModal({
       }
 
       // Step 3: Transfer LAIKA if boosting (via Phantom/Solana)
-      if (laikaAmountLKI > 0) {
+      if (laikaAmount > 0) {
         const totalSteps = calculation.investment.requiredTAKARA > 0 ? 4 : 3
         toast.info(`Step ${stepNumber}/${totalSteps}: Transferring LAIKA via Phantom (Solana) for APY boost...`)
         const platformWallet = solanaService.getPlatformWalletAddress()
         await solanaService.transferLAIKA(
           publicKey!,
           platformWallet,
-          laikaAmountLKI,
+          laikaAmount,
           signTransaction!
         )
         toast.success('✓ LAIKA boost transferred successfully!')
@@ -97,15 +97,15 @@ export default function InvestmentModal({
       setTxSignature(usdtSignature)
 
       // Final Step: Create investment record and Wexel on Solana
-      const totalSteps = (calculation.investment.requiredTAKARA > 0 ? 1 : 0) + (laikaAmountLKI > 0 ? 1 : 0) + 2
+      const totalSteps = (calculation.investment.requiredTAKARA > 0 ? 1 : 0) + (laikaAmount > 0 ? 1 : 0) + 2
       toast.info(`Step ${stepNumber}/${totalSteps}: Creating investment and minting Wexel on Solana...`)
       const response = await api.createInvestment({
         vaultId,
         usdtAmount,
         takaraAmount: calculation.investment.requiredTAKARA,
-        laikaBoost: laikaAmountLKI > 0
+        laikaBoost: laikaAmount > 0
           ? {
-              laikaAmount: laikaAmountLKI,
+              laikaAmount: laikaAmount,
               // @ts-ignore - Type definitions need updating
               laikaValueUSD: calculation.investment.laikaValueUSD || 0,
             }
@@ -205,13 +205,13 @@ export default function InvestmentModal({
                           <div className="text-green-400 font-medium">✓ TAKARA Required: <span className="font-bold">{calculation.investment.requiredTAKARA.toLocaleString()} TAKARA</span></div>
                         </div>
                       )}
-                      {laikaAmountLKI > 0 && (
+                      {laikaAmount > 0 && (
                         <div className="bg-laika-purple/10 border border-laika-purple/20 rounded p-2">
-                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmountLKI.toLocaleString()} LAIKA</span></div>
+                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmount.toLocaleString()} LAIKA</span></div>
                           <div className="text-laika-green text-xs">Extra APY: +{calculation.earnings.laikaBoostAPY}%</div>
                         </div>
                       )}
-                      {!calculation.investment.requiredTAKARA && !laikaAmountLKI && (
+                      {!calculation.investment.requiredTAKARA && !laikaAmount && (
                         <div className="text-gray-400 text-xs italic">No TAKARA or LAIKA required for this investment</div>
                       )}
                     </div>
@@ -316,7 +316,7 @@ export default function InvestmentModal({
                 </div>
               )}
 
-              {laikaAmountLKI > 0 && (
+              {laikaAmount > 0 && (
                 <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
                   <div className="text-sm text-laika-purple font-medium mb-2">
                     🚀 LAIKA Boost
@@ -326,7 +326,7 @@ export default function InvestmentModal({
                       <div>
                         <div className="text-xs text-gray-400">LAIKA Amount</div>
                         <div className="text-white font-semibold">
-                          {laikaAmountLKI.toLocaleString()} LAIKA
+                          {laikaAmount.toLocaleString()} LAIKA
                         </div>
                       </div>
                       <div>

@@ -371,6 +371,14 @@ export const adminApiService = {
     const response = await adminApi.post('/admin/treasury/withdraw', data)
     return response.data
   },
+
+  /**
+   * Get TAKARA pricing calculations
+   */
+  getTakaraPricingCalculations: async () => {
+    const response = await adminApi.get('/admin/pricing/takara')
+    return response.data
+  },
 }
 
 export default adminApiService

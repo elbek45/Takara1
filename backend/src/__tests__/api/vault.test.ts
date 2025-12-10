@@ -75,7 +75,7 @@ describe('Vault API', () => {
       expect(vault).toHaveProperty('maxInvestment');
       expect(vault).toHaveProperty('baseAPY');
       expect(vault).toHaveProperty('maxAPY');
-      expect(vault).toHaveProperty('miningPower');
+      expect(vault).toHaveProperty('takaraAPY');
     });
 
     it('should work without authentication', async () => {
@@ -216,7 +216,7 @@ describe('Vault API', () => {
         .post(`/api/vaults/${starterVaultId}/calculate`)
         .send({
           usdtAmount: 1000,
-          laikaAmountLKI: 50000 // Amount in LAIKA tokens (at 0.01 rate = 500 USD, 50% of USDT amount)
+          laikaAmount: 50000 // Amount in LAIKA tokens (at 0.01 rate = 500 USD, 50% of USDT amount)
         });
 
       expect(response.status).toBe(200);
@@ -234,7 +234,7 @@ describe('Vault API', () => {
         .post(`/api/vaults/${starterVaultId}/calculate`)
         .send({
           usdtAmount: 1000,
-          laikaAmountLKI: 95000 // 950 USD worth (95% of USDT), but will be capped at 90%
+          laikaAmount: 95000 // 950 USD worth (95% of USDT), but will be capped at 90%
         });
 
       expect(response.status).toBe(200);
@@ -315,7 +315,7 @@ describe('Vault API', () => {
       expect(vault.takaraRatio).toBeNull();
       expect(parseFloat(vault.baseAPY.toString())).toBe(4.0);
       expect(parseFloat(vault.maxAPY.toString())).toBe(8.0);
-      expect(parseFloat(vault.miningPower.toString())).toBe(50);
+      expect(parseFloat(vault.takaraAPY.toString())).toBe(50);
     });
 
     it('should correctly configure Pro vault', async () => {
@@ -327,7 +327,7 @@ describe('Vault API', () => {
       expect(parseFloat(vault.takaraRatio!.toString())).toBe(30);
       expect(parseFloat(vault.baseAPY.toString())).toBe(5.5);
       expect(parseFloat(vault.maxAPY.toString())).toBe(11.0);
-      expect(parseFloat(vault.miningPower.toString())).toBe(100);
+      expect(parseFloat(vault.takaraAPY.toString())).toBe(100);
     });
 
     it('should correctly configure Elite vault', async () => {
@@ -339,7 +339,7 @@ describe('Vault API', () => {
       expect(parseFloat(vault.takaraRatio!.toString())).toBe(50);
       expect(parseFloat(vault.baseAPY.toString())).toBe(8.0);
       expect(parseFloat(vault.maxAPY.toString())).toBe(16.0);
-      expect(parseFloat(vault.miningPower.toString())).toBe(350);
+      expect(parseFloat(vault.takaraAPY.toString())).toBe(350);
     });
   });
 

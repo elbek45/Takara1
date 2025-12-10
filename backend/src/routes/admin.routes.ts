@@ -81,4 +81,7 @@ router.get('/treasury/statistics', requireSuperAdmin, adminTreasuryController.ge
 router.get('/treasury/tax-records', requireSuperAdmin, adminTreasuryController.getTaxRecords);
 router.post('/treasury/withdraw', requireSuperAdmin, adminTreasuryController.withdrawFromTreasury);
 
+// TAKARA Pricing Calculator (Super Admin Only) - NEW
+router.get('/pricing/takara', requireSuperAdmin, adminAdvancedController.getTakaraPricingCalculations);
+
 export default router;

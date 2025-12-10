@@ -775,3 +775,38 @@ export async function updateNetworkConfig(req: Request, res: Response) {
     });
   }
 }
+
+// ==================== TAKARA PRICING CALCULATOR ====================
+
+/**
+ * GET /api/admin/pricing/takara
+ *
+ * Get comprehensive TAKARA pricing calculations for admin panel
+ *
+ * Returns:
+ * - Current TAKARA price (dynamic or calculated)
+ * - Mining economics and difficulty
+ * - Example calculations for different vaults
+ * - Price scenarios and recommendations
+ * - ROI analysis
+ */
+export async function getTakaraPricingCalculations(req: Request, res: Response) {
+  try {
+    logger.info('Fetching TAKARA pricing calculations');
+
+    const { getTakaraPricingCalculations } = await import('../services/price.service');
+    const calculations = await getTakaraPricingCalculations();
+
+    return res.json({
+      success: true,
+      data: calculations
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to get TAKARA pricing calculations');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch TAKARA pricing calculations'
+    });
+  }
+}

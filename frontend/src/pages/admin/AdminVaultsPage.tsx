@@ -112,7 +112,7 @@ export default function AdminVaultsPage() {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      takaraAPY: vault.takaraAPY,
+      takaraAPY: Number(vault.takaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: Number(vault.takaraRatio || 0),
       totalCapacity: Number(vault.totalCapacity || 10000000),
@@ -217,7 +217,7 @@ export default function AdminVaultsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Takara APY:</span>
-                  <span className="text-green-400 font-medium">{vault.takaraAPY}</span>
+                  <span className="text-green-400 font-medium">{vault.takaraAPY}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Min Investment:</span>

@@ -45,7 +45,7 @@ async function main() {
         takaraRatio: vault.takaraRatio,
         baseAPY: vault.baseAPY,
         maxAPY: vault.maxAPY,
-        miningPower: vault.miningPower,
+        takaraAPY: vault.takaraAPY,
         isActive: true
       }
     });
