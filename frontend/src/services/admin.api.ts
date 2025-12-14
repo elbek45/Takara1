@@ -379,6 +379,34 @@ export const adminApiService = {
     const response = await adminApi.get('/admin/pricing/takara')
     return response.data
   },
+
+  // ========== TAKARA Statistics & Supply Tracking (v2.3) ==========
+
+  /**
+   * Get TAKARA statistics (supply breakdown, pricing, treasury)
+   */
+  getTakaraStats: async () => {
+    const response = await adminApi.get('/admin/takara/stats')
+    return response.data
+  },
+
+  /**
+   * Get TAKARA history (supply and price over time)
+   */
+  getTakaraHistory: async (days: number = 30) => {
+    const response = await adminApi.get('/admin/takara/history', {
+      params: { days }
+    })
+    return response.data
+  },
+
+  /**
+   * Get TAKARA breakdown (detailed by investment/boost/mining/tax)
+   */
+  getTakaraBreakdown: async () => {
+    const response = await adminApi.get('/admin/takara/breakdown')
+    return response.data
+  },
 }
 
 export default adminApiService

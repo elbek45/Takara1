@@ -1,18 +1,20 @@
 /**
- * Price Service
+ * Price Service (v2.3)
  *
  * Fetches real-time cryptocurrency prices from various sources:
  * - Jupiter API (Solana tokens) - Primary
  * - CoinGecko API (Fallback)
+ * - Dynamic TAKARA pricing (time + supply based)
  *
  * Supports:
  * - LAIKA token price (Solana)
- * - TAKARA token price (when deployed)
+ * - TAKARA token price (dynamic calculation)
  * - Caching to reduce API calls
  */
 
 import axios from 'axios';
 import { getLogger } from '../config/logger';
+import { getTakaraPrice as getDynamicTakaraPrice } from './takara-pricing.service';
 
 const logger = getLogger('price-service');
 
@@ -286,71 +288,51 @@ export async function getTakaraPrice(): Promise<number> {
 }
 
 /**
- * Calculate TAKARA base price based on platform economics
+ * Calculate TAKARA base price based on platform economics (v2.3)
  *
- * Factors considered:
- * - Mining difficulty (current network state)
- * - Supply/demand ratio
- * - Utility value (entry requirements)
- * - Base price recommendation: $0.05
+ * Now uses dynamic pricing model that considers:
+ * - Time progression (5-year distribution period)
+ * - Circulating supply (mined + entry + boost TAKARA)
+ * - Mining difficulty
+ *
+ * Falls back to static price if dynamic calculation fails
  */
 async function calculateTakaraBasePrice(): Promise<number> {
-  const BASE_PRICE = 0.05; // $0.05 USD (recommended launch price)
-
-  // Get current mining difficulty to adjust price
-  const { prisma } = await import('../config/database');
-
   try {
-    const latestMiningStats = await prisma.miningStats.findFirst({
-      orderBy: { date: 'desc' }
-    });
-
-    const currentDifficulty = latestMiningStats
-      ? Number(latestMiningStats.currentDifficulty)
-      : 1.0;
-
-    // Price adjustment based on difficulty
-    // As difficulty increases, mining becomes harder, so price should increase
-    // Difficulty range: 1.0 - 10.0
-    // Price range: $0.05 - $0.10
-    const difficultyMultiplier = 1 + ((currentDifficulty - 1.0) / 9.0) * 1.0;
-    const adjustedPrice = BASE_PRICE * difficultyMultiplier;
-
-    logger.debug({
-      basePrice: BASE_PRICE,
-      currentDifficulty,
-      difficultyMultiplier,
-      adjustedPrice
-    }, 'Calculated TAKARA price');
-
-    return Number(adjustedPrice.toFixed(6));
-  } catch (error) {
-    logger.warn({ error }, 'Failed to calculate dynamic TAKARA price, using base price');
+    // Use dynamic pricing service (v2.3)
+    const dynamicPrice = await getDynamicTakaraPrice();
+    logger.info({ price: dynamicPrice }, 'Calculated dynamic TAKARA price');
+    return dynamicPrice;
+  } catch (error: any) {
+    logger.error({ error: error.message }, 'Failed to calculate dynamic TAKARA price, using fallback');
+    // Fallback to minimum initial price if dynamic calculation fails
+    const BASE_PRICE = 0.001; // $0.001 USD (initial price)
+    logger.warn({ price: BASE_PRICE }, 'Using fallback TAKARA price');
     return BASE_PRICE;
   }
 }
 
 /**
- * Calculate LAIKA value in USDT with 10% platform discount
+ * Calculate LAIKA value in USDT with platform valuation
  *
- * Formula:
- * laikaValueUSD = laikaAmount × laikaPrice × 0.90
+ * Platform accepts LAIKA at 10% below market price
+ * Formula: laikaValueUSD = laikaAmount × laikaPrice × 0.90
  *
- * This applies a 10% discount to the LAIKA value
+ * This is NOT a discount for users - platform values LAIKA cheaper than market
  */
 export async function calculateLaikaValueWithDiscount(laikaAmount: number): Promise<{
   laikaAmount: number;
   laikaPrice: number;
-  marketValue: number; // Without discount
-  discountPercent: number;
-  discountAmount: number;
-  finalValue: number; // With 10% discount
+  marketValue: number; // Market price
+  discountPercent: number; // Platform valuation discount (10%)
+  discountAmount: number; // Difference from market
+  finalValue: number; // Platform accepts at 90% of market
 }> {
   const laikaPrice = await getLaikaPrice();
   const marketValue = laikaAmount * laikaPrice;
-  const discountPercent = 10;
+  const discountPercent = 10; // Platform values LAIKA 10% below market
   const discountAmount = marketValue * (discountPercent / 100);
-  const finalValue = marketValue - discountAmount;
+  const finalValue = marketValue - discountAmount; // 90% of market value
 
   return {
     laikaAmount,
@@ -365,7 +347,7 @@ export async function calculateLaikaValueWithDiscount(laikaAmount: number): Prom
 /**
  * Calculate required LAIKA amount for desired USD value
  *
- * Takes into account the 10% discount
+ * Takes into account platform valuation (10% below market)
  */
 export async function calculateRequiredLaika(desiredUSDValue: number): Promise<{
   desiredUSDValue: number;

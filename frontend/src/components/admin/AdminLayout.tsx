@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket, Network, Coins, Wallet } from 'lucide-react'
+import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket, Network, Coins, Wallet, BarChart3 } from 'lucide-react'
 import { adminApiService } from '../../services/admin.api'
 import { toast } from 'sonner'
 
@@ -11,6 +11,7 @@ const navigation = [
   { name: 'Mining Stats', href: '/admin/mining', icon: TrendingUp },
   { name: 'Boost Tokens', href: '/admin/boost-tokens', icon: Coins },
   { name: 'Treasury', href: '/admin/treasury', icon: Wallet },
+  { name: 'TAKARA Stats', href: '/admin/takara-stats', icon: BarChart3 },
   { name: 'Deployment', href: '/admin/deployment', icon: Rocket },
   { name: 'Network', href: '/admin/network', icon: Network },
 ]

@@ -266,10 +266,10 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     const laikaAmountValue = laikaAmount || 0;
     const laikaMarketValueUSD = laikaAmountValue * laikaPrice;
 
-    // Calculate discounted value with 10% platform discount
+    // Calculate LAIKA value (platform accepts at 10% below market)
     const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountValue);
 
-    // Calculate LAIKA boost (uses market value, applies 10% discount internally)
+    // Calculate LAIKA boost (platform values LAIKA 10% below market)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
       tier: vault.tier as VaultTier,
@@ -316,10 +316,10 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           requiredTAKARA,
           laikaAmount: laikaAmountValue,
           laikaPrice: laikaPrice, // Real-time price from Jupiter
-          laikaMarketValueUSD: laikaMarketValueUSD, // Market value before discount
-          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // 10%
-          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // USD discount
-          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // After 10% discount
+          laikaMarketValueUSD: laikaMarketValueUSD, // Market price
+          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // Platform valuation: 10% below market
+          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // Difference from market
+          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // Platform accepts at 90% of market
           // For backward compatibility
           laikaValueUSD: laikaDiscountInfo.finalValue,
           laikaToUsdtRate: laikaPrice

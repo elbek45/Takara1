@@ -277,7 +277,17 @@ model MiningStats {
   id                String        @id @default(uuid())
 
   date              DateTime      @unique @default(now())
+
+  // TAKARA Supply Tracking (v2.3 - User requirement)
   totalMined        Decimal       @db.Decimal(20, 6) // Total TAKARA mined to date
+  totalEntryLocked  Decimal       @default(0) @db.Decimal(20, 6) // Entry requirement TAKARA (will be returned)
+  totalBoostLocked  Decimal       @default(0) @db.Decimal(20, 6) // Boost TAKARA (will be returned)
+  totalClaimTax     Decimal       @default(0) @db.Decimal(20, 6) // 5% claim tax (stays in treasury)
+
+  // Circulating Supply = totalMined + totalEntryLocked + totalBoostLocked (excludes claim tax)
+  // This represents all TAKARA that belongs to users (mined + will be returned)
+  circulatingSupply Decimal       @default(0) @db.Decimal(20, 6)
+
   activeMiners      Int           // Active investments mining
   currentDifficulty Decimal       @db.Decimal(10, 6)
 

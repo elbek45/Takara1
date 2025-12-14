@@ -1,12 +1,12 @@
 /**
- * TAKARA Boost Calculator v2.2
+ * TAKARA Boost Calculator v2.3
  *
- * Implements the TAKARA boost mechanism with platform discount (same as LAIKA)
+ * Implements the TAKARA boost mechanism (NO DISCOUNT - uses full market value)
  *
  * Key Rules:
  * 1. TAKARA market value = takaraAmount × takaraPrice (USDT)
- * 2. Platform applies 10% DISCOUNT: discounted value = market value × 0.90
- * 3. Max discounted value = USDT investment × 0.90 (max 90% of investment)
+ * 2. TAKARA uses FULL market value (NO discount)
+ * 3. Max TAKARA value = USDT investment × 0.90 (max 90% of investment)
  * 4. Max APY from vault config (updated in v2.2):
  *    - Pro 12M: 24% APY
  *    - Pro 30M: 41% APY
@@ -18,9 +18,6 @@
  */
 
 import { VaultTier } from '../config/vaults.config';
-
-// Platform discount on TAKARA value (same as LAIKA)
-export const TAKARA_DISCOUNT_PERCENT = 10;
 
 // Maximum APY achievable with full TAKARA boost (v2.2 values)
 // Note: These are defaults, actual values come from vault.maxAPY
@@ -39,12 +36,9 @@ export interface TakaraBoostInput {
 }
 
 export interface TakaraBoostResult {
-  takaraMarketValueUSD: number; // Market value of TAKARA (before discount)
-  takaraDiscountPercent: number; // Platform discount percent (10%)
-  takaraDiscountAmount: number; // Discount amount in USD
-  takaraDiscountedValueUSD: number; // Value after 10% discount
+  takaraMarketValueUSD: number; // Market value of TAKARA (full market value)
   maxTakaraValueUSD: number; // Maximum TAKARA allowed (90% of USDT)
-  effectiveTakaraValueUSD: number; // Actual TAKARA used for boost (min of discounted and max)
+  effectiveTakaraValueUSD: number; // Actual TAKARA used for boost (min of market value and max)
   boostFillPercent: number; // How much of max boost is filled (0-100%)
   maxAPY: number; // Maximum APY for this vault
   boostRange: number; // APY range available for boost
@@ -56,30 +50,23 @@ export interface TakaraBoostResult {
 /**
  * Calculate the final APY with TAKARA boost
  *
- * Formula (v2.2 with 10% discount):
- * 1. takara_discount = takara_market_value × 0.10 (10% platform discount)
- * 2. takara_discounted_value = takara_market_value - takara_discount
- * 3. max_takara_value = usdt_invested × 0.90 (max 90% of investment)
- * 4. effective_takara = min(takara_discounted_value, max_takara_value)
- * 5. boost_fill_percent = (effective_takara / max_takara_value) × 100
- * 6. boost_range = maxAPY - base_apy
- * 7. additional_apy = (boost_range × boost_fill_percent) / 100
- * 8. final_apy = base_apy + additional_apy
- * 9. final_apy = min(final_apy, maxAPY)
+ * Formula (v2.3 - NO DISCOUNT, uses full market value):
+ * 1. max_takara_value = usdt_invested × 0.90 (max 90% of investment)
+ * 2. effective_takara = min(takara_market_value, max_takara_value)
+ * 3. boost_fill_percent = (effective_takara / max_takara_value) × 100
+ * 4. boost_range = maxAPY - base_apy
+ * 5. additional_apy = (boost_range × boost_fill_percent) / 100
+ * 6. final_apy = base_apy + additional_apy
+ * 7. final_apy = min(final_apy, maxAPY)
  */
 export function calculateTakaraBoost(input: TakaraBoostInput): TakaraBoostResult {
   const { baseAPY, maxAPY, tier, usdtInvested, takaraMarketValueUSD } = input;
 
-  // Apply 10% platform discount to TAKARA value
-  const takaraDiscountPercent = TAKARA_DISCOUNT_PERCENT;
-  const takaraDiscountAmount = takaraMarketValueUSD * (takaraDiscountPercent / 100);
-  const takaraDiscountedValueUSD = takaraMarketValueUSD - takaraDiscountAmount;
-
   // Maximum TAKARA value = 90% of USDT investment
   const maxTakaraValueUSD = usdtInvested * 0.90;
 
-  // Effective TAKARA (discounted value cannot exceed maximum)
-  const effectiveTakaraValueUSD = Math.min(takaraDiscountedValueUSD, maxTakaraValueUSD);
+  // Effective TAKARA (market value cannot exceed maximum)
+  const effectiveTakaraValueUSD = Math.min(takaraMarketValueUSD, maxTakaraValueUSD);
 
   // Boost fill percentage (0-100%)
   const boostFillPercent = maxTakaraValueUSD > 0
@@ -101,9 +88,6 @@ export function calculateTakaraBoost(input: TakaraBoostInput): TakaraBoostResult
 
   return {
     takaraMarketValueUSD: Number(takaraMarketValueUSD.toFixed(6)),
-    takaraDiscountPercent,
-    takaraDiscountAmount: Number(takaraDiscountAmount.toFixed(6)),
-    takaraDiscountedValueUSD: Number(takaraDiscountedValueUSD.toFixed(6)),
     maxTakaraValueUSD: Number(maxTakaraValueUSD.toFixed(2)),
     effectiveTakaraValueUSD: Number(effectiveTakaraValueUSD.toFixed(6)),
     boostFillPercent: Number(boostFillPercent.toFixed(2)),
@@ -181,14 +165,13 @@ export function validateTakaraBoost(input: TakaraBoostInput): {
     };
   }
 
-  // Apply discount and check against maximum
-  const takaraDiscountedValueUSD = takaraMarketValueUSD * 0.90; // After 10% discount
+  // Check against maximum (no discount applied)
   const maxTakaraValueUSD = usdtInvested * 0.90;
 
-  if (takaraDiscountedValueUSD > maxTakaraValueUSD) {
+  if (takaraMarketValueUSD > maxTakaraValueUSD) {
     return {
       valid: true,
-      warning: `TAKARA discounted value ($${takaraDiscountedValueUSD.toFixed(2)}) exceeds maximum ($${maxTakaraValueUSD.toFixed(2)}). Only $${maxTakaraValueUSD.toFixed(2)} will be used for boost.`
+      warning: `TAKARA market value ($${takaraMarketValueUSD.toFixed(2)}) exceeds maximum ($${maxTakaraValueUSD.toFixed(2)}). Only $${maxTakaraValueUSD.toFixed(2)} will be used for boost.`
     };
   }
 
@@ -235,8 +218,7 @@ export function getBoostRecommendation(
 export function formatBoostResult(result: TakaraBoostResult): string {
   const lines = [
     `💎 TAKARA Market Value: $${result.takaraMarketValueUSD.toFixed(2)}`,
-    `🎁 Platform Discount: -${result.takaraDiscountPercent}% ($${result.takaraDiscountAmount.toFixed(2)})`,
-    `💰 Discounted Value: $${result.takaraDiscountedValueUSD.toFixed(2)}`,
+    `💰 Effective Value: $${result.effectiveTakaraValueUSD.toFixed(2)}`,
     ``,
     `📊 APY Boost:`,
     `   Base APY: ${result.finalAPY - result.additionalAPY}%`,
@@ -254,9 +236,9 @@ export function formatBoostResult(result: TakaraBoostResult): string {
  * Calculate combined boost (LAIKA + TAKARA)
  *
  * When both boosts are applied:
- * 1. Calculate LAIKA boost first
+ * 1. Calculate LAIKA boost first (platform values at 10% below market = 90%)
  * 2. Use LAIKA-boosted APY as base for TAKARA
- * 3. TAKARA boost adds on top
+ * 3. TAKARA boost adds on top (uses full market value, no discount)
  * 4. Final APY capped at vault maxAPY
  */
 export function calculateCombinedBoost(params: {
@@ -273,7 +255,7 @@ export function calculateCombinedBoost(params: {
 } {
   const { baseAPY, maxAPY, usdtInvested, laikaMarketValueUSD, takaraMarketValueUSD } = params;
 
-  // Step 1: Calculate LAIKA boost
+  // Step 1: Calculate LAIKA boost (platform values LAIKA 10% below market = 90%)
   const laikaDiscountedValue = laikaMarketValueUSD * 0.90;
   const maxBoostValue = usdtInvested * 0.90;
   const effectiveLaikaValue = Math.min(laikaDiscountedValue, maxBoostValue);
@@ -283,9 +265,8 @@ export function calculateCombinedBoost(params: {
   const laikaAdditionalAPY = (boostRange * laikaBoostFill) / 100;
   const apyAfterLaika = Math.min(baseAPY + laikaAdditionalAPY, maxAPY);
 
-  // Step 2: Calculate TAKARA boost (on top of LAIKA)
-  const takaraDiscountedValue = takaraMarketValueUSD * 0.90;
-  const effectiveTakaraValue = Math.min(takaraDiscountedValue, maxBoostValue);
+  // Step 2: Calculate TAKARA boost (on top of LAIKA, uses full market value)
+  const effectiveTakaraValue = Math.min(takaraMarketValueUSD, maxBoostValue);
   const takaraBoostFill = maxBoostValue > 0 ? (effectiveTakaraValue / maxBoostValue) * 100 : 0;
 
   const remainingBoostRange = maxAPY - apyAfterLaika;

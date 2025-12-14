@@ -1,15 +1,16 @@
 /**
- * Daily TAKARA Mining Job
+ * Daily TAKARA Mining Job (v2.3 - Updated for circulating supply)
  *
  * Runs daily to:
  * - Calculate mining rewards for all active investments
- * - Update mining difficulty
- * - Record mining stats
+ * - Update mining difficulty based on circulating supply
+ * - Record mining stats with TAKARA type breakdown
  * - Distribute TAKARA to pending balances
  */
 
 import { prisma } from '../config/database';
 import { calculateDifficulty, calculateMining, TAKARA_CONFIG } from '../utils/mining.calculator';
+import { calculateSupplyBreakdown } from '../services/supply.service';
 import { getLogger } from '../config/logger';
 
 const logger = getLogger('daily-mining-job');
@@ -21,12 +22,16 @@ export async function processDailyMining(): Promise<void> {
   try {
     logger.info('Starting daily TAKARA mining process');
 
-    // Get current mining stats
-    const latestStats = await prisma.miningStats.findFirst({
-      orderBy: { date: 'desc' }
-    });
+    // Get current supply breakdown (v2.3 - includes all TAKARA types)
+    const supplyBreakdown = await calculateSupplyBreakdown();
 
-    const totalMinedSoFar = latestStats ? Number(latestStats.totalMined) : 0;
+    logger.info({
+      circulatingSupply: supplyBreakdown.circulatingSupply,
+      totalMined: supplyBreakdown.totalMined,
+      totalEntryLocked: supplyBreakdown.totalEntryLocked,
+      totalBoostLocked: supplyBreakdown.totalBoostLocked,
+      totalClaimTax: supplyBreakdown.totalClaimTax
+    }, 'Current TAKARA supply breakdown');
 
     // Get all active investments
     const activeInvestments = await prisma.investment.findMany({
@@ -45,13 +50,16 @@ export async function processDailyMining(): Promise<void> {
       return;
     }
 
-    // Calculate current difficulty
+    // Calculate current difficulty based on circulating supply (v2.3)
     const currentDifficulty = calculateDifficulty({
-      totalMined: totalMinedSoFar,
+      circulatingSupply: supplyBreakdown.circulatingSupply,
       activeMiners: activeInvestments.length
     });
 
-    logger.info({ difficulty: currentDifficulty }, 'Current mining difficulty');
+    logger.info({
+      difficulty: currentDifficulty,
+      circulatingSupply: supplyBreakdown.circulatingSupply
+    }, 'Current mining difficulty');
 
     let totalMinedToday = 0;
     const miningRecords = [];
@@ -78,7 +86,7 @@ export async function processDailyMining(): Promise<void> {
           difficulty: currentDifficulty,
           takaraMinedRaw: miningResult.dailyTakaraRaw,
           takaraMinedFinal: dailyTakara,
-          totalMinedSoFar: totalMinedSoFar + totalMinedToday,
+          totalMinedSoFar: supplyBreakdown.totalMined + totalMinedToday,
           activeMiners: activeInvestments.length
         });
 
@@ -111,11 +119,18 @@ export async function processDailyMining(): Promise<void> {
       });
     }
 
-    // Create today's mining stats
+    // Recalculate supply breakdown after mining (v2.3)
+    const updatedSupply = await calculateSupplyBreakdown();
+
+    // Create today's mining stats with full supply breakdown
     await prisma.miningStats.create({
       data: {
         date: new Date(),
-        totalMined: totalMinedSoFar + totalMinedToday,
+        totalMined: updatedSupply.totalMined,
+        totalEntryLocked: updatedSupply.totalEntryLocked,
+        totalBoostLocked: updatedSupply.totalBoostLocked,
+        totalClaimTax: updatedSupply.totalClaimTax,
+        circulatingSupply: updatedSupply.circulatingSupply,
         activeMiners: activeInvestments.length,
         currentDifficulty
       }
@@ -123,10 +138,11 @@ export async function processDailyMining(): Promise<void> {
 
     logger.info({
       totalMinedToday,
-      totalMinedSoFar: totalMinedSoFar + totalMinedToday,
+      totalMined: updatedSupply.totalMined,
+      circulatingSupply: updatedSupply.circulatingSupply,
       difficulty: currentDifficulty,
       activeMiners: activeInvestments.length,
-      percentComplete: ((totalMinedSoFar + totalMinedToday) / TAKARA_CONFIG.TOTAL_SUPPLY * 100).toFixed(4) + '%'
+      percentCirculating: (updatedSupply.circulatingSupply / TAKARA_CONFIG.TOTAL_SUPPLY * 100).toFixed(4) + '%'
     }, 'Daily mining completed successfully');
   } catch (error) {
     logger.error({ error }, 'Daily mining job failed');
