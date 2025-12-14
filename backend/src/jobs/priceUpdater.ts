@@ -24,7 +24,7 @@ export async function runPriceUpdateJob(): Promise<void> {
     // Update TAKARA pricing calculations
     const takaraCalc = await getTakaraPricingCalculations();
     logger.info({
-      currentPrice: takaraCalc.current.currentPrice
+      currentPrice: takaraCalc.currentPrice.price
     }, 'TAKARA pricing updated');
 
     logger.info('✅ Price update job completed successfully');

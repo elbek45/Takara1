@@ -28,7 +28,7 @@ async function updatePrices() {
     // Обновить расчеты цен TAKARA
     const takaraCalculations = await getTakaraPricingCalculations();
     logger.info({
-      currentPrice: takaraCalculations.current.currentPrice
+      currentPrice: takaraCalculations.currentPrice.price
     }, 'TAKARA pricing updated successfully');
 
     logger.info('All prices updated successfully');
