@@ -36,7 +36,7 @@ export const TAKARA_PRICING_CONFIG = {
   DIFFICULTY_WEIGHT: 0.20, // 20% - Difficulty-based growth
 
   // Launch date (set when first TAKARA is mined)
-  LAUNCH_DATE: new Date('2024-11-27T00:00:00Z'), // v2.0 launch date
+  LAUNCH_DATE: new Date('2025-12-14T00:00:00Z'), // Manually set launch date
 } as const;
 
 export interface TakaraPriceBreakdown {

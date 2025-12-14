@@ -12,7 +12,7 @@
  */
 
 export const TAKARA_CONFIG = {
-  TOTAL_SUPPLY: 600_000_000, // 600 million TAKARA
+  TOTAL_SUPPLY: 21_000_000, // 21 million TAKARA
   MINING_PERIOD_MONTHS: 60, // 5 years
   BASE_DIFFICULTY: 1.0, // Base difficulty multiplier
   SUPPLY_FACTOR: 0.5, // How much total mined affects difficulty
