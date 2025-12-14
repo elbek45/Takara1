@@ -205,7 +205,7 @@ async function deployTakaraInBackground() {
     deploymentState.currentStep = 'Connecting to Solana';
     deploymentState.progress = 20;
 
-    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Check balance
@@ -273,11 +273,11 @@ async function deployTakaraInBackground() {
       tokenAccount: tokenAccount.address.toString(),
       mintAuthority: payer.publicKey.toString(),
       freezeAuthority: payer.publicKey.toString(),
-      network: 'mainnet-beta',
+      network: 'devnet',
       rpcUrl,
       deployedAt: new Date().toISOString(),
       deployedBy: 'admin',
-      solscanUrl: `https://solscan.io/token/${mint.toString()}`
+      solscanUrl: `https://solscan.io/token/${mint.toString()}?cluster=devnet`
     };
 
     deploymentState.currentStep = 'Saving deployment info';
@@ -381,7 +381,7 @@ export async function verifyTakaraToken(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Verify mint exists

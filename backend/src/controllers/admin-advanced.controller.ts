@@ -69,7 +69,7 @@ export async function getMiningStats(req: Request, res: Response) {
 
     try {
       const connection = new Connection(
-        process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
+        process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
         'confirmed'
       );
 
@@ -130,7 +130,7 @@ export async function getMiningStats(req: Request, res: Response) {
         blockchain: {
           mintAddress: process.env.TAKARA_TOKEN_MINT || null,
           mintAuthority,
-          network: process.env.SOLANA_NETWORK || 'mainnet-beta'
+          network: process.env.SOLANA_NETWORK || 'devnet'
         },
         updatedAt: new Date().toISOString()
       }
@@ -160,12 +160,12 @@ export async function getWallets(req: Request, res: Response) {
     const wallets = {
       solana: {
         platformWallet: process.env.PLATFORM_WALLET || null,
-        network: process.env.SOLANA_NETWORK || 'mainnet-beta',
+        network: process.env.SOLANA_NETWORK || 'devnet',
         rpcUrl: process.env.SOLANA_RPC_URL || null
       },
       ethereum: {
         platformAddress: process.env.PLATFORM_ETHEREUM_ADDRESS || null,
-        network: process.env.ETHEREUM_NETWORK || 'mainnet',
+        network: process.env.ETHEREUM_NETWORK || 'sepolia',
         rpcUrl: process.env.ETHEREUM_RPC_URL || null
       },
       tokens: {
