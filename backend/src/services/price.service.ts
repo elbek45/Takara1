@@ -15,6 +15,7 @@
 import axios from 'axios';
 import { getLogger } from '../config/logger';
 import { getTakaraPrice as getDynamicTakaraPrice } from './takara-pricing.service';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 
 const logger = getLogger('price-service');
 
@@ -501,7 +502,7 @@ export async function getTakaraPricingCalculations(): Promise<{
     ? Number(latestMiningStats.totalMined)
     : 0;
 
-  const TOTAL_SUPPLY = 600_000_000;
+  const TOTAL_SUPPLY = TAKARA_CONFIG.TOTAL_SUPPLY;
   const percentMined = (totalMined / TOTAL_SUPPLY) * 100;
 
   // Example calculations for different vaults

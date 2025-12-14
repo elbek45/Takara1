@@ -17,6 +17,7 @@ import { getLogger } from '../config/logger';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token';
 import bs58 from 'bs58';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 
 const logger = getLogger('admin-deployment-controller');
 
@@ -266,7 +267,7 @@ async function deployTakaraInBackground() {
       name: 'Takara Gold',
       symbol: 'TAKARA',
       decimals: 9,
-      totalSupply: 600_000_000,
+      totalSupply: TAKARA_CONFIG.TOTAL_SUPPLY, // 21M TAKARA
       initialMint: 60_000_000,
       mintAddress: mint.toString(),
       tokenAccount: tokenAccount.address.toString(),

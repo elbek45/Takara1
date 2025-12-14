@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { prisma } from '../config/database';
 import { getLogger } from '../config/logger';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 import { getMint } from '@solana/spl-token';
 
 const logger = getLogger('admin-advanced-controller');
@@ -25,7 +26,7 @@ const logger = getLogger('admin-advanced-controller');
  * GET /api/admin/mining-stats
  *
  * Returns:
- * - Total TAKARA supply (600M)
+ * - Total TAKARA supply (21M)
  * - TAKARA minted so far
  * - TAKARA remaining to mint
  * - Total TAKARA mined by users
@@ -83,7 +84,7 @@ export async function getMiningStats(req: Request, res: Response) {
     }
 
     // 5. Calculate statistics
-    const TOTAL_SUPPLY = 600_000_000; // 600M TAKARA
+    const TOTAL_SUPPLY = TAKARA_CONFIG.TOTAL_SUPPLY; // 21M TAKARA
     const DISTRIBUTION_YEARS = 5;
     const DAILY_BASE_RATE = TOTAL_SUPPLY / (DISTRIBUTION_YEARS * 365);
 

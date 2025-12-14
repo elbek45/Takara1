@@ -17,6 +17,7 @@ import { transferFromPlatform } from '../services/solana.service';
 import { transferUSDTFromPlatform } from '../services/ethereum.service';
 import { applyTakaraClaimTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 
 const logger = getLogger('admin-controller');
 
@@ -649,7 +650,7 @@ export async function getMiningStats(req: Request, res: Response): Promise<void>
       }
     });
 
-    const TOTAL_SUPPLY = 600_000_000;
+    const TOTAL_SUPPLY = TAKARA_CONFIG.TOTAL_SUPPLY; // 21M TAKARA
     const totalMined = latestStats ? Number(latestStats.totalMined) : 0;
     const percentMined = (totalMined / TOTAL_SUPPLY) * 100;
 

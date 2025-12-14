@@ -69,7 +69,7 @@ async function deployTakaraToken() {
     name: 'Takara Gold',
     symbol: 'TAKARA',
     decimals: 9,
-    totalSupply: 600_000_000, // 600 million
+    totalSupply: 21_000_000, // 21 million
     description: 'TAKARA is the mining reward token for Takara Gold DeFi platform'
   };
 

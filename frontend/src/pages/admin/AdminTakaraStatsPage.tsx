@@ -150,14 +150,14 @@ export default function AdminTakaraStatsPage() {
               <div className="h-px bg-neutral-700"></div>
 
               <div className="flex items-center justify-between">
-                <span className="text-neutral-400">Total Supply (600M)</span>
-                <span className="text-white">{(600_000_000).toLocaleString()}</span>
+                <span className="text-neutral-400">Total Supply</span>
+                <span className="text-white">{supply.totalSupply.toLocaleString()}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-neutral-400">% Circulating</span>
                 <span className="text-emerald-400 font-medium">
-                  {((supply.circulatingSupply / 600_000_000) * 100).toFixed(4)}%
+                  {((supply.circulatingSupply / supply.totalSupply) * 100).toFixed(4)}%
                 </span>
               </div>
 
