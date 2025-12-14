@@ -8,6 +8,7 @@ import { runDailyMiningJob } from './dailyTakaraMining';
 import { runActivationJob } from './investmentActivation';
 import { runPayoutJob } from './payoutDistribution';
 import { runLaikaReturnJob } from './laikaReturn';
+import { runPriceUpdateJob } from './priceUpdater';
 import { CRON_SCHEDULES } from '../config/constants';
 import { getLogger } from '../config/logger';
 
@@ -28,6 +29,7 @@ function cronToInterval(cronSchedule: string): number {
   // "0 0 * * *" = daily at midnight = 24 hours
   // "0 */6 * * *" = every 6 hours
   // "0 */1 * * *" = every hour
+  // "*/30 * * * *" = every 30 minutes
 
   if (cronSchedule === '0 0 * * *') {
     return 24 * 60 * 60 * 1000; // Daily
@@ -39,6 +41,10 @@ function cronToInterval(cronSchedule: string): number {
 
   if (cronSchedule === '0 */1 * * *' || cronSchedule === '0 1 * * *') {
     return 60 * 60 * 1000; // Hourly
+  }
+
+  if (cronSchedule === '*/30 * * * *') {
+    return 30 * 60 * 1000; // Every 30 minutes
   }
 
   // Default: hourly
@@ -90,6 +96,7 @@ export function startJobScheduler(): void {
     scheduleJob('Investment Activation', runActivationJob, CRON_SCHEDULES.VAULT_ACTIVATION);
     scheduleJob('Payout Distribution', runPayoutJob, CRON_SCHEDULES.PAYOUT_CHECK);
     scheduleJob('LAIKA Return', runLaikaReturnJob, CRON_SCHEDULES.LAIKA_RETURN);
+    scheduleJob('Price Update', runPriceUpdateJob, '*/30 * * * *'); // Every 30 minutes
 
     logger.info('✅ All background jobs scheduled');
   } catch (error) {
@@ -127,7 +134,8 @@ export function getJobStatus(): {
       'Daily TAKARA Mining',
       'Investment Activation',
       'Payout Distribution',
-      'LAIKA Return'
+      'LAIKA Return',
+      'Price Update'
     ]
   };
 }
@@ -150,6 +158,10 @@ export async function runJobManually(jobName: string): Promise<void> {
       break;
     case 'laika':
       await runLaikaReturnJob();
+      break;
+    case 'price':
+    case 'priceUpdate':
+      await runPriceUpdateJob();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

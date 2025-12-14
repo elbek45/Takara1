@@ -407,6 +407,14 @@ export const adminApiService = {
     const response = await adminApi.get('/admin/takara/breakdown')
     return response.data
   },
+
+  /**
+   * Get LAIKA token pricing information
+   */
+  getLaikaPricing: async () => {
+    const response = await adminApi.get('/admin/pricing/laika')
+    return response.data
+  },
 }
 
 export default adminApiService

@@ -85,6 +85,9 @@ router.post('/treasury/withdraw', requireSuperAdmin, adminTreasuryController.wit
 // TAKARA Pricing Calculator (Super Admin Only) - NEW
 router.get('/pricing/takara', requireSuperAdmin, adminAdvancedController.getTakaraPricingCalculations);
 
+// LAIKA Pricing (Super Admin Only) - NEW v2.3
+router.get('/pricing/laika', requireSuperAdmin, adminAdvancedController.getLaikaPricing);
+
 // TAKARA Statistics & Supply Tracking (Super Admin Only) - NEW v2.3
 router.get('/takara/stats', requireSuperAdmin, adminTakaraStatsController.getTakaraStats);
 router.get('/takara/history', requireSuperAdmin, adminTakaraStatsController.getTakaraHistory);

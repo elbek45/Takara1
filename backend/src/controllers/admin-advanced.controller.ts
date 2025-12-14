@@ -811,3 +811,40 @@ export async function getTakaraPricingCalculations(req: Request, res: Response) 
     });
   }
 }
+
+/**
+ * GET /api/admin/pricing/laika
+ * Get current LAIKA token price from multiple sources
+ * Returns cached price if available (5min cache)
+ */
+export async function getLaikaPricing(req: Request, res: Response) {
+  try {
+    logger.info('Fetching LAIKA price');
+
+    const { getLaikaPrice } = await import('../services/price.service');
+    const laikaPrice = await getLaikaPrice();
+
+    // Calculate platform acceptance value (10% below market)
+    const platformAcceptanceRate = 0.90;
+    const platformValue = laikaPrice * platformAcceptanceRate;
+
+    return res.json({
+      success: true,
+      data: {
+        currentPrice: laikaPrice,
+        platformAcceptanceValue: platformValue,
+        platformDiscount: 10, // percentage
+        sources: ['CoinMarketCap', 'Jupiter', 'CoinGecko'],
+        cacheAge: '5 minutes',
+        updatedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to get LAIKA price');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch LAIKA price'
+    });
+  }
+}
