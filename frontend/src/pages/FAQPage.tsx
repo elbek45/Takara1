@@ -204,7 +204,7 @@ export default function FAQPage() {
           <div className="bg-background-elevated rounded-lg p-4">
             <p className="font-semibold text-white mb-2">How it works:</p>
             <ul className="text-sm text-gray-300 space-y-1">
-              <li>• You can deposit up to 90% of your USDT value in LAIKA</li>
+              <li>• You can deposit up to 50% of your USDT value in LAIKA</li>
               <li>• Boost increases your APY up to the vault's Max APY</li>
               <li>• <strong>Max boost by tier:</strong> STARTER +2% | PRO +2.5-3% | ELITE +3-4%</li>
               <li>• Your LAIKA is returned at the end of the term</li>

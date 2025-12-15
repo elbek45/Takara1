@@ -138,7 +138,7 @@ export async function step1CreateInvestmentUSDT(req: AuthenticatedRequest, res: 
         nextStep: txVerified ? 'step2-tokens' : 'wait-usdt-confirmation',
         requirements: {
           takaraRequired,
-          laikaMaxAllowed: data.usdtAmount * 0.9, // 90% of USDT
+          laikaMaxAllowed: data.usdtAmount * 0.5, // 50% of USDT
           mustDepositTakara: takaraRequired > 0,
           canBoostWithLaika: true
         },
@@ -267,12 +267,12 @@ export async function step2DepositTokens(req: AuthenticatedRequest, res: Respons
     let finalAPY = Number(investment.vault.baseAPY);
 
     if (data.laikaAmount && data.laikaTxHash) {
-      const maxAllowedLaika = Number(investment.usdtAmount) * 0.9;
+      const maxAllowedLaika = Number(investment.usdtAmount) * 0.5;
 
       if (data.laikaAmount > maxAllowedLaika) {
         return res.status(400).json({
           success: false,
-          message: `Maximum LAIKA boost is ${maxAllowedLaika} (90% of USDT investment)`
+          message: `Maximum LAIKA boost is ${maxAllowedLaika} (50% of USDT investment)`
         });
       }
 

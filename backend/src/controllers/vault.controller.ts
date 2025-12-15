@@ -319,7 +319,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           laikaMarketValueUSD: laikaMarketValueUSD, // Market price
           laikaDiscountPercent: laikaDiscountInfo.discountPercent, // Platform valuation: 10% below market
           laikaDiscountAmount: laikaDiscountInfo.discountAmount, // Difference from market
-          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // Platform accepts at 90% of market
+          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // Platform accepts at 50% of market
           // For backward compatibility
           laikaValueUSD: laikaDiscountInfo.finalValue,
           laikaToUsdtRate: laikaPrice
@@ -327,7 +327,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
         laika: {
           // Detailed LAIKA info for UI
           ...boostResult,
-          maxBoostValue: usdtAmount * 0.90, // Max LAIKA value allowed (90% of USDT)
+          maxBoostValue: usdtAmount * 0.50, // Max LAIKA value allowed (50% of USDT)
           currentBoostPercent: boostResult.boostFillPercent
         },
         earnings: {

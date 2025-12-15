@@ -39,11 +39,11 @@ export default function VaultDetailPage() {
 
   const calculation = calculationResponse?.data
 
-  // Calculate max LAIKA based on 90% of USDT amount
+  // Calculate max LAIKA based on 50% of USDT amount
   // Using exchange rate: 1 LAIKA = 0.01 USDT, so 1 USDT = 100 LAIKA
   // @ts-ignore - Type definitions need updating
   const laikaToUsdtRate = calculation?.investment?.laikaToUsdtRate || 0.01
-  const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.9 : 0
+  const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.5 : 0
   const maxLaikaBoost = maxLaikaBoostUSD / laikaToUsdtRate
 
   if (vaultLoading) {
@@ -308,6 +308,19 @@ export default function VaultDetailPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       Enter 0 for no boost, or up to {maxLaikaBoost.toLocaleString()} {boostToken} for maximum boost
                     </p>
+
+                    {/* Max Boost Button */}
+                    <button
+                      onClick={() => setLaikaAmount(maxLaikaBoost)}
+                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
+                      className={`mt-2 w-full py-2.5 rounded-lg font-semibold transition-all text-sm ${
+                        boostToken === 'LAIKA'
+                          ? 'bg-laika-purple hover:bg-laika-purple/80 text-white'
+                          : 'bg-gold hover:bg-gold/80 text-black'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      🚀 Set Max Boost ({maxLaikaBoost.toLocaleString()} {boostToken})
+                    </button>
                   </div>
 
                   {/* Boost Preview */}
