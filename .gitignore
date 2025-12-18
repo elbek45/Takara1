@@ -69,3 +69,6 @@ Thumbs.db
 # Solana keys (NEVER commit private keys!)
 .solana-keys/
 *.json
+
+# Test wallet keys
+.keys/
