@@ -55,11 +55,11 @@ export default function LandingPage() {
                 <div className="text-sm text-gray-400">Takara Vaults</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">12-25%</div>
+                <div className="text-3xl font-bold text-gradient-gold">7.73-29%</div>
                 <div className="text-sm text-gray-400">Base APY Range</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">Up to 500%</div>
+                <div className="text-3xl font-bold text-gradient-gold">Up to 450%</div>
                 <div className="text-sm text-gray-400">Takara APY</div>
               </div>
               <div className="space-y-2">
@@ -91,7 +91,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">High APY</h3>
               <p className="text-gray-400">
-                Earn 4-8% base APY on USDT deposits, up to 12% max APY with optional LAIKA boost
+                Earn 7.73-25% base APY on USDT deposits, up to 29% max APY with optional LAIKA boost
               </p>
             </div>
 
@@ -340,16 +340,16 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $100</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 12M: 8% Base APY
+                  <span className="text-gold-500">✓</span> 18M: 7.73-9.73% APY (11.6% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 10% Base APY
+                  <span className="text-gold-500">✓</span> 30M: 24-26% APY (60% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 12% Base APY
+                  <span className="text-gold-500">✓</span> 36M: 25-27% APY (75% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-blue-400">⚡</span> Up to 500% Takara APY
+                  <span className="text-blue-400">⚡</span> Up to 150% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-green-400">•</span> Monthly payouts
@@ -363,16 +363,16 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $1,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 12M: 12% Base APY
+                  <span className="text-gold-500">✓</span> 18M: 7.73-10.23% APY (11.6% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 20.5% Base APY
+                  <span className="text-gold-500">✓</span> 30M: 24-27% APY (60% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 25% Base APY
+                  <span className="text-gold-500">✓</span> 36M: 25-28% APY (75% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-purple-400">⚡</span> Up to 500% Takara APY
+                  <span className="text-purple-400">⚡</span> Up to 350% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-green-400">•</span> Monthly payouts
@@ -386,16 +386,16 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold text-white mb-2">From $5,000</h3>
               <div className="space-y-3 text-gray-300">
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 12M: 15% Base APY
+                  <span className="text-gold-500">✓</span> 18M: 7.73-10.73% APY (11.6% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 17% Base APY
+                  <span className="text-gold-500">✓</span> 30M: 24-27.5% APY (60% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 19% Base APY
+                  <span className="text-gold-500">✓</span> 36M: 25-29% APY (75% total)
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-gold-400">⚡</span> Up to 500% Takara APY
+                  <span className="text-gold-400">⚡</span> Up to 450% Takara APY
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <span className="text-green-400">•</span> Monthly payouts

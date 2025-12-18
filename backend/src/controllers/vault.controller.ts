@@ -272,6 +272,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     // Calculate LAIKA boost (platform values LAIKA 10% below market)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
+      maxAPY: Number(vault.maxAPY),
       tier: vault.tier as VaultTier,
       usdtInvested: usdtAmount,
       laikaMarketValueUSD: laikaMarketValueUSD

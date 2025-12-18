@@ -40,11 +40,14 @@ export default function VaultDetailPage() {
   const calculation = calculationResponse?.data
 
   // Calculate max LAIKA based on 50% of USDT amount
-  // Using exchange rate: 1 LAIKA = 0.01 USDT, so 1 USDT = 100 LAIKA
+  // Platform applies 10% discount, so we need to account for that
+  // To get $X boost value after 10% discount, need market value = $X / 0.9
   // @ts-ignore - Type definitions need updating
   const laikaToUsdtRate = calculation?.investment?.laikaToUsdtRate || 0.01
   const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.5 : 0
-  const maxLaikaBoost = maxLaikaBoostUSD / laikaToUsdtRate
+  // Account for 10% platform discount
+  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 0.9
+  const maxLaikaBoost = maxLaikaMarketValueUSD / laikaToUsdtRate
 
   if (vaultLoading) {
     return (
@@ -316,7 +319,7 @@ export default function VaultDetailPage() {
                       className={`mt-2 w-full py-2.5 rounded-lg font-semibold transition-all text-sm ${
                         boostToken === 'LAIKA'
                           ? 'bg-laika-purple hover:bg-laika-purple/80 text-white'
-                          : 'bg-gold hover:bg-gold/80 text-black'
+                          : 'bg-gold-500 hover:bg-gold-400 text-black'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       🚀 Set Max Boost ({maxLaikaBoost.toLocaleString()} {boostToken})

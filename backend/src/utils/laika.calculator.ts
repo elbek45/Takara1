@@ -1,17 +1,16 @@
 /**
- * LAIKA Boost Calculator v2.2
+ * LAIKA Boost Calculator v2.4
  *
  * Implements the LAIKA boost mechanism with platform discount
  *
  * Key Rules:
  * 1. LAIKA market value = laikaAmount × laikaPrice (USDT)
- * 2. Platform applies 10% DISCOUNT: discounted value = market value × 0.50
+ * 2. Platform applies 10% DISCOUNT: discounted value = market value × 0.90 (10% off)
  * 3. Max discounted value = USDT investment × 0.50 (max 50% of investment)
- * 4. Max APY by tier:
- *    - Tier 1 (Starter): 8% APY
- *    - Tier 2 (Pro): 10% APY
- *    - Tier 3 (Elite): 12% APY
+ * 4. Max APY depends on vault baseAPY and tier boost range
  * 5. LAIKA is returned to NFT owner at end of term
+ *
+ * Note: This calculator is used for estimations. Actual max APY comes from vault config.
  */
 
 import { VaultTier } from '../config/vaults.config';
@@ -19,15 +18,9 @@ import { VaultTier } from '../config/vaults.config';
 // Platform discount on LAIKA value
 export const LAIKA_DISCOUNT_PERCENT = 10;
 
-// Maximum APY achievable with full LAIKA boost
-export const MAX_APY_BY_TIER = {
-  [VaultTier.STARTER]: 8.0,
-  [VaultTier.PRO]: 10.0,
-  [VaultTier.ELITE]: 12.0
-} as const;
-
 export interface LaikaBoostInput {
   baseAPY: number; // Base APY from vault
+  maxAPY?: number; // Max APY from vault (if not provided, calculated from tier)
   tier: VaultTier; // Vault tier
   usdtInvested: number; // USDT investment amount
   laikaMarketValueUSD: number; // Market USD value of LAIKA deposited (before discount)
@@ -51,22 +44,23 @@ export interface LaikaBoostResult {
 /**
  * Calculate the final APY with LAIKA boost
  *
- * Updated Formula (v2.2 with 10% discount):
+ * Updated Formula (v2.4 with 10% discount):
  * 1. laika_discount = laika_market_value × 0.10 (10% platform discount)
- * 2. laika_discounted_value = laika_market_value - laika_discount
+ * 2. laika_discounted_value = laika_market_value × 0.90 (after 10% discount)
  * 3. max_laika_value = usdt_invested × 0.50 (max 50% of investment)
  * 4. effective_laika = min(laika_discounted_value, max_laika_value)
  * 5. boost_fill_percent = (effective_laika / max_laika_value) × 100
- * 6. boost_range = MAX_APY[tier] - base_apy
+ * 6. boost_range = max_apy - base_apy
  * 7. additional_apy = (boost_range × boost_fill_percent) / 100
  * 8. final_apy = base_apy + additional_apy
- * 9. final_apy = min(final_apy, MAX_APY[tier])
+ * 9. final_apy = min(final_apy, max_apy)
  */
 export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
-  const { baseAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
+  const { baseAPY, maxAPY: inputMaxAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
 
-  // Get maximum APY for this tier
-  const maxAPY = MAX_APY_BY_TIER[tier];
+  // Use provided maxAPY or calculate default boost ranges
+  // Note: This should always come from vault config in production
+  const maxAPY = inputMaxAPY || baseAPY + 2; // Fallback only
 
   // Apply 10% platform discount to LAIKA value
   const laikaDiscountPercent = LAIKA_DISCOUNT_PERCENT;
@@ -115,14 +109,14 @@ export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
 
 /**
  * Calculate required LAIKA for desired APY
+ * @deprecated - Use calculateLaikaBoost with maxAPY parameter instead
  */
 export function calculateRequiredLaikaForAPY(
   baseAPY: number,
-  tier: VaultTier,
+  maxAPY: number,
   usdtInvested: number,
   desiredAPY: number
 ): number {
-  const maxAPY = MAX_APY_BY_TIER[tier];
   const maxLaikaValueUSD = usdtInvested * 0.50;
 
   // Cannot exceed max APY
@@ -154,10 +148,11 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
   error?: string;
   warning?: string;
 } {
-  const { baseAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
+  const { baseAPY, maxAPY: inputMaxAPY, usdtInvested, laikaMarketValueUSD } = input;
+
+  const maxAPY = inputMaxAPY || baseAPY + 2;
 
   // Validate base APY
-  const maxAPY = MAX_APY_BY_TIER[tier];
   if (baseAPY >= maxAPY) {
     return {
       valid: false,
@@ -182,7 +177,7 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
   }
 
   // Apply discount and check against maximum
-  const laikaDiscountedValueUSD = laikaMarketValueUSD * 0.50; // After 10% discount
+  const laikaDiscountedValueUSD = laikaMarketValueUSD * 0.90; // After 10% discount
   const maxLaikaValueUSD = usdtInvested * 0.50;
 
   if (laikaDiscountedValueUSD > maxLaikaValueUSD) {
@@ -197,17 +192,17 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
 
 /**
  * Get boost recommendation for user
+ * @deprecated - Use vault config maxAPY directly
  */
 export function getBoostRecommendation(
   baseAPY: number,
-  tier: VaultTier,
+  maxAPY: number,
   usdtInvested: number
 ): {
   noBoost: { apy: number; laikaRequired: number };
   partialBoost: { apy: number; laikaRequired: number };
   fullBoost: { apy: number; laikaRequired: number };
 } {
-  const maxAPY = MAX_APY_BY_TIER[tier];
   const maxLaikaValueUSD = usdtInvested * 0.50;
 
   // Calculate mid-point boost (50%)
@@ -256,6 +251,5 @@ export default {
   calculateRequiredLaikaForAPY,
   validateLaikaBoost,
   getBoostRecommendation,
-  formatBoostResult,
-  MAX_APY_BY_TIER
+  formatBoostResult
 };

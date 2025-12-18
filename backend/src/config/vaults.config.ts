@@ -1,5 +1,10 @@
 /**
- * Takara Gold v2.3 - Vault Configuration (Updated)
+ * Takara Gold v2.4 - Vault Configuration (Real APY Based on Total Returns)
+ *
+ * Total Returns for Full Lock Period:
+ * - 18 Months: 11.6% total return (7.73% APY)
+ * - 30 Months: 60% total return (24% APY)
+ * - 36 Months: 75% total return (25% APY)
  *
  * TAKARA Requirements:
  * - 18M vaults: STARTER & PRO = no TAKARA, ELITE = requires TAKARA
@@ -57,8 +62,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 7.0,
-    maxAPY: 9.0, // +2% max LAIKA boost
+    baseAPY: 7.73,
+    maxAPY: 9.73, // +2% max LAIKA boost
     takaraAPY: 75,
     miningPower: 75,
     requireTAKARA: false,
@@ -73,8 +78,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 9.0,
-    maxAPY: 11.0, // +2% max LAIKA boost
+    baseAPY: 24.0,
+    maxAPY: 26.0, // +2% max LAIKA boost
     takaraAPY: 100,
     miningPower: 100, // Baseline
     requireTAKARA: true,
@@ -89,8 +94,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 100,
     maxInvestment: 999999999, // No limit
-    baseAPY: 10.0,
-    maxAPY: 12.0, // +2% max LAIKA boost
+    baseAPY: 25.0,
+    maxAPY: 27.0, // +2% max LAIKA boost
     takaraAPY: 150,
     miningPower: 150,
     requireTAKARA: true,
@@ -107,8 +112,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 10.0,
-    maxAPY: 12.5, // +2.5% max LAIKA boost
+    baseAPY: 7.73,
+    maxAPY: 10.23, // +2.5% max LAIKA boost
     takaraAPY: 150,
     miningPower: 120,
     requireTAKARA: false, // 18M Pro vault: no TAKARA required
@@ -123,8 +128,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 14.0,
-    maxAPY: 17.0, // +3% max LAIKA boost
+    baseAPY: 24.0,
+    maxAPY: 27.0, // +3% max LAIKA boost
     takaraAPY: 250,
     miningPower: 170,
     requireTAKARA: true,
@@ -139,8 +144,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 1000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 16.0,
-    maxAPY: 19.0, // +3% max LAIKA boost
+    baseAPY: 25.0,
+    maxAPY: 28.0, // +3% max LAIKA boost
     takaraAPY: 350,
     miningPower: 200,
     requireTAKARA: true,
@@ -157,8 +162,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 12.0,
-    maxAPY: 15.0, // +3% max LAIKA boost
+    baseAPY: 7.73,
+    maxAPY: 10.73, // +3% max LAIKA boost
     takaraAPY: 200,
     miningPower: 250,
     requireTAKARA: true, // Elite 18M REQUIRES TAKARA (exception!)
@@ -173,8 +178,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 15.0,
-    maxAPY: 18.5, // +3.5% max LAIKA boost
+    baseAPY: 24.0,
+    maxAPY: 27.5, // +3.5% max LAIKA boost
     takaraAPY: 300,
     miningPower: 300,
     requireTAKARA: true,
@@ -189,8 +194,8 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 5000,
     maxInvestment: 999999999, // No limit
-    baseAPY: 16.0,
-    maxAPY: 20.0, // +4% max LAIKA boost - MAXIMUM BOOST (REDUCED TO 20%)
+    baseAPY: 25.0,
+    maxAPY: 29.0, // +4% max LAIKA boost - MAXIMUM BOOST
     takaraAPY: 450,
     miningPower: 350, // MAXIMUM MINING POWER
     requireTAKARA: true,
