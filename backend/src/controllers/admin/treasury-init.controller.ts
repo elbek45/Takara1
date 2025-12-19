@@ -29,9 +29,7 @@ export async function initTakara(req: Request, res: Response): Promise<void> {
         where: { tokenSymbol: 'TAKARA' },
         data: {
           balance: takaraBalance,
-          totalCollected: takaraBalance,
-          contractAddress: takaraMint,
-          updatedAt: new Date()
+          totalCollected: takaraBalance
         }
       });
 
@@ -51,12 +49,9 @@ export async function initTakara(req: Request, res: Response): Promise<void> {
       const created = await prisma.treasuryBalance.create({
         data: {
           tokenSymbol: 'TAKARA',
-          tokenName: 'TAKARA',
           balance: takaraBalance,
           totalCollected: takaraBalance,
-          totalWithdrawn: 0,
-          blockchain: 'SOLANA',
-          contractAddress: takaraMint
+          totalWithdrawn: 0
         }
       });
 
