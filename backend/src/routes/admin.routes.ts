@@ -10,6 +10,7 @@ import * as adminDeploymentController from '../controllers/admin-deployment.cont
 import * as adminBoostController from '../controllers/admin-boost.controller';
 import * as adminTreasuryController from '../controllers/admin-treasury.controller';
 import * as adminTakaraStatsController from '../controllers/admin/takara-stats.controller';
+import * as treasuryInitController from '../controllers/admin/treasury-init.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware';
 
@@ -81,6 +82,7 @@ router.get('/treasury/balances/:symbol', requireSuperAdmin, adminTreasuryControl
 router.get('/treasury/statistics', requireSuperAdmin, adminTreasuryController.getStatistics);
 router.get('/treasury/tax-records', requireSuperAdmin, adminTreasuryController.getTaxRecords);
 router.post('/treasury/withdraw', requireSuperAdmin, adminTreasuryController.withdrawFromTreasury);
+router.post('/treasury/init-takara', requireSuperAdmin, treasuryInitController.initTakara);
 
 // TAKARA Pricing Calculator (Super Admin Only) - NEW
 router.get('/pricing/takara', requireSuperAdmin, adminAdvancedController.getTakaraPricingCalculations);
