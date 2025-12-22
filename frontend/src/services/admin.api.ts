@@ -119,12 +119,13 @@ export const adminApiService = {
     name: string
     tier: 'STARTER' | 'PRO' | 'ELITE'
     duration: number
-    payoutSchedule: 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM'
+    payoutSchedule: 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM'
     minInvestment: number
     maxInvestment: number
     baseAPY: number
     maxAPY: number
-    takaraAPY: number // v2.2: renamed from miningPower
+    baseTakaraAPY: number
+    maxTakaraAPY: number
     requireTAKARA: boolean
     takaraRatio?: number
     totalCapacity?: number
@@ -143,7 +144,8 @@ export const adminApiService = {
     maxInvestment?: number
     baseAPY?: number
     maxAPY?: number
-    takaraAPY?: number // v2.2: renamed from miningPower
+    baseTakaraAPY?: number
+    maxTakaraAPY?: number
     requireTAKARA?: boolean
     takaraRatio?: number
     totalCapacity?: number

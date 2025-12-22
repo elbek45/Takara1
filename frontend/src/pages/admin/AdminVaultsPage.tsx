@@ -10,12 +10,13 @@ interface VaultFormData {
   name: string
   tier: 'STARTER' | 'PRO' | 'ELITE'
   duration: number
-  payoutSchedule: 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM'
+  payoutSchedule: 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM' | 'DAILY'
   minInvestment: number
   maxInvestment: number
   baseAPY: number
   maxAPY: number
-  takaraAPY: number
+  baseTakaraAPY: number
+  maxTakaraAPY: number
   requireTAKARA: boolean
   takaraRatio: number
   totalCapacity: number
@@ -31,7 +32,8 @@ const initialFormData: VaultFormData = {
   maxInvestment: 999999999,
   baseAPY: 4,
   maxAPY: 6,
-  takaraAPY: 50,
+  baseTakaraAPY: 100,
+  maxTakaraAPY: 200,
   requireTAKARA: false,
   takaraRatio: 0,
   totalCapacity: 10000000,
@@ -112,7 +114,8 @@ export default function AdminVaultsPage() {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      takaraAPY: Number(vault.takaraAPY),
+      baseTakaraAPY: Number(vault.baseTakaraAPY || 100),
+      maxTakaraAPY: Number(vault.maxTakaraAPY || 200),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: Number(vault.takaraRatio || 0),
       totalCapacity: Number(vault.totalCapacity || 10000000),
@@ -216,8 +219,8 @@ export default function AdminVaultsPage() {
                   <span className="text-gold-500 font-medium">{vault.maxAPY}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Takara APY:</span>
-                  <span className="text-green-400 font-medium">{vault.takaraAPY}%</span>
+                  <span className="text-gray-400">TAKARA APY:</span>
+                  <span className="text-green-400 font-medium">{vault.baseTakaraAPY}% → {vault.maxTakaraAPY}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Min Investment:</span>
@@ -426,6 +429,7 @@ function VaultForm({
             className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
             disabled={isEdit}
           >
+            <option value="DAILY">DAILY</option>
             <option value="MONTHLY">MONTHLY</option>
             <option value="QUARTERLY">QUARTERLY</option>
             <option value="END_OF_TERM">END_OF_TERM</option>
@@ -479,11 +483,22 @@ function VaultForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Takara APY</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Base TAKARA APY (%)</label>
           <input
             type="number"
-            value={formData.takaraAPY}
-            onChange={(e) => handleChange('takaraAPY', Number(e.target.value))}
+            value={formData.baseTakaraAPY}
+            onChange={(e) => handleChange('baseTakaraAPY', Number(e.target.value))}
+            className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Max TAKARA APY (%)</label>
+          <input
+            type="number"
+            value={formData.maxTakaraAPY}
+            onChange={(e) => handleChange('maxTakaraAPY', Number(e.target.value))}
             className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
             required
           />
