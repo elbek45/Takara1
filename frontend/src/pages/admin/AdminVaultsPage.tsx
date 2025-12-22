@@ -218,6 +218,12 @@ export default function AdminVaultsPage() {
                   <span className="text-gray-400">Max APY:</span>
                   <span className="text-gold-500 font-medium">{vault.maxAPY}%</span>
                 </div>
+                <div className="flex justify-between bg-gold-500/10 -mx-2 px-2 py-1 rounded">
+                  <span className="text-gray-400">Total Return:</span>
+                  <span className="text-gold-400 font-bold">
+                    {(vault.baseAPY * vault.duration / 12).toFixed(0)}% → {(vault.maxAPY * vault.duration / 12).toFixed(0)}%
+                  </span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">TAKARA APY:</span>
                   <span className="text-green-400 font-medium">{vault.baseTakaraAPY}% → {vault.maxTakaraAPY}%</span>
