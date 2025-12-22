@@ -1,7 +1,7 @@
 /**
  * Ethereum Service
  *
- * Handles MetaMask integration and Ethereum blockchain operations
+ * Handles Phantom EVM integration and Ethereum blockchain operations
  */
 
 import { ethers } from 'ethers';
@@ -44,18 +44,25 @@ class EthereumService {
   private readonly USDT_DECIMALS = 6; // USDT has 6 decimals
 
   /**
-   * Check if MetaMask is installed
+   * Check if EVM wallet (Phantom) is installed
    */
-  isMetaMaskInstalled(): boolean {
+  isWalletInstalled(): boolean {
     return typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
   }
 
   /**
-   * Connect to MetaMask wallet
+   * Alias for backward compatibility
+   */
+  isMetaMaskInstalled(): boolean {
+    return this.isWalletInstalled();
+  }
+
+  /**
+   * Connect to Phantom EVM wallet
    */
   async connect(): Promise<EthereumWallet> {
-    if (!this.isMetaMaskInstalled()) {
-      throw new WalletNotFoundError('metamask');
+    if (!this.isWalletInstalled()) {
+      throw new WalletNotFoundError('phantom');
     }
 
     try {
@@ -65,7 +72,7 @@ class EthereumService {
       });
 
       if (!accounts || accounts.length === 0) {
-        throw new WalletConnectionError('metamask', 'No accounts found');
+        throw new WalletConnectionError('phantom', 'No accounts found');
       }
 
       // Create provider and signer
@@ -100,8 +107,8 @@ class EthereumService {
         provider: this.provider,
       };
     } catch (error: any) {
-      console.error('MetaMask connection error:', error);
-      throw new WalletConnectionError('metamask', error.message);
+      console.error('Phantom connection error:', error);
+      throw new WalletConnectionError('phantom', error.message);
     }
   }
 
@@ -183,7 +190,7 @@ class EthereumService {
    */
   async switchToMainnet(): Promise<void> {
     if (!window.ethereum) {
-      throw new Error('MetaMask not found');
+      throw new Error('Phantom wallet not found');
     }
 
     try {

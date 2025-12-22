@@ -179,8 +179,8 @@ export default function VaultDetailPage() {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
                   <div>
-                    <div className="font-semibold text-white">USDT Payment (MetaMask - Ethereum)</div>
-                    <div className="text-gray-400">Main investment amount via MetaMask wallet</div>
+                    <div className="font-semibold text-white">USDT Payment (Phantom - Ethereum)</div>
+                    <div className="text-gray-400">Main investment amount via Phantom wallet</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

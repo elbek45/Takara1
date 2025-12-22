@@ -31,13 +31,10 @@ export default function FAQPage() {
       answer: (
         <div className="space-y-2">
           <p>You need TWO wallets for stacking on Takara:</p>
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-            <p className="font-semibold text-blue-400 mb-1">1. MetaMask (Ethereum)</p>
-            <p className="text-sm">For USDT payment on Ethereum mainnet</p>
-          </div>
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-            <p className="font-semibold text-purple-400 mb-1">2. Phantom (Solana)</p>
-            <p className="text-sm">For TAKARA tokens and LAIKA boost on Solana mainnet</p>
+            <p className="font-semibold text-purple-400 mb-1">Phantom Wallet</p>
+            <p className="text-sm">For USDT payment (Ethereum) + TAKARA/LAIKA tokens (Solana)</p>
+            <p className="text-xs text-gray-400 mt-1">Phantom supports both Ethereum and Solana networks</p>
           </div>
         </div>
       )
@@ -55,7 +52,7 @@ export default function FAQPage() {
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
                 <div>
                   <p className="font-semibold text-white mb-1">Connect Both Wallets</p>
-                  <p className="text-sm text-gray-400">Connect MetaMask and Phantom on the platform</p>
+                  <p className="text-sm text-gray-400">Connect Phantom wallet on the platform</p>
                 </div>
               </div>
             </div>
@@ -98,7 +95,7 @@ export default function FAQPage() {
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">5</div>
                 <div>
                   <p className="font-semibold text-white mb-1">Complete 2-Step Payment</p>
-                  <p className="text-sm text-gray-400">→ Pay USDT via MetaMask (Ethereum)</p>
+                  <p className="text-sm text-gray-400">→ Pay USDT via Phantom (Ethereum)</p>
                   <p className="text-sm text-gray-400">→ Pay TAKARA + LAIKA via Phantom (Solana)</p>
                 </div>
               </div>
@@ -125,8 +122,8 @@ export default function FAQPage() {
         <div className="space-y-3">
           <p>Takara uses a unique 2-step payment system for security and efficiency:</p>
 
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-            <p className="font-semibold text-blue-400 mb-2">Step 1: USDT Payment (MetaMask)</p>
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+            <p className="font-semibold text-purple-400 mb-2">Step 1: USDT Payment (Phantom)</p>
             <p className="text-sm text-gray-300">Pay your USDT on <strong>Ethereum Mainnet</strong></p>
             <p className="text-sm text-gray-400 mt-1">This is your main stacking deposit</p>
           </div>
@@ -426,7 +423,7 @@ export default function FAQPage() {
 
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-3">
             <p className="text-sm text-yellow-400">
-              ⚠️ <strong>Always verify:</strong> Check transaction details in MetaMask and Phantom before confirming
+              ⚠️ <strong>Always verify:</strong> Check transaction details in Phantom before confirming
             </p>
           </div>
         </div>

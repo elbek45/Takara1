@@ -1,12 +1,12 @@
 /**
- * MetaMask Connect Button Component
- * Reusable button for connecting to MetaMask wallet
+ * Phantom EVM Connect Button Component
+ * Reusable button for connecting to Phantom wallet (EVM)
  */
 
 import { Wallet } from 'lucide-react'
-import { useMetaMask } from '../../hooks/useMetaMask'
+import { useEVMWallet } from '../../hooks/useEVMWallet'
 
-interface MetaMaskButtonProps {
+interface EVMWalletButtonProps {
   variant?: 'primary' | 'secondary' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
@@ -14,13 +14,13 @@ interface MetaMaskButtonProps {
   className?: string
 }
 
-export function MetaMaskButton({
+export function EVMWalletButton({
   variant = 'secondary',
   size = 'md',
   fullWidth = false,
   showBalance = false,
   className = '',
-}: MetaMaskButtonProps) {
+}: EVMWalletButtonProps) {
   const {
     isConnected,
     address,
@@ -30,7 +30,7 @@ export function MetaMaskButton({
     connect,
     disconnect,
     formatAddress,
-  } = useMetaMask()
+  } = useEVMWallet()
 
   const handleClick = () => {
     if (isConnected) {
@@ -44,7 +44,7 @@ export function MetaMaskButton({
   const variantStyles = {
     primary: 'bg-gradient-gold text-background-primary hover:opacity-90',
     secondary: isConnected
-      ? 'bg-orange-500 text-white hover:opacity-90'
+      ? 'bg-purple-500 text-white hover:opacity-90'
       : 'bg-gray-700 text-gray-300 hover:opacity-90',
     outline: 'border-2 border-gold-500 text-gold-500 hover:bg-gold-500/10',
   }
@@ -72,10 +72,10 @@ export function MetaMaskButton({
       `}
       title={
         isConnected
-          ? `MetaMask: ${address}`
+          ? `Phantom: ${address}`
           : isConnecting
           ? 'Connecting...'
-          : 'Connect MetaMask'
+          : 'Connect Phantom'
       }
     >
       <Wallet className={size === 'sm' ? 'h-3.5 w-3.5' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'} />
@@ -94,25 +94,25 @@ export function MetaMaskButton({
           )}
         </>
       ) : (
-        <span className="hidden lg:inline">MetaMask</span>
+        <span className="hidden lg:inline">Phantom</span>
       )}
     </button>
   )
 }
 
 // Compact version for mobile
-interface MetaMaskButtonCompactProps {
+interface EVMWalletButtonCompactProps {
   className?: string
 }
 
-export function MetaMaskButtonCompact({ className = '' }: MetaMaskButtonCompactProps) {
+export function EVMWalletButtonCompact({ className = '' }: EVMWalletButtonCompactProps) {
   const {
     isConnected,
     address,
     isConnecting,
     connect,
     disconnect,
-  } = useMetaMask()
+  } = useEVMWallet()
 
   const handleClick = () => {
     if (isConnected) {
@@ -128,7 +128,7 @@ export function MetaMaskButtonCompact({ className = '' }: MetaMaskButtonCompactP
       disabled={isConnecting}
       className={`
         flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-opacity
-        ${isConnected ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300'}
+        ${isConnected ? 'bg-purple-500 text-white' : 'bg-gray-700 text-gray-300'}
         hover:opacity-90
         ${isConnecting ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
@@ -142,10 +142,10 @@ export function MetaMaskButtonCompact({ className = '' }: MetaMaskButtonCompactP
           {address.slice(0, 6)}...{address.slice(-4)}
         </span>
       ) : (
-        <span>Connect MetaMask</span>
+        <span>Connect Phantom</span>
       )}
     </button>
   )
 }
 
-export default MetaMaskButton
+export default EVMWalletButton

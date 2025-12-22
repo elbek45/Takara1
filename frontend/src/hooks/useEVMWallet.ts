@@ -1,6 +1,6 @@
 /**
- * useMetaMask Hook
- * Manages MetaMask connection and Ethereum state
+ * useEVMWallet Hook
+ * Manages Phantom EVM connection and Ethereum state
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -9,7 +9,7 @@ import { api } from '../services/api'
 import { toast } from 'sonner'
 import type { EthereumWallet } from '../types/blockchain'
 
-interface MetaMaskState {
+interface EVMWalletState {
   address: string | null
   chainId: number | null
   isConnected: boolean
@@ -18,8 +18,8 @@ interface MetaMaskState {
   ethBalance: string
 }
 
-export function useMetaMask() {
-  const [state, setState] = useState<MetaMaskState>({
+export function useEVMWallet() {
+  const [state, setState] = useState<EVMWalletState>({
     address: null,
     chainId: null,
     isConnected: false,
@@ -29,12 +29,12 @@ export function useMetaMask() {
   })
 
   /**
-   * Connect to MetaMask
+   * Connect to Phantom EVM
    */
   const connect = useCallback(async () => {
-    if (!ethereumService.isMetaMaskInstalled()) {
-      toast.error('Please install MetaMask extension')
-      window.open('https://metamask.io/download/', '_blank')
+    if (!ethereumService.isWalletInstalled()) {
+      toast.error('Please install Phantom wallet')
+      window.open('https://phantom.app/download', '_blank')
       return
     }
 
@@ -65,23 +65,23 @@ export function useMetaMask() {
       if (api.isAuthenticated()) {
         try {
           await api.connectEthereum(wallet.address)
-          toast.success('MetaMask connected and saved')
+          toast.success('Phantom connected and saved')
         } catch (backendError: any) {
           console.error('Failed to save Ethereum address:', backendError)
           // Don't show error toast to avoid annoying the user
         }
       } else {
-        toast.success('MetaMask connected successfully')
+        toast.success('Phantom connected successfully')
       }
     } catch (error: any) {
-      console.error('MetaMask connection error:', error)
-      toast.error(error.message || 'Failed to connect MetaMask')
+      console.error('Phantom connection error:', error)
+      toast.error(error.message || 'Failed to connect Phantom')
       setState((prev) => ({ ...prev, isConnecting: false }))
     }
   }, [])
 
   /**
-   * Disconnect MetaMask
+   * Disconnect Phantom
    */
   const disconnect = useCallback(() => {
     ethereumService.disconnect()
@@ -93,7 +93,7 @@ export function useMetaMask() {
       usdtBalance: 0,
       ethBalance: '0',
     })
-    toast.info('MetaMask disconnected')
+    toast.info('Phantom disconnected')
   }, [])
 
   /**
@@ -124,7 +124,7 @@ export function useMetaMask() {
   const transferUSDT = useCallback(
     async (toAddress: string, amount: number) => {
       if (!state.isConnected || !state.address) {
-        throw new Error('MetaMask not connected')
+        throw new Error('Phantom not connected')
       }
 
       const result = await ethereumService.transferUSDT({
@@ -189,7 +189,7 @@ export function useMetaMask() {
     }
 
     const handleChainChanged = () => {
-      // Reload page on chain change (recommended by MetaMask)
+      // Reload page on chain change
       window.location.reload()
     }
 
@@ -212,7 +212,7 @@ export function useMetaMask() {
     const autoConnect = async () => {
       // Only auto-connect if user is authenticated
       if (!api.isAuthenticated()) return
-      if (!ethereumService.isMetaMaskInstalled()) return
+      if (!ethereumService.isWalletInstalled()) return
 
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' })
@@ -235,7 +235,7 @@ export function useMetaMask() {
     transferUSDT,
     checkAndSwitchNetwork,
     estimateTransferGas,
-    isMetaMaskInstalled: ethereumService.isMetaMaskInstalled(),
+    isWalletInstalled: ethereumService.isWalletInstalled(),
     formatAddress: ethereumService.formatAddress,
     isValidAddress: ethereumService.isValidAddress,
   }

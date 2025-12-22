@@ -6,8 +6,8 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
-import { MetaMaskButton, MetaMaskButtonCompact } from '../wallet'
-import { useMetaMask } from '../../hooks/useMetaMask'
+import { EVMWalletButton, EVMWalletButtonCompact } from '../wallet'
+import { useEVMWallet } from '../../hooks/useEVMWallet'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -20,7 +20,7 @@ const navigation = [
 export default function Header() {
   const location = useLocation()
   const { connected, disconnect: disconnectPhantom } = useWallet()
-  const { disconnect: disconnectMetaMask } = useMetaMask()
+  const { disconnect: disconnectEVM } = useEVMWallet()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -46,9 +46,9 @@ export default function Header() {
     }
 
     try {
-      disconnectMetaMask()
+      disconnectEVM()
     } catch (error) {
-      console.log('MetaMask already disconnected')
+      console.log('EVM wallet already disconnected')
     }
 
     // Clear all cached data
@@ -130,10 +130,10 @@ export default function Header() {
             {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
               <>
-                {/* MetaMask Button */}
-                <MetaMaskButton variant="secondary" size="md" />
+                {/* EVM Wallet Button (Phantom) */}
+                <EVMWalletButton variant="secondary" size="md" />
 
-                {/* Phantom Wallet Button */}
+                {/* Phantom Wallet Button (Solana) */}
                 <WalletMultiButton className="!bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
               </>
             )}
@@ -207,10 +207,10 @@ export default function Header() {
             {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
               <div className="pt-2 space-y-2">
-                {/* MetaMask Button */}
-                <MetaMaskButtonCompact className="w-full" />
+                {/* EVM Wallet Button (Phantom) */}
+                <EVMWalletButtonCompact className="w-full" />
 
-                {/* Phantom Wallet Button */}
+                {/* Phantom Wallet Button (Solana) */}
                 <WalletMultiButton className="!w-full !bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
 
                 {/* Logout Button for mobile */}

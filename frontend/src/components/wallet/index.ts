@@ -2,5 +2,5 @@
  * Wallet Components Barrel Export
  */
 
-export { MetaMaskButton, MetaMaskButtonCompact } from './MetaMaskButton'
+export { EVMWalletButton, EVMWalletButtonCompact } from './EVMWalletButton'
 export { AutoConnectWallet } from './AutoConnectWallet'

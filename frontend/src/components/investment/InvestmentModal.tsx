@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
-import { useMetaMask } from '../../hooks/useMetaMask'
+import { useEVMWallet } from '../../hooks/useEVMWallet'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
 
@@ -28,7 +28,7 @@ export default function InvestmentModal({
   laikaAmount,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
-  const { transferUSDT, isConnected: metaMaskConnected, address: ethAddress } = useMetaMask()
+  const { transferUSDT, isConnected: evmConnected, address: ethAddress } = useEVMWallet()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
@@ -36,8 +36,8 @@ export default function InvestmentModal({
   const investMutation = useMutation({
     mutationFn: async () => {
       // Critical validation: Check all required wallets are connected
-      if (!metaMaskConnected) {
-        throw new Error('MetaMask must be connected for USDT payment')
+      if (!evmConnected) {
+        throw new Error('Phantom must be connected for USDT payment')
       }
 
       if (calculation.investment.requiredTAKARA > 0 && (!publicKey || !signTransaction)) {
@@ -48,12 +48,12 @@ export default function InvestmentModal({
         throw new Error('Phantom wallet must be connected for LAIKA boost')
       }
 
-      // Step 1: Transfer USDT via MetaMask (Ethereum Mainnet)
+      // Step 1: Transfer USDT via Phantom (Ethereum Mainnet)
       if (!ethAddress) {
-        throw new Error('MetaMask address not available')
+        throw new Error('Phantom EVM address not available')
       }
 
-      toast.info('Step 1/3: Transferring USDT via MetaMask (Ethereum Mainnet)...')
+      toast.info('Step 1/3: Transferring USDT via Phantom (Ethereum Mainnet)...')
 
       // Get platform wallet address from environment
       const platformWalletETH = import.meta.env.VITE_PLATFORM_WALLET_ETH || ethAddress
@@ -183,7 +183,7 @@ export default function InvestmentModal({
                   <div className="bg-black/20 rounded-lg p-4 border border-gold-500/30">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold text-lg">1</div>
-                      <div className="font-bold text-white text-base">USDT Payment (MetaMask)</div>
+                      <div className="font-bold text-white text-base">USDT Payment (Phantom)</div>
                     </div>
                     <div className="pl-11 space-y-1 text-sm">
                       <div className="text-gray-300">Network: <span className="text-blue-400 font-medium">Ethereum Mainnet</span></div>
@@ -227,7 +227,7 @@ export default function InvestmentModal({
               </div>
 
               {/* Wallet Connection Status - CRITICAL WARNING */}
-              {(!metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
+              {(!evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
                 <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
                   <div className="text-sm text-red-400 font-bold mb-3">
                     ⚠️ CRITICAL: Required Wallets Not Connected!
@@ -236,10 +236,10 @@ export default function InvestmentModal({
                     <div className="text-red-300 font-medium">
                       You MUST connect these wallets BEFORE proceeding with payment:
                     </div>
-                    {!metaMaskConnected && (
+                    {!evmConnected && (
                       <div className="flex items-center gap-2">
                         <span className="text-red-400">✗</span>
-                        <span><strong>MetaMask</strong> - Required for USDT payment (${usdtAmount.toLocaleString()})</span>
+                        <span><strong>Phantom</strong> - Required for USDT payment (${usdtAmount.toLocaleString()})</span>
                       </div>
                     )}
                     {calculation.investment.requiredTAKARA > 0 && !publicKey && (
@@ -256,7 +256,7 @@ export default function InvestmentModal({
               )}
 
               {/* Wallet Connection Status - Success */}
-              {metaMaskConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+              {evmConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
                   <div className="text-sm text-green-400 font-medium mb-2">
                     ✓ All Required Wallets Connected
@@ -264,7 +264,7 @@ export default function InvestmentModal({
                   <div className="text-sm text-gray-300 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-green-400">✓</span>
-                      <span>MetaMask connected - Ready for USDT payment</span>
+                      <span>Phantom connected - Ready for USDT payment</span>
                     </div>
                     {calculation.investment.requiredTAKARA > 0 && publicKey && (
                       <div className="flex items-center gap-2">
@@ -386,19 +386,19 @@ export default function InvestmentModal({
                 onClick={handleInvest}
                 disabled={
                   investMutation.isPending ||
-                  !metaMaskConnected ||
+                  !evmConnected ||
                   (calculation.investment.requiredTAKARA > 0 && !publicKey)
                 }
                 className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
-                  !metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                  !evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     : 'btn-gold'
                 }`}
               >
-                {!metaMaskConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                {!evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
                   ? 'Connect Required Wallets First'
                   : 'Proceed to Transfer'}
-                {metaMaskConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+                {evmConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
                   <ArrowRight className="h-5 w-5" />
                 )}
               </button>
