@@ -44,7 +44,8 @@ export interface Vault {
   maxInvestment: number
   baseAPY: number
   maxAPY: number
-  takaraAPY: number // v2.2: renamed from miningPower
+  baseTakaraAPY: number // Base TAKARA mining APY
+  maxTakaraAPY: number // Max TAKARA mining APY with boost
   requireTAKARA: boolean
   takaraRatio?: number
   currentFilled: number
@@ -134,7 +135,7 @@ export interface InvestmentCalculation {
     payoutAmount: number
   }
   mining: {
-    takaraAPY: number // v2.2: renamed from miningPower
+    maxTakaraAPY: number // Max TAKARA mining APY
     currentDifficulty: number
     dailyTAKARA: number
     monthlyTAKARA: number
