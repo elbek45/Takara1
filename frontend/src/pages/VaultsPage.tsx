@@ -70,7 +70,7 @@ export default function VaultsPage() {
                 Filter by Duration
               </label>
               <div className="flex flex-wrap gap-2">
-                {['ALL', 12, 30, 36].map((duration) => (
+                {['ALL', 18, 30, 36].map((duration) => (
                   <button
                     key={duration}
                     onClick={() => setSelectedDuration(duration as number | 'ALL')}
@@ -168,6 +168,21 @@ export default function VaultsPage() {
                       {vault.maxAPY}%
                     </span>
                   </div>
+                  {/* Total Return */}
+                  <div className="bg-gradient-to-r from-gold-500/10 to-green-500/10 -mx-2 px-3 py-3 rounded-lg border border-gold-500/20">
+                    <div className="text-sm font-medium text-gray-300 mb-2">Total Return</div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-400 mb-1">Base</div>
+                        <div className="text-lg font-bold text-gray-300">{(vault.baseAPY * vault.duration / 12).toFixed(1)}%</div>
+                      </div>
+                      <div className="text-gray-500">→</div>
+                      <div className="text-center">
+                        <div className="text-xs text-gold-400 mb-1">Max</div>
+                        <div className="text-xl font-bold text-gold-400">{(vault.maxAPY * vault.duration / 12).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  </div>
                   {vault.requireTAKARA && vault.takaraRatio && (
                     <div className="flex justify-between items-center bg-green-900/10 -mx-2 px-2 py-2 rounded">
                       <span className="text-sm text-gray-400">TAKARA Required</span>
@@ -177,9 +192,9 @@ export default function VaultsPage() {
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Mining Power</span>
+                    <span className="text-sm text-gray-400">Takara APY</span>
                     <span className="text-lg font-semibold text-green-400">
-                      {vault.miningPower}
+                      up to {vault.takaraAPY}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -195,6 +210,84 @@ export default function VaultsPage() {
                   <div className="text-xs text-gray-400 mb-1">Payout Schedule</div>
                   <div className="text-sm font-medium text-white">
                     {vault.payoutSchedule.replace('_', ' ')}
+                  </div>
+                </div>
+
+                {/* Earnings Projections */}
+                <div className="mb-6 space-y-4">
+                  {/* USDT Earnings */}
+                  <div className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-lg">
+                    <div className="text-xs text-blue-400 font-semibold mb-3">
+                      USDT Earnings (Min ${vault.minInvestment.toLocaleString()})
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start text-xs">
+                        <span className="text-gray-400">Monthly</span>
+                        <div className="text-right">
+                          <div className="text-white font-medium">
+                            ${((vault.minInvestment * vault.baseAPY / 100 * (vault.duration / 12)) / vault.duration).toFixed(2)}
+                          </div>
+                          <div className="text-gold-400 text-[10px]">
+                            ${((vault.minInvestment * vault.maxAPY / 100 * (vault.duration / 12)) / vault.duration).toFixed(2)} max
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-start text-xs">
+                        <span className="text-gray-400">Yearly</span>
+                        <div className="text-right">
+                          <div className="text-white font-medium">
+                            ${(vault.minInvestment * vault.baseAPY / 100).toFixed(2)}
+                          </div>
+                          <div className="text-gold-400 text-[10px]">
+                            ${(vault.minInvestment * vault.maxAPY / 100).toFixed(2)} max
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-start text-xs border-t border-blue-900/20 pt-2">
+                        <span className="text-gray-400">Total ({vault.duration}M)</span>
+                        <div className="text-right">
+                          <div className="text-blue-400 font-bold">
+                            ${(vault.minInvestment * vault.baseAPY / 100 * (vault.duration / 12)).toFixed(2)}
+                          </div>
+                          <div className="text-gold-400 text-[10px] font-semibold">
+                            ${(vault.minInvestment * vault.maxAPY / 100 * (vault.duration / 12)).toFixed(2)} max
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TAKARA Mining */}
+                  <div className="p-4 bg-green-900/10 border border-green-900/30 rounded-lg">
+                    <div className="text-xs text-green-400 font-semibold mb-3">
+                      TAKARA Mining (Min ${vault.minInvestment.toLocaleString()})
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Daily</span>
+                        <span className="text-white font-medium">
+                          {((vault.minInvestment * vault.takaraAPY / 100) / 365).toFixed(2)} TAKARA
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Monthly</span>
+                        <span className="text-white font-medium">
+                          {(((vault.minInvestment * vault.takaraAPY / 100) / 365) * 30).toFixed(2)} TAKARA
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Yearly</span>
+                        <span className="text-white font-medium">
+                          {(vault.minInvestment * vault.takaraAPY / 100).toFixed(2)} TAKARA
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs border-t border-green-900/20 pt-2">
+                        <span className="text-gray-400">Total ({vault.duration}M)</span>
+                        <span className="text-green-400 font-bold">
+                          {(((vault.minInvestment * vault.takaraAPY / 100) / 365) * vault.duration * 30).toFixed(2)} TAKARA
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

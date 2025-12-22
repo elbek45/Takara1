@@ -10,7 +10,7 @@ Takara Gold is a next-generation DeFi platform with **dual-blockchain architectu
 
 - 💰 **Invest USDT** via Ethereum (ERC-20) or TRON (TRC-20) in 9 different Vault types with 4-12% APY
 - ⛏️ **Mine TAKARA tokens** daily on Solana (600M total supply over 5 years)
-- 🚀 **Boost earnings** with LAIKA ($LKI) tokens on Solana up to 12% APY
+- 🚀 **Boost earnings** with LAIKA The Cosmodog tokens on Solana up to 12% APY
 - 🎨 **Trade positions** on integrated NFT marketplace (Solana)
 - 💎 **Own investment NFTs** representing your position (Solana)
 
@@ -28,7 +28,7 @@ Takara Gold is a next-generation DeFi platform with **dual-blockchain architectu
 
 - **NFT-Backed Positions**: Each investment = unique Solana NFT
 - **Dual Income**: Stable USDT APY + daily TAKARA mining
-- **LAIKA Boost**: Increase APY by depositing $LKI tokens
+- **LAIKA Boost**: Increase APY by depositing LAIKA The Cosmodog tokens
 - **Marketplace**: Sell your position before term ends
 - **Dynamic Difficulty**: TAKARA mining difficulty adjusts with network
 
@@ -348,7 +348,5 @@ Contributions welcome! Please read CONTRIBUTING.md first.
 
 ---
 
-**Built with ❤️ using Claude Code**
-
 Version: 2.1.1
-Last Updated: November 2025
+Last Updated: December 2025

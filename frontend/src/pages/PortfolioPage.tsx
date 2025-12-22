@@ -1,21 +1,39 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../services/api'
 import { InvestmentStatus, Investment } from '../types'
-import { Wallet, ExternalLink, Tag, X } from 'lucide-react'
+import { Wallet, ExternalLink, Tag, X, Zap, DollarSign, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useClaimUSDT, useClaimTAKARA } from '../hooks/useInvestmentActions'
 import { useCancelListing } from '../hooks/useMarketplace'
 import ListNFTModal from '../components/marketplace/ListNFTModal'
+import TaxPreviewModal from '../components/TaxPreviewModal'
+import { toast } from 'react-hot-toast'
 
 export default function PortfolioPage() {
   const { connected } = useWallet()
+  const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<InvestmentStatus | 'ALL'>('ALL')
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null)
   const [isListModalOpen, setIsListModalOpen] = useState(false)
+  const [taxPreviewInvestment, setTaxPreviewInvestment] = useState<Investment | null>(null)
+  const [isTaxPreviewOpen, setIsTaxPreviewOpen] = useState(false)
   const claimUSDT = useClaimUSDT()
   const claimTAKARA = useClaimTAKARA()
   const cancelListing = useCancelListing()
+
+  // Instant Sale toggle mutation
+  const toggleInstantSaleMutation = useMutation({
+    mutationFn: ({ investmentId, enabled }: { investmentId: string; enabled: boolean }) =>
+      api.toggleInstantSale(investmentId, enabled),
+    onSuccess: (_, variables) => {
+      toast.success(`Instant sale ${variables.enabled ? 'enabled' : 'disabled'}`)
+      queryClient.invalidateQueries({ queryKey: ['myInvestments'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to toggle instant sale')
+    },
+  })
 
   const { data: investmentsResponse, isLoading } = useQuery({
     queryKey: ['myInvestments', statusFilter],
@@ -55,6 +73,19 @@ export default function PortfolioPage() {
     const listingId = getListingId(investmentId)
     if (listingId) {
       await cancelListing.mutateAsync(listingId)
+    }
+  }
+
+  const handleTakaraClaimClick = (investment: Investment) => {
+    setTaxPreviewInvestment(investment)
+    setIsTaxPreviewOpen(true)
+  }
+
+  const handleConfirmTakaraClaim = async () => {
+    if (taxPreviewInvestment) {
+      await claimTAKARA.mutateAsync(taxPreviewInvestment.id)
+      setIsTaxPreviewOpen(false)
+      setTaxPreviewInvestment(null)
     }
   }
 
@@ -236,6 +267,123 @@ export default function PortfolioPage() {
                   </div>
                 )}
 
+                {/* TAKARA Boost Info - v2.2 */}
+                {investment.takaraBoost && (
+                  <div className="bg-green-900/10 border border-green-500/30 rounded-lg p-4 mb-6">
+                    <div className="text-sm text-green-400 font-medium mb-2">
+                      TAKARA Boost Active ⚡
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">TAKARA Amount</div>
+                        <div className="text-white font-semibold">
+                          {investment.takaraBoost.takaraAmount.toLocaleString()} TAKARA
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Value (USD)</div>
+                        <div className="text-white font-semibold">
+                          ${investment.takaraBoost.takaraValueUSD.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Additional APY</div>
+                        <div className="text-green-400 font-semibold">
+                          +{investment.takaraBoost.additionalAPY}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-gray-400">
+                      Boost: {investment.takaraBoost.boostPercentage}% of max allowed (${investment.takaraBoost.maxAllowedUSD})
+                    </div>
+                    {investment.takaraBoost.isReturned && (
+                      <div className="mt-2 text-sm text-green-400">✓ TAKARA returned</div>
+                    )}
+                  </div>
+                )}
+
+                {/* Instant Sale Info - v2.2 */}
+                {investment.status === 'ACTIVE' && investment.instantSalePrice && (
+                  <div className="bg-yellow-900/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm text-yellow-400 font-medium">
+                        Instant Sale {investment.isInstantSaleEnabled ? 'Enabled' : 'Disabled'}
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        investment.isInstantSaleEnabled
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {investment.isInstantSaleEnabled ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500">Instant Sale Price</div>
+                        <div className="text-white font-semibold">
+                          ${investment.instantSalePrice.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Original Value</div>
+                        <div className="text-gray-300">
+                          ${investment.usdtAmount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-yellow-400">
+                      💡 20% discount for instant sale. Platform purchases at market value.
+                    </div>
+                  </div>
+                )}
+
+                {/* Management Actions for Active Investments - v2.2 */}
+                {investment.status === 'ACTIVE' && (
+                  <div className="bg-background-elevated rounded-lg p-4 mb-6">
+                    <div className="text-sm font-semibold text-white mb-4">Investment Management</div>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {/* Instant Sale Toggle */}
+                      <button
+                        onClick={() => toggleInstantSaleMutation.mutate({
+                          investmentId: investment.id,
+                          enabled: !investment.isInstantSaleEnabled
+                        })}
+                        disabled={toggleInstantSaleMutation.isPending}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                          investment.isInstantSaleEnabled
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {investment.isInstantSaleEnabled ? (
+                          <ToggleRight className="h-5 w-5" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5" />
+                        )}
+                        {toggleInstantSaleMutation.isPending
+                          ? 'Processing...'
+                          : investment.isInstantSaleEnabled
+                          ? 'Disable Instant Sale'
+                          : 'Enable Instant Sale'}
+                      </button>
+
+                      {/* Add TAKARA Boost Button - disabled if already has boost */}
+                      <button
+                        disabled={!!investment.takaraBoost}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-colors ${
+                          investment.takaraBoost
+                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title={investment.takaraBoost ? 'TAKARA boost already applied' : 'Apply TAKARA boost to increase APY'}
+                      >
+                        <Zap className="h-5 w-5" />
+                        {investment.takaraBoost ? 'Boost Applied' : 'Add TAKARA Boost'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* List / Cancel Listing Actions */}
                 {investment.status === 'ACTIVE' && (
                   <div className="border-t border-green-900/20 pt-4">
@@ -285,8 +433,11 @@ export default function PortfolioPage() {
                         <div className="text-xl font-bold text-green-400 mb-3">
                           {investment.pendingTAKARA.toFixed(2)}
                         </div>
+                        <div className="text-xs text-yellow-400 mb-2">
+                          ⚠️ 5% treasury tax will be applied
+                        </div>
                         <button
-                          onClick={() => claimTAKARA.mutate(investment.id)}
+                          onClick={() => handleTakaraClaimClick(investment)}
                           disabled={claimTAKARA.isPending}
                           className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white w-full py-2 rounded-lg font-medium text-sm transition-colors"
                         >
@@ -311,6 +462,21 @@ export default function PortfolioPage() {
             setSelectedInvestment(null)
           }}
           investment={selectedInvestment}
+        />
+      )}
+
+      {/* Tax Preview Modal */}
+      {taxPreviewInvestment && (
+        <TaxPreviewModal
+          isOpen={isTaxPreviewOpen}
+          onClose={() => {
+            setIsTaxPreviewOpen(false)
+            setTaxPreviewInvestment(null)
+          }}
+          onConfirm={handleConfirmTakaraClaim}
+          amount={taxPreviewInvestment.pendingTAKARA}
+          tokenSymbol="TAKARA"
+          isPending={claimTAKARA.isPending}
         />
       )}
     </div>

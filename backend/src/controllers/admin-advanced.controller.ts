@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { prisma } from '../config/database';
 import { getLogger } from '../config/logger';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 import { getMint } from '@solana/spl-token';
 
 const logger = getLogger('admin-advanced-controller');
@@ -25,7 +26,7 @@ const logger = getLogger('admin-advanced-controller');
  * GET /api/admin/mining-stats
  *
  * Returns:
- * - Total TAKARA supply (600M)
+ * - Total TAKARA supply (21M)
  * - TAKARA minted so far
  * - TAKARA remaining to mint
  * - Total TAKARA mined by users
@@ -68,7 +69,7 @@ export async function getMiningStats(req: Request, res: Response) {
 
     try {
       const connection = new Connection(
-        process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
+        process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
         'confirmed'
       );
 
@@ -83,7 +84,7 @@ export async function getMiningStats(req: Request, res: Response) {
     }
 
     // 5. Calculate statistics
-    const TOTAL_SUPPLY = 600_000_000; // 600M TAKARA
+    const TOTAL_SUPPLY = TAKARA_CONFIG.TOTAL_SUPPLY; // 21M TAKARA
     const DISTRIBUTION_YEARS = 5;
     const DAILY_BASE_RATE = TOTAL_SUPPLY / (DISTRIBUTION_YEARS * 365);
 
@@ -129,7 +130,7 @@ export async function getMiningStats(req: Request, res: Response) {
         blockchain: {
           mintAddress: process.env.TAKARA_TOKEN_MINT || null,
           mintAuthority,
-          network: process.env.SOLANA_NETWORK || 'mainnet-beta'
+          network: process.env.SOLANA_NETWORK || 'devnet'
         },
         updatedAt: new Date().toISOString()
       }
@@ -159,12 +160,12 @@ export async function getWallets(req: Request, res: Response) {
     const wallets = {
       solana: {
         platformWallet: process.env.PLATFORM_WALLET || null,
-        network: process.env.SOLANA_NETWORK || 'mainnet-beta',
+        network: process.env.SOLANA_NETWORK || 'devnet',
         rpcUrl: process.env.SOLANA_RPC_URL || null
       },
       ethereum: {
         platformAddress: process.env.PLATFORM_ETHEREUM_ADDRESS || null,
-        network: process.env.ETHEREUM_NETWORK || 'mainnet',
+        network: process.env.ETHEREUM_NETWORK || 'sepolia',
         rpcUrl: process.env.ETHEREUM_RPC_URL || null
       },
       tokens: {
@@ -385,7 +386,7 @@ export async function createVault(req: Request, res: Response) {
       maxInvestment: z.number().positive(),
       baseAPY: z.number().min(0).max(100),
       maxAPY: z.number().min(0).max(100),
-      miningPower: z.number().min(0),
+      takaraAPY: z.number().min(0),
       requireTAKARA: z.boolean().default(false),
       takaraRatio: z.number().min(0).optional(),
       totalCapacity: z.number().positive().optional(),
@@ -435,7 +436,7 @@ export async function createVault(req: Request, res: Response) {
         maxInvestment: data.maxInvestment,
         baseAPY: data.baseAPY,
         maxAPY: data.maxAPY,
-        miningPower: data.miningPower,
+        takaraAPY: data.takaraAPY,
         requireTAKARA: data.requireTAKARA,
         takaraRatio: data.takaraRatio,
         totalCapacity: data.totalCapacity,
@@ -483,7 +484,7 @@ export async function updateVault(req: Request, res: Response) {
       maxInvestment: z.number().positive().optional(),
       baseAPY: z.number().min(0).max(100).optional(),
       maxAPY: z.number().min(0).max(100).optional(),
-      miningPower: z.number().min(0).optional(),
+      takaraAPY: z.number().min(0).optional(),
       requireTAKARA: z.boolean().optional(),
       takaraRatio: z.number().min(0).optional(),
       totalCapacity: z.number().positive().optional(),
@@ -661,6 +662,189 @@ export async function getVaultStats(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch vault statistics'
+    });
+  }
+}
+
+// ==================== NETWORK CONFIGURATION ====================
+
+/**
+ * Get Network Configuration
+ *
+ * GET /api/admin/network
+ *
+ * Returns current network configuration (testnet/mainnet)
+ */
+export async function getNetworkConfig(req: Request, res: Response) {
+  try {
+    logger.info('Fetching network configuration');
+
+    const config = {
+      // Solana Configuration
+      solana: {
+        network: process.env.SOLANA_NETWORK || 'testnet',
+        rpcUrl: process.env.SOLANA_RPC_URL || '',
+        platformWallet: process.env.PLATFORM_WALLET || '',
+        takaraTokenMint: process.env.TAKARA_TOKEN_MINT || '',
+        laikaTokenMint: process.env.LAIKA_TOKEN_MINT || '',
+        usdtTokenMint: process.env.USDT_TOKEN_MINT || '',
+      },
+      // Ethereum Configuration
+      ethereum: {
+        network: process.env.ETHEREUM_NETWORK || 'sepolia',
+        rpcUrl: process.env.ETHEREUM_RPC_URL || '',
+        platformAddress: process.env.PLATFORM_ETHEREUM_ADDRESS || '',
+        usdtContractAddress: process.env.USDT_CONTRACT_ADDRESS || '',
+      },
+      // General
+      nodeEnv: process.env.NODE_ENV || 'development',
+      appVersion: process.env.APP_VERSION || '2.1.1',
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: config
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to fetch network configuration');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch network configuration'
+    });
+  }
+}
+
+/**
+ * Update Network Configuration
+ *
+ * PUT /api/admin/network
+ *
+ * Updates network configuration and restarts backend
+ */
+export async function updateNetworkConfig(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      solana: z.object({
+        network: z.enum(['testnet', 'devnet', 'mainnet-beta']),
+        rpcUrl: z.string().url(),
+        platformWallet: z.string().optional(),
+        platformWalletPrivateKey: z.string().optional(),
+        takaraTokenMint: z.string().optional(),
+        laikaTokenMint: z.string().optional(),
+        usdtTokenMint: z.string().optional(),
+      }).optional(),
+      ethereum: z.object({
+        network: z.enum(['sepolia', 'mainnet']),
+        rpcUrl: z.string().url(),
+        platformAddress: z.string().optional(),
+        platformPrivateKey: z.string().optional(),
+        usdtContractAddress: z.string().optional(),
+      }).optional(),
+    });
+
+    const validatedData = schema.parse(req.body);
+
+    logger.info({ config: validatedData }, 'Updating network configuration');
+
+    // In production, this would:
+    // 1. Write to .env file or database
+    // 2. Restart the backend service
+    // 3. Update configuration
+
+    // For now, we'll return a message that manual update is required
+    return res.status(200).json({
+      success: true,
+      message: 'Network configuration received. Manual server restart required to apply changes.',
+      data: validatedData,
+      note: 'Configuration must be manually updated in .env.production file and server must be restarted'
+    });
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+
+    logger.error({ error }, 'Failed to update network configuration');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update network configuration'
+    });
+  }
+}
+
+// ==================== TAKARA PRICING CALCULATOR ====================
+
+/**
+ * GET /api/admin/pricing/takara
+ *
+ * Get comprehensive TAKARA pricing calculations for admin panel
+ *
+ * Returns:
+ * - Current TAKARA price (dynamic or calculated)
+ * - Mining economics and difficulty
+ * - Example calculations for different vaults
+ * - Price scenarios and recommendations
+ * - ROI analysis
+ */
+export async function getTakaraPricingCalculations(req: Request, res: Response) {
+  try {
+    logger.info('Fetching TAKARA pricing calculations');
+
+    const { getTakaraPricingCalculations } = await import('../services/price.service');
+    const calculations = await getTakaraPricingCalculations();
+
+    return res.json({
+      success: true,
+      data: calculations
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to get TAKARA pricing calculations');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch TAKARA pricing calculations'
+    });
+  }
+}
+
+/**
+ * GET /api/admin/pricing/laika
+ * Get current LAIKA token price from multiple sources
+ * Returns cached price if available (5min cache)
+ */
+export async function getLaikaPricing(req: Request, res: Response) {
+  try {
+    logger.info('Fetching LAIKA price');
+
+    const { getLaikaPrice } = await import('../services/price.service');
+    const laikaPrice = await getLaikaPrice();
+
+    // Calculate platform acceptance value (10% below market)
+    const platformAcceptanceRate = 0.90;
+    const platformValue = laikaPrice * platformAcceptanceRate;
+
+    return res.json({
+      success: true,
+      data: {
+        currentPrice: laikaPrice,
+        platformAcceptanceValue: platformValue,
+        platformDiscount: 10, // percentage
+        sources: ['CoinMarketCap', 'Jupiter', 'CoinGecko'],
+        cacheAge: '5 minutes',
+        updatedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Failed to get LAIKA price');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch LAIKA price'
     });
   }
 }

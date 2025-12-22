@@ -37,6 +37,10 @@ app.set('trust proxy', '127.0.0.1');
 // Security headers
 app.use(helmet());
 
+// Health check routes (registered before CORS to allow monitoring without origin)
+import healthRoutes from './routes/health.routes';
+app.use('/health', healthRoutes);
+
 // CORS configuration
 const allowedOrigins = [
   ...(process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || []),
@@ -100,10 +104,6 @@ app.use('/api/', limiter);
 app.use(requestLogger());
 
 // ==================== ROUTES ====================
-
-// Health check routes
-import healthRoutes from './routes/health.routes';
-app.use('/health', healthRoutes);
 
 // API info
 app.get('/api', (req: Request, res: Response) => {

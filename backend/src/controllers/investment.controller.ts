@@ -19,6 +19,7 @@ import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calcul
 import { VaultTier } from '../config/vaults.config';
 import { verifyTransaction, transferTAKARAReward } from '../services/solana.service';
 import { verifyUSDTTransaction, transferUSDTFromPlatform } from '../services/ethereum.service';
+import { applyTakaraClaimTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 
 const logger = getLogger('investment-controller');
@@ -558,12 +559,19 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Transfer TAKARA to user's Solana wallet
+    // Apply 5% tax on TAKARA claim
+    const taxResult = await applyTakaraClaimTax({
+      userId,
+      transactionId: id,
+      takaraAmount: pendingAmount
+    });
+
+    // Transfer TAKARA to user's Solana wallet (after tax deduction)
     let txSignature: string;
     try {
-      txSignature = await transferTAKARAReward(user.walletAddress, pendingAmount);
+      txSignature = await transferTAKARAReward(user.walletAddress, taxResult.amountAfterTax);
     } catch (error: any) {
-      logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer TAKARA');
+      logger.error({ error, userId, amount: taxResult.amountAfterTax }, 'Failed to transfer TAKARA');
       res.status(500).json({
         success: false,
         message: 'Failed to transfer TAKARA. Please try again later.'
@@ -595,15 +603,19 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
     logger.info({
       investmentId: id,
       userId,
-      amount: pendingAmount,
+      amountBeforeTax: pendingAmount,
+      taxAmount: taxResult.taxAmount,
+      amountAfterTax: taxResult.amountAfterTax,
       txSignature
-    }, 'TAKARA claimed and transferred');
+    }, 'TAKARA claimed and transferred (with 5% tax)');
 
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.TAKARA_CLAIMED,
       data: {
-        amountClaimed: pendingAmount,
+        amountClaimed: taxResult.amountAfterTax,
+        amountBeforeTax: pendingAmount,
+        taxAmount: taxResult.taxAmount,
         totalMined: Number(investment.totalMinedTAKARA) + pendingAmount,
         txSignature
       }
@@ -617,10 +629,274 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
   }
 }
 
+/**
+ * POST /api/investments/:id/boost/takara
+ * Apply TAKARA boost to an active investment
+ */
+export async function applyTakaraBoost(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).userId!;
+    const { takaraAmount, takaraPrice } = req.body;
+
+    if (!takaraAmount || !takaraPrice) {
+      res.status(400).json({
+        success: false,
+        message: 'TAKARA amount and price are required'
+      });
+      return;
+    }
+
+    // Get user's wallet address
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { walletAddress: true }
+    });
+
+    if (!user?.walletAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'Please connect your Solana wallet first'
+      });
+      return;
+    }
+
+    // Import service
+    const { applyTakaraBoost: applyBoostService } = await import('../services/takaraBoost.service');
+
+    const result = await applyBoostService({
+      investmentId: id,
+      userId,
+      takaraAmount: Number(takaraAmount),
+      takaraPrice: Number(takaraPrice),
+      userWallet: user.walletAddress
+    });
+
+    logger.info({
+      investmentId: id,
+      userId,
+      boostId: result.boostId
+    }, 'TAKARA boost applied successfully');
+
+    res.json({
+      success: true,
+      message: 'TAKARA boost applied successfully',
+      data: result
+    });
+  } catch (error: any) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to apply TAKARA boost');
+    res.status(500).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * GET /api/investments/:id/boost/takara
+ * Get TAKARA boost details for an investment
+ */
+export async function getTakaraBoost(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).userId!;
+
+    const investment = await prisma.investment.findFirst({
+      where: { id, userId },
+      include: { takaraBoost: true }
+    });
+
+    if (!investment) {
+      res.status(404).json({
+        success: false,
+        message: ERROR_MESSAGES.INVESTMENT_NOT_FOUND
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: investment.takaraBoost
+    });
+  } catch (error) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to get TAKARA boost');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * PUT /api/investments/:id/instant-sale
+ * Toggle instant sale for an investment
+ */
+export async function toggleInstantSale(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).userId!;
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({
+        success: false,
+        message: 'Enabled field is required and must be a boolean'
+      });
+      return;
+    }
+
+    const investment = await prisma.investment.findFirst({
+      where: { id, userId, status: 'ACTIVE' }
+    });
+
+    if (!investment) {
+      res.status(404).json({
+        success: false,
+        message: ERROR_MESSAGES.INVESTMENT_NOT_FOUND
+      });
+      return;
+    }
+
+    // Import service
+    const { calculateInstantSalePrice } = await import('../services/instantSale.service');
+
+    // Calculate instant sale price if enabling
+    let instantSalePrice = null;
+    if (enabled) {
+      const priceResult = await calculateInstantSalePrice({ investmentId: id });
+      instantSalePrice = priceResult.instantSalePrice;
+    }
+
+    // Update investment
+    const updated = await prisma.investment.update({
+      where: { id },
+      data: {
+        isInstantSaleEnabled: enabled,
+        instantSalePrice: instantSalePrice ? instantSalePrice : null
+      }
+    });
+
+    logger.info({
+      investmentId: id,
+      userId,
+      enabled,
+      instantSalePrice
+    }, 'Instant sale toggled');
+
+    res.json({
+      success: true,
+      message: `Instant sale ${enabled ? 'enabled' : 'disabled'}`,
+      data: {
+        isInstantSaleEnabled: updated.isInstantSaleEnabled,
+        instantSalePrice: updated.instantSalePrice ? Number(updated.instantSalePrice) : null
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to toggle instant sale');
+    res.status(500).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * POST /api/investments/:id/instant-sale/execute
+ * Execute instant sale of an investment
+ */
+export async function executeInstantSale(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).userId!;
+
+    const investment = await prisma.investment.findFirst({
+      where: { id, userId, status: 'ACTIVE', isInstantSaleEnabled: true }
+    });
+
+    if (!investment) {
+      res.status(404).json({
+        success: false,
+        message: 'Investment not found or instant sale not enabled'
+      });
+      return;
+    }
+
+    // Import service
+    const { executeInstantSale: executeService } = await import('../services/instantSale.service');
+
+    const result = await executeService({
+      investmentId: id,
+      userId
+    });
+
+    logger.info({
+      investmentId: id,
+      userId,
+      salePrice: result.salePrice
+    }, 'Instant sale executed');
+
+    res.json({
+      success: true,
+      message: 'Instant sale executed successfully',
+      data: result
+    });
+  } catch (error: any) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to execute instant sale');
+    res.status(500).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * GET /api/investments/:id/instant-sale/price
+ * Get instant sale price calculation
+ */
+export async function getInstantSalePrice(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).userId!;
+
+    const investment = await prisma.investment.findFirst({
+      where: { id, userId, status: 'ACTIVE' }
+    });
+
+    if (!investment) {
+      res.status(404).json({
+        success: false,
+        message: ERROR_MESSAGES.INVESTMENT_NOT_FOUND
+      });
+      return;
+    }
+
+    // Import service
+    const { calculateInstantSalePrice } = await import('../services/instantSale.service');
+
+    const priceResult = await calculateInstantSalePrice({ investmentId: id });
+
+    res.json({
+      success: true,
+      data: priceResult
+    });
+  } catch (error: any) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to get instant sale price');
+    res.status(500).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
 export default {
   createInvestment,
   getMyInvestments,
   getInvestmentById,
   claimYield,
-  claimTakara
+  claimTakara,
+  applyTakaraBoost,
+  getTakaraBoost,
+  toggleInstantSale,
+  executeInstantSale,
+  getInstantSalePrice
 };

@@ -105,6 +105,71 @@ export const adminApiService = {
   },
 
   /**
+   * Get All Vaults (Admin View)
+   */
+  getVaults: async () => {
+    const response = await adminApi.get('/admin/vaults')
+    return response.data
+  },
+
+  /**
+   * Create New Vault
+   */
+  createVault: async (data: {
+    name: string
+    tier: 'STARTER' | 'PRO' | 'ELITE'
+    duration: number
+    payoutSchedule: 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'END_OF_TERM'
+    minInvestment: number
+    maxInvestment: number
+    baseAPY: number
+    maxAPY: number
+    takaraAPY: number // v2.2: renamed from miningPower
+    requireTAKARA: boolean
+    takaraRatio?: number
+    totalCapacity?: number
+    isActive: boolean
+  }) => {
+    const response = await adminApi.post('/admin/vaults', data)
+    return response.data
+  },
+
+  /**
+   * Update Vault
+   */
+  updateVault: async (id: string, data: {
+    name?: string
+    minInvestment?: number
+    maxInvestment?: number
+    baseAPY?: number
+    maxAPY?: number
+    takaraAPY?: number // v2.2: renamed from miningPower
+    requireTAKARA?: boolean
+    takaraRatio?: number
+    totalCapacity?: number
+    isActive?: boolean
+  }) => {
+    const response = await adminApi.put(`/admin/vaults/${id}`, data)
+    return response.data
+  },
+
+  /**
+   * Delete Vault (Deactivate)
+   */
+  deleteVault: async (id: string) => {
+    const response = await adminApi.delete(`/admin/vaults/${id}`)
+    return response.data
+  },
+
+  /**
+   * Get Vault Statistics
+   */
+  getVaultStats: async (id: string) => {
+    const response = await adminApi.get(`/admin/vaults/${id}/stats`)
+    return response.data
+  },
+
+  /**
    * Get Mining Stats
    */
   getMiningStats: async () => {
@@ -147,6 +212,207 @@ export const adminApiService = {
    */
   verifyTakara: async () => {
     const response = await adminApi.post('/admin/deployment/verify-takara')
+    return response.data
+  },
+
+  /**
+   * Create WEXEL NFT Collection
+   */
+  createWexelCollection: async () => {
+    const response = await adminApi.post('/admin/deployment/create-wexel-collection', {
+      confirm: true
+    })
+    return response.data
+  },
+
+  // ==================== NETWORK CONFIGURATION ====================
+
+  /**
+   * Get Network Configuration
+   */
+  getNetworkConfig: async () => {
+    const response = await adminApi.get('/admin/network')
+    return response.data
+  },
+
+  /**
+   * Update Network Configuration
+   */
+  updateNetworkConfig: async (data: {
+    solana?: {
+      network: 'testnet' | 'devnet' | 'mainnet-beta'
+      rpcUrl: string
+      platformWallet?: string
+      platformWalletPrivateKey?: string
+      takaraTokenMint?: string
+      laikaTokenMint?: string
+      usdtTokenMint?: string
+    }
+    ethereum?: {
+      network: 'sepolia' | 'mainnet'
+      rpcUrl: string
+      platformAddress?: string
+      platformPrivateKey?: string
+      usdtContractAddress?: string
+    }
+  }) => {
+    const response = await adminApi.put('/admin/network', data)
+    return response.data
+  },
+
+  // ========== Boost Tokens Management (v2.2) ==========
+
+  /**
+   * Get all boost tokens
+   */
+  getBoostTokens: async () => {
+    const response = await adminApi.get('/admin/boost-tokens')
+    return response.data
+  },
+
+  /**
+   * Get boost token statistics
+   */
+  getBoostTokenStatistics: async () => {
+    const response = await adminApi.get('/admin/boost-tokens/statistics')
+    return response.data
+  },
+
+  /**
+   * Create boost token
+   */
+  createBoostToken: async (data: {
+    tokenSymbol: string
+    tokenName: string
+    tokenMint: string
+    isEnabled?: boolean
+    maxBoostPercent?: number
+    displayOrder?: number
+  }) => {
+    const response = await adminApi.post('/admin/boost-tokens', data)
+    return response.data
+  },
+
+  /**
+   * Update boost token
+   */
+  updateBoostToken: async (symbol: string, data: {
+    isEnabled?: boolean
+    maxBoostPercent?: number
+    displayOrder?: number
+  }) => {
+    const response = await adminApi.put(`/admin/boost-tokens/${symbol}`, data)
+    return response.data
+  },
+
+  /**
+   * Delete boost token
+   */
+  deleteBoostToken: async (symbol: string) => {
+    const response = await adminApi.delete(`/admin/boost-tokens/${symbol}`)
+    return response.data
+  },
+
+  // ========== Treasury Management (v2.2) ==========
+
+  /**
+   * Get treasury summary
+   */
+  getTreasurySummary: async () => {
+    const response = await adminApi.get('/admin/treasury/summary')
+    return response.data
+  },
+
+  /**
+   * Get treasury balances
+   */
+  getTreasuryBalances: async () => {
+    const response = await adminApi.get('/admin/treasury/balances')
+    return response.data
+  },
+
+  /**
+   * Get tax statistics
+   */
+  getTaxStatistics: async (params?: {
+    startDate?: string
+    endDate?: string
+    sourceType?: 'TAKARA_CLAIM' | 'WEXEL_SALE'
+  }) => {
+    const response = await adminApi.get('/admin/treasury/statistics', { params })
+    return response.data
+  },
+
+  /**
+   * Get tax records
+   */
+  getTaxRecords: async (params?: {
+    page?: number
+    limit?: number
+    tokenSymbol?: string
+    sourceType?: 'TAKARA_CLAIM' | 'WEXEL_SALE'
+    startDate?: string
+    endDate?: string
+  }) => {
+    const response = await adminApi.get('/admin/treasury/tax-records', { params })
+    return response.data
+  },
+
+  /**
+   * Withdraw from treasury
+   */
+  withdrawFromTreasury: async (data: {
+    tokenSymbol: string
+    amount: number
+    destinationWallet: string
+    reason: string
+    txSignature?: string
+  }) => {
+    const response = await adminApi.post('/admin/treasury/withdraw', data)
+    return response.data
+  },
+
+  /**
+   * Get TAKARA pricing calculations
+   */
+  getTakaraPricingCalculations: async () => {
+    const response = await adminApi.get('/admin/pricing/takara')
+    return response.data
+  },
+
+  // ========== TAKARA Statistics & Supply Tracking (v2.3) ==========
+
+  /**
+   * Get TAKARA statistics (supply breakdown, pricing, treasury)
+   */
+  getTakaraStats: async () => {
+    const response = await adminApi.get('/admin/takara/stats')
+    return response.data
+  },
+
+  /**
+   * Get TAKARA history (supply and price over time)
+   */
+  getTakaraHistory: async (days: number = 30) => {
+    const response = await adminApi.get('/admin/takara/history', {
+      params: { days }
+    })
+    return response.data
+  },
+
+  /**
+   * Get TAKARA breakdown (detailed by investment/boost/mining/tax)
+   */
+  getTakaraBreakdown: async () => {
+    const response = await adminApi.get('/admin/takara/breakdown')
+    return response.data
+  },
+
+  /**
+   * Get LAIKA token pricing information
+   */
+  getLaikaPricing: async () => {
+    const response = await adminApi.get('/admin/pricing/laika')
     return response.data
   },
 }

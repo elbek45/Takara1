@@ -18,7 +18,7 @@ export default function FAQPage() {
         <div className="space-y-2">
           <p>Takara 宝 is a premium DeFi platform on Solana that offers three ways to earn:</p>
           <ul className="list-disc pl-5 space-y-1">
-            <li><strong>Base APY:</strong> 4-8% on USDT deposits</li>
+            <li><strong>Base APY:</strong> 7.73-25% on USDT deposits</li>
             <li><strong>LAIKA Boost:</strong> Up to +4% additional APY</li>
             <li><strong>TAKARA Mining:</strong> Daily token rewards based on vault mining power</li>
           </ul>
@@ -66,7 +66,7 @@ export default function FAQPage() {
                 <div>
                   <p className="font-semibold text-white mb-1">Choose Your Vault</p>
                   <p className="text-sm text-gray-400">Browse 9 vaults across 3 tiers (Starter, Pro, Elite)</p>
-                  <p className="text-sm text-gray-400 mt-1">Select based on your amount and duration (12M, 30M, or 36M)</p>
+                  <p className="text-sm text-gray-400 mt-1">Select based on your amount and duration (18M, 30M, or 36M)</p>
                 </div>
               </div>
             </div>
@@ -76,7 +76,8 @@ export default function FAQPage() {
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">3</div>
                 <div>
                   <p className="font-semibold text-white mb-1">Enter USDT Amount</p>
-                  <p className="text-sm text-gray-400">Minimum: $100 (Starter) to $5,000 (Elite)</p>
+                  <p className="text-sm text-gray-400">Minimum: $100 (Starter), $1,000 (Pro), $5,000 (Elite)</p>
+                  <p className="text-sm text-green-400 mt-1">No maximum limit - stack as much as you want!</p>
                 </div>
               </div>
             </div>
@@ -134,7 +135,12 @@ export default function FAQPage() {
             <p className="font-semibold text-purple-400 mb-2">Step 2: TAKARA + LAIKA (Phantom)</p>
             <p className="text-sm text-gray-300">Pay required TAKARA tokens on <strong>Solana Mainnet</strong></p>
             <p className="text-sm text-gray-300 mt-1">If you chose boost: pay LAIKA tokens</p>
-            <p className="text-sm text-gray-400 mt-2">💡 Pro/Elite tiers require TAKARA (30-50 per 100 USDT)</p>
+            <p className="text-sm text-gray-400 mt-2">💡 <strong>TAKARA Requirements:</strong></p>
+            <ul className="text-xs text-gray-400 mt-1 ml-4 space-y-1">
+              <li>• 18M vaults: STARTER/PRO - No TAKARA | ELITE - 25 per 100 USDT</li>
+              <li>• 30M/36M vaults: ALL tiers require TAKARA (20-50 per 100 USDT)</li>
+              <li>• Higher APY = More TAKARA needed</li>
+            </ul>
           </div>
 
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-3">
@@ -153,36 +159,36 @@ export default function FAQPage() {
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
             <p className="font-semibold text-blue-400 mb-2">STARTER (From $100, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
-              <li>• 4-6% Base APY</li>
-              <li>• Up to 8% Max APY (with LAIKA boost)</li>
-              <li>• 50-150 Mining Power</li>
-              <li>• ✓ 12M: No TAKARA required</li>
-              <li>• ⚡ 30M: 20 TAKARA per 100 USDT</li>
-              <li>• ⚡ 36M: 35 TAKARA per 100 USDT</li>
+              <li>• 7.73-25% Base APY</li>
+              <li>• Up to 9.73-27% Max APY (with LAIKA boost)</li>
+              <li>• 75-150 Takara APY</li>
+              <li>• ✓ 18M: No TAKARA required (11.6% total return)</li>
+              <li>• ⚡ 30M: 20 TAKARA per 100 USDT (60% total return)</li>
+              <li>• ⚡ 36M: 35 TAKARA per 100 USDT (75% total return)</li>
             </ul>
           </div>
 
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
             <p className="font-semibold text-purple-400 mb-2">PRO (From $1,000, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
-              <li>• 4.5-7% Base APY</li>
-              <li>• Up to 10% Max APY (with LAIKA boost)</li>
-              <li>• 120-200 Mining Power</li>
-              <li>• ✓ 12M: No TAKARA required</li>
-              <li>• ⚡ 30M: 30 TAKARA per 100 USDT</li>
-              <li>• ⚡ 36M: 45 TAKARA per 100 USDT</li>
+              <li>• 7.73-25% Base APY</li>
+              <li>• Up to 10.23-28% Max APY (with LAIKA boost)</li>
+              <li>• 150-350 Takara APY</li>
+              <li>• ✓ 18M: No TAKARA required (11.6% total return)</li>
+              <li>• ⚡ 30M: 30 TAKARA per 100 USDT (60% total return)</li>
+              <li>• ⚡ 36M: 45 TAKARA per 100 USDT (75% total return)</li>
             </ul>
           </div>
 
           <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4">
             <p className="font-semibold text-gold-400 mb-2">ELITE (From $5,000, no max limit)</p>
             <ul className="text-sm text-gray-300 space-y-1">
-              <li>• 5-8% Base APY</li>
-              <li>• Up to 12% Max APY (with LAIKA boost)</li>
-              <li>• 250-350 Mining Power</li>
-              <li>• ⚡ 12M: 25 TAKARA per 100 USDT (premium tier)</li>
-              <li>• ⚡ 30M: 40 TAKARA per 100 USDT</li>
-              <li>• ⚡ 36M: 50 TAKARA per 100 USDT (highest)</li>
+              <li>• 7.73-25% Base APY</li>
+              <li>• Up to 10.73-29% Max APY (with LAIKA boost)</li>
+              <li>• 200-450 Takara APY</li>
+              <li>• ⚡ 18M: 25 TAKARA per 100 USDT (11.6% total return)</li>
+              <li>• ⚡ 30M: 40 TAKARA per 100 USDT (60% total return)</li>
+              <li>• ⚡ 36M: 50 TAKARA per 100 USDT (75% total return)</li>
             </ul>
           </div>
         </div>
@@ -198,8 +204,9 @@ export default function FAQPage() {
           <div className="bg-background-elevated rounded-lg p-4">
             <p className="font-semibold text-white mb-2">How it works:</p>
             <ul className="text-sm text-gray-300 space-y-1">
-              <li>• You can deposit up to 90% of your USDT value in LAIKA</li>
-              <li>• Each LAIKA token adds extra APY to your vault (up to +4%)</li>
+              <li>• You can deposit up to 50% of your USDT value in LAIKA</li>
+              <li>• Boost increases your APY up to the vault's Max APY</li>
+              <li>• <strong>Max boost by tier:</strong> STARTER +2% | PRO +2.5-3% | ELITE +3-4%</li>
               <li>• Your LAIKA is returned at the end of the term</li>
               <li>• During the term, you earn the boosted APY on your USDT</li>
             </ul>
@@ -221,7 +228,7 @@ export default function FAQPage() {
           <p>Your LAIKA tokens are returned to you at the <strong>end of your vault term</strong>.</p>
           <p className="text-gray-400">For example:</p>
           <ul className="list-disc pl-5 space-y-1 text-gray-300">
-            <li>12-month vault: LAIKA returned after 12 months</li>
+            <li>18-month vault: LAIKA returned after 18 months</li>
             <li>30-month vault: LAIKA returned after 30 months</li>
             <li>36-month vault: LAIKA returned after 36 months</li>
           </ul>
@@ -241,7 +248,7 @@ export default function FAQPage() {
           <p>Every vault has a mining power that determines how many TAKARA tokens you mine daily:</p>
 
           <div className="bg-background-elevated rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-white">Mining Power by Tier:</p>
+            <p className="font-semibold text-white">Takara APY by Tier:</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• <span className="text-blue-400">Starter:</span> 50-150 mining power</li>
               <li>• <span className="text-purple-400">Pro:</span> 120-200 mining power</li>

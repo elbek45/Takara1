@@ -12,7 +12,7 @@
  */
 
 export const TAKARA_CONFIG = {
-  TOTAL_SUPPLY: 600_000_000, // 600 million TAKARA
+  TOTAL_SUPPLY: 21_000_000, // 21 million TAKARA
   MINING_PERIOD_MONTHS: 60, // 5 years
   BASE_DIFFICULTY: 1.0, // Base difficulty multiplier
   SUPPLY_FACTOR: 0.5, // How much total mined affects difficulty
@@ -20,7 +20,7 @@ export const TAKARA_CONFIG = {
 } as const;
 
 export interface MiningInput {
-  miningPower: number; // From vault config (50, 100, 150, etc.)
+  takaraAPY: number; // From vault config (50, 100, 150, etc.)
   usdtInvested: number; // Investment amount
   currentDifficulty: number; // Current network difficulty
   durationMonths: number; // Vault duration
@@ -35,27 +35,30 @@ export interface MiningResult {
 }
 
 export interface DifficultyFactors {
-  totalMined: number; // Total TAKARA mined so far
+  circulatingSupply: number; // Total user-owned TAKARA (mined + entry locked + boost locked)
   activeMiners: number; // Number of active mining investments
 }
 
 /**
- * Calculate dynamic difficulty
+ * Calculate dynamic difficulty (v2.3 - Updated to use circulating supply)
  *
  * Formula:
- * difficulty = base × (1 + total_mined/total_supply × supply_factor) × (1 + active_miners × miner_factor)
+ * difficulty = base × (1 + circulating_supply/total_supply × supply_factor) × (1 + active_miners × miner_factor)
+ *
+ * Where circulating_supply = totalMined + totalEntryLocked + totalBoostLocked
+ * (All TAKARA that belongs to users, including what will be returned)
  *
  * Example:
- * - 0% mined, 100 miners: difficulty ≈ 1.0001
- * - 10% mined, 1000 miners: difficulty ≈ 1.051
- * - 50% mined, 5000 miners: difficulty ≈ 1.255
+ * - 0% circulating, 100 miners: difficulty ≈ 1.0001
+ * - 10% circulating, 1000 miners: difficulty ≈ 1.051
+ * - 50% circulating, 5000 miners: difficulty ≈ 1.255
  */
 export function calculateDifficulty(factors: DifficultyFactors): number {
-  const { totalMined, activeMiners } = factors;
+  const { circulatingSupply, activeMiners } = factors;
   const { TOTAL_SUPPLY, BASE_DIFFICULTY, SUPPLY_FACTOR, MINER_FACTOR } = TAKARA_CONFIG;
 
-  // Supply impact (how much has been mined)
-  const supplyRatio = totalMined / TOTAL_SUPPLY;
+  // Supply impact (circulating supply ratio)
+  const supplyRatio = circulatingSupply / TOTAL_SUPPLY;
   const supplyMultiplier = 1 + (supplyRatio * SUPPLY_FACTOR);
 
   // Miner impact (network effect)
@@ -76,14 +79,14 @@ export function calculateDifficulty(factors: DifficultyFactors): number {
  * Where base_daily_rate is calculated to distribute total supply over mining period
  */
 export function calculateBaseMiningRate(
-  miningPower: number,
+  takaraAPY: number,
   usdtInvested: number
 ): number {
   // Base daily rate per $1000 invested at 100% mining power
   // This ensures fair distribution over 5 years
   const BASE_DAILY_PER_1000 = 10.0; // Adjustable
 
-  const powerMultiplier = miningPower / 100;
+  const powerMultiplier = takaraAPY / 100;
   const investmentMultiplier = usdtInvested / 1000;
 
   const dailyRaw = powerMultiplier * investmentMultiplier * BASE_DAILY_PER_1000;
@@ -95,10 +98,10 @@ export function calculateBaseMiningRate(
  * Calculate TAKARA mining rewards
  */
 export function calculateMining(input: MiningInput): MiningResult {
-  const { miningPower, usdtInvested, currentDifficulty, durationMonths } = input;
+  const { takaraAPY, usdtInvested, currentDifficulty, durationMonths } = input;
 
   // Calculate raw daily mining (before difficulty)
-  const dailyTakaraRaw = calculateBaseMiningRate(miningPower, usdtInvested);
+  const dailyTakaraRaw = calculateBaseMiningRate(takaraAPY, usdtInvested);
 
   // Apply difficulty
   const dailyTakaraFinal = dailyTakaraRaw / currentDifficulty;
@@ -125,17 +128,17 @@ export function calculateMining(input: MiningInput): MiningResult {
 export function compareMiningOptions(
   usdtInvested: number,
   currentDifficulty: number,
-  vaultOptions: Array<{ name: string; miningPower: number; duration: number }>
+  vaultOptions: Array<{ name: string; takaraAPY: number; duration: number }>
 ): Array<{
   name: string;
-  miningPower: number;
+  takaraAPY: number;
   duration: number;
   dailyTakara: number;
   totalTakara: number;
 }> {
   return vaultOptions.map(option => {
     const result = calculateMining({
-      miningPower: option.miningPower,
+      takaraAPY: option.takaraAPY,
       usdtInvested,
       currentDifficulty,
       durationMonths: option.duration
@@ -143,7 +146,7 @@ export function compareMiningOptions(
 
     return {
       name: option.name,
-      miningPower: option.miningPower,
+      takaraAPY: option.takaraAPY,
       duration: option.duration,
       dailyTakara: result.dailyTakaraFinal,
       totalTakara: result.totalTakaraExpected
@@ -159,32 +162,32 @@ export function compareMiningOptions(
 export function projectFutureDifficulty(
   currentFactors: DifficultyFactors,
   monthsAhead: number,
-  averageMonthlyMining: number, // Average TAKARA mined per month
+  averageMonthlySupplyGrowth: number, // Average circulating supply growth per month
   minerGrowthRate: number = 1.05 // 5% monthly growth in miners
 ): number {
-  let totalMined = currentFactors.totalMined;
+  let circulatingSupply = currentFactors.circulatingSupply;
   let activeMiners = currentFactors.activeMiners;
 
   // Project forward month by month
   for (let i = 0; i < monthsAhead; i++) {
-    totalMined += averageMonthlyMining;
+    circulatingSupply += averageMonthlySupplyGrowth;
     activeMiners *= minerGrowthRate;
   }
 
-  return calculateDifficulty({ totalMined, activeMiners: Math.floor(activeMiners) });
+  return calculateDifficulty({ circulatingSupply, activeMiners: Math.floor(activeMiners) });
 }
 
 /**
  * Calculate mining efficiency score (TAKARA per USDT invested)
  */
 export function calculateMiningEfficiency(
-  miningPower: number,
+  takaraAPY: number,
   usdtInvested: number,
   currentDifficulty: number,
   durationMonths: number
 ): number {
   const result = calculateMining({
-    miningPower,
+    takaraAPY,
     usdtInvested,
     currentDifficulty,
     durationMonths
@@ -197,35 +200,35 @@ export function calculateMiningEfficiency(
 }
 
 /**
- * Get mining statistics for dashboard
+ * Get mining statistics for dashboard (v2.3 - Updated for circulating supply)
  */
 export function getMiningStats(
   currentFactors: DifficultyFactors
 ): {
-  totalMined: number;
+  circulatingSupply: number;
   totalSupply: number;
-  percentMined: number;
+  percentCirculating: number;
   remaining: number;
   activeMiners: number;
   currentDifficulty: number;
   averageDifficultyIncrease: number;
 } {
-  const { totalMined, activeMiners } = currentFactors;
+  const { circulatingSupply, activeMiners } = currentFactors;
   const { TOTAL_SUPPLY } = TAKARA_CONFIG;
 
-  const percentMined = (totalMined / TOTAL_SUPPLY) * 100;
-  const remaining = TOTAL_SUPPLY - totalMined;
+  const percentCirculating = (circulatingSupply / TOTAL_SUPPLY) * 100;
+  const remaining = TOTAL_SUPPLY - circulatingSupply;
   const currentDifficulty = calculateDifficulty(currentFactors);
 
   // Calculate average difficulty increase rate
-  // Compare current vs if no mining had happened
-  const initialDifficulty = calculateDifficulty({ totalMined: 0, activeMiners: 100 });
+  // Compare current vs if no supply had circulated
+  const initialDifficulty = calculateDifficulty({ circulatingSupply: 0, activeMiners: 100 });
   const averageDifficultyIncrease = ((currentDifficulty / initialDifficulty) - 1) * 100;
 
   return {
-    totalMined: Number(totalMined.toFixed(2)),
+    circulatingSupply: Number(circulatingSupply.toFixed(2)),
     totalSupply: TOTAL_SUPPLY,
-    percentMined: Number(percentMined.toFixed(4)),
+    percentCirculating: Number(percentCirculating.toFixed(4)),
     remaining: Number(remaining.toFixed(2)),
     activeMiners,
     currentDifficulty: Number(currentDifficulty.toFixed(6)),
@@ -240,9 +243,9 @@ export function validateMiningInput(input: MiningInput): {
   valid: boolean;
   error?: string;
 } {
-  const { miningPower, usdtInvested, currentDifficulty, durationMonths } = input;
+  const { takaraAPY, usdtInvested, currentDifficulty, durationMonths } = input;
 
-  if (miningPower <= 0) {
+  if (takaraAPY <= 0) {
     return { valid: false, error: 'Mining power must be greater than 0' };
   }
 

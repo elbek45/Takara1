@@ -91,11 +91,16 @@ export function calculateEarnings(input: APYCalculationInput): APYCalculationRes
 /**
  * Calculate number of payouts based on schedule
  */
+/**
+ * Calculate number of payouts based on schedule
+ */
 export function calculateNumberOfPayouts(
   durationMonths: number,
   schedule: PayoutSchedule
 ): number {
   switch (schedule) {
+    case PayoutSchedule.DAILY:
+      return durationMonths * 30; // Daily payouts
     case PayoutSchedule.MONTHLY:
       return durationMonths;
     case PayoutSchedule.QUARTERLY:
@@ -119,6 +124,10 @@ export function calculateNextPayoutDate(
   const nextDate = new Date(baseDate);
 
   switch (schedule) {
+    case PayoutSchedule.DAILY:
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+      
     case PayoutSchedule.MONTHLY:
       nextDate.setMonth(nextDate.getMonth() + 1);
       break;

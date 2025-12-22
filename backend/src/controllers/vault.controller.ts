@@ -67,7 +67,7 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -164,7 +164,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -203,7 +203,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
 export async function calculateInvestment(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const { usdtAmount, laikaAmountLKI } = req.body;
+    const { usdtAmount, laikaAmount } = req.body;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -262,16 +262,17 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     const laikaPrice = await getLaikaPrice();
     logger.info({ laikaPrice }, 'Fetched LAIKA price for calculation');
 
-    // Convert LKI amount to USD market value
-    const laikaAmountLKIValue = laikaAmountLKI || 0;
-    const laikaMarketValueUSD = laikaAmountLKIValue * laikaPrice;
+    // Convert LAIKA amount to USD market value
+    const laikaAmountValue = laikaAmount || 0;
+    const laikaMarketValueUSD = laikaAmountValue * laikaPrice;
 
-    // Calculate discounted value with 10% platform discount
-    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountLKIValue);
+    // Calculate LAIKA value (platform accepts at 10% below market)
+    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountValue);
 
-    // Calculate LAIKA boost (uses market value, applies 10% discount internally)
+    // Calculate LAIKA boost (platform values LAIKA 10% below market)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
+      maxAPY: Number(vault.maxAPY),
       tier: vault.tier as VaultTier,
       usdtInvested: usdtAmount,
       laikaMarketValueUSD: laikaMarketValueUSD
@@ -296,7 +297,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
 
     // Calculate TAKARA mining
     const miningResult = calculateMining({
-      miningPower: Number(vault.miningPower),
+      takaraAPY: Number(vault.takaraAPY),
       usdtInvested: usdtAmount,
       currentDifficulty,
       durationMonths: vault.duration
@@ -314,20 +315,20 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
         investment: {
           usdtAmount,
           requiredTAKARA,
-          laikaAmountLKI: laikaAmountLKIValue,
+          laikaAmount: laikaAmountValue,
           laikaPrice: laikaPrice, // Real-time price from Jupiter
-          laikaMarketValueUSD: laikaMarketValueUSD, // Market value before discount
-          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // 10%
-          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // USD discount
-          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // After 10% discount
+          laikaMarketValueUSD: laikaMarketValueUSD, // Market price
+          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // Platform valuation: 10% below market
+          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // Difference from market
+          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // Platform accepts at 50% of market
           // For backward compatibility
           laikaValueUSD: laikaDiscountInfo.finalValue,
-          lkiToUsdtRate: laikaPrice
+          laikaToUsdtRate: laikaPrice
         },
         laika: {
           // Detailed LAIKA info for UI
           ...boostResult,
-          maxBoostValue: usdtAmount * 0.90, // Max LAIKA value allowed (90% of USDT)
+          maxBoostValue: usdtAmount * 0.50, // Max LAIKA value allowed (50% of USDT)
           currentBoostPercent: boostResult.boostFillPercent
         },
         earnings: {
@@ -341,7 +342,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           payoutAmount: earningsResult.payoutAmount
         },
         mining: {
-          miningPower: Number(vault.miningPower),
+          takaraAPY: Number(vault.takaraAPY),
           currentDifficulty,
           dailyTAKARA: miningResult.dailyTakaraFinal,
           monthlyTAKARA: miningResult.monthlyTakara,

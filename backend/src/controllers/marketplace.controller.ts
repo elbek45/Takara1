@@ -13,6 +13,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { AuthenticatedRequest, CreateListingInput } from '../types';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, MARKETPLACE_CONFIG } from '../config/constants';
+import { applyWexelSaleTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 import { invalidateCacheByPrefix } from '../middleware/cache.middleware';
 
@@ -281,7 +282,41 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
     // Calculate platform fee and seller proceeds
     const price = Number(listing.priceUSDT);
     const platformFeeAmount = price * (Number(listing.platformFee) / 100);
-    const sellerProceeds = price - platformFeeAmount;
+
+    // Apply 5% tax on WEXEL sale (v2.2)
+    let taxAmount = 0;
+    let sellerProceeds = price - platformFeeAmount;
+
+    try {
+      const taxResult = await applyWexelSaleTax({
+        userId: listing.sellerId,
+        investmentId: listing.investmentId,
+        salePrice: price
+        // Note: platformWallet would be needed for actual tax transfer
+      });
+
+      taxAmount = taxResult.taxAmount;
+      sellerProceeds = price - platformFeeAmount - taxAmount;
+
+      logger.info({
+        listingId: id,
+        salePrice: price,
+        platformFee: platformFeeAmount,
+        taxAmount,
+        sellerReceives: sellerProceeds
+      }, 'WEXEL sale tax applied');
+    } catch (taxError: any) {
+      logger.error({
+        error: taxError,
+        listingId: id
+      }, 'Failed to apply WEXEL sale tax');
+
+      res.status(500).json({
+        success: false,
+        message: `Tax application failed: ${taxError?.message || 'Unknown error'}`
+      });
+      return;
+    }
 
     // Start transaction
     await prisma.$transaction(async (tx) => {
@@ -361,6 +396,7 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
         vaultName: listing.investment.vault.name,
         pricePaid: price,
         platformFee: platformFeeAmount,
+        taxAmount, // v2.2: 5% tax on WEXEL sale
         sellerReceived: sellerProceeds,
         nftMintAddress: listing.investment.nftMintAddress,
         laikaIncluded: !!listing.investment.laikaBoost

@@ -41,7 +41,7 @@ export interface MintNFTInput {
   usdtAmount: number;
   finalAPY: number;
   duration: number;
-  miningPower: number;
+  takaraAPY: number;
   hasLaikaBoost: boolean;
   ownerWallet: string;
 }
@@ -57,13 +57,13 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
     usdtAmount,
     finalAPY,
     duration,
-    miningPower,
+    takaraAPY,
     hasLaikaBoost,
     ownerWallet
   } = input;
 
   // Generate unique NFT name
-  const nftName = `Takara Gold ${vaultTier} #${investmentId.slice(0, 8)}`;
+  const nftName = `WEXEL ${vaultTier} #${investmentId.slice(0, 8)}`;
 
   // Create attributes
   const attributes = [
@@ -72,19 +72,19 @@ export function generateNFTMetadata(input: MintNFTInput): NFTMetadata {
     { trait_type: 'Investment Amount', value: `${usdtAmount} USDT` },
     { trait_type: 'APY', value: `${finalAPY}%` },
     { trait_type: 'Duration', value: `${duration} months` },
-    { trait_type: 'Mining Power', value: `${miningPower}%` },
+    { trait_type: 'Mining Power', value: `${takaraAPY}%` },
     { trait_type: 'LAIKA Boost', value: hasLaikaBoost ? 'Yes' : 'No' }
   ];
 
   // Generate description
-  const description = `Takara Gold Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${miningPower}% TAKARA mining power. This NFT can be traded on the Takara Gold marketplace.`;
+  const description = `WEXEL Investment NFT representing a ${vaultName} position with ${finalAPY}% APY and ${takaraAPY}% TAKARA mining power. This NFT represents ownership of the investment and can be traded on the Takara Gold marketplace.`;
 
   // TODO: Replace with actual IPFS image URL
   const imageUrl = `https://placeholder.takaragold.io/nft/${vaultTier.toLowerCase()}.png`;
 
   return {
     name: nftName,
-    symbol: 'TAKARA-INV',
+    symbol: 'WXL',
     description,
     image: imageUrl,
     attributes,
@@ -177,7 +177,11 @@ export async function mintInvestmentNFT(
     const metaplex = Metaplex.make(connection)
       .use(keypairIdentity(platformWallet));
 
-    const { nft, response } = await metaplex.nfts().create({
+    // Get WEXEL collection address
+    const wexelCollectionAddress = process.env.WEXEL_COLLECTION_ADDRESS;
+
+    // Build NFT creation options
+    const createOptions: any = {
       uri: metadataUri,
       name: metadata.name,
       symbol: metadata.symbol,
@@ -189,7 +193,17 @@ export async function mintInvestmentNFT(
           share: 100
         }
       ]
-    });
+    };
+
+    // Add collection if configured
+    if (wexelCollectionAddress && wexelCollectionAddress !== 'TO_BE_DEPLOYED') {
+      createOptions.collection = new PublicKey(wexelCollectionAddress);
+      logger.info({ collectionAddress: wexelCollectionAddress }, 'Minting NFT as part of WEXEL collection');
+    } else {
+      logger.warn('WEXEL_COLLECTION_ADDRESS not configured, minting without collection');
+    }
+
+    const { nft, response } = await metaplex.nfts().create(createOptions);
 
     const signature = response?.signature || 'unknown';
 

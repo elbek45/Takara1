@@ -57,7 +57,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 100,
+            takaraAPY: 100,
             duration: 30,
           },
         },
@@ -67,7 +67,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 50,
+            takaraAPY: 50,
             duration: 12,
           },
         },
@@ -105,7 +105,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 50,
+            takaraAPY: 50,
             duration: 12,
           },
         },
@@ -178,7 +178,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 50,
           status: 'ACTIVE',
           vault: {
-            miningPower: 100,
+            takaraAPY: 100,
             duration: 30,
           },
         },
@@ -213,7 +213,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 100,
+            takaraAPY: 100,
             duration: 30,
           },
         },
@@ -223,7 +223,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 50,
+            takaraAPY: 50,
             duration: 12,
           },
         },
@@ -265,7 +265,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 50,
+            takaraAPY: 50,
             duration: 12,
           },
         },
@@ -303,7 +303,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 100,
+            takaraAPY: 100,
             duration: 30,
           },
         },
@@ -313,7 +313,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 50,
+            takaraAPY: 50,
             duration: 12,
           },
         },
@@ -369,7 +369,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 350, // Elite
+            takaraAPY: 350, // Elite
             duration: 36,
           },
         },
@@ -400,7 +400,7 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            miningPower: 100,
+            takaraAPY: 100,
             duration: 30,
           },
         },

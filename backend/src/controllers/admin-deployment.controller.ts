@@ -17,6 +17,7 @@ import { getLogger } from '../config/logger';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token';
 import bs58 from 'bs58';
+import { TAKARA_CONFIG } from '../utils/mining.calculator';
 
 const logger = getLogger('admin-deployment-controller');
 
@@ -57,10 +58,13 @@ export async function getDeploymentStatus(req: Request, res: Response): Promise<
     // Check if tokens are deployed
     const takaraDeployed = config.takaraTokenMint && config.takaraTokenMint !== 'TO_BE_DEPLOYED';
     const laikaConfigured = config.laikaTokenMint && config.laikaTokenMint !== 'TO_BE_DEPLOYED';
+    const wexelCollectionAddress = process.env.WEXEL_COLLECTION_ADDRESS;
+    const wexelCollectionDeployed = !!wexelCollectionAddress && wexelCollectionAddress !== 'TO_BE_DEPLOYED';
 
     // Check deployment files
     let takaraDeploymentInfo = null;
     let laikaDeploymentInfo = null;
+    let wexelCollectionInfo = null;
 
     try {
       const takaraPath = path.join(__dirname, '../../takara-mainnet-deployment.json');
@@ -78,6 +82,14 @@ export async function getDeploymentStatus(req: Request, res: Response): Promise<
       // File doesn't exist yet
     }
 
+    try {
+      const wexelPath = path.join(__dirname, '../../wexel-collection-mainnet.json');
+      const wexelData = await fs.readFile(wexelPath, 'utf-8');
+      wexelCollectionInfo = JSON.parse(wexelData);
+    } catch (error) {
+      // File doesn't exist yet
+    }
+
     res.json({
       success: true,
       data: {
@@ -86,13 +98,16 @@ export async function getDeploymentStatus(req: Request, res: Response): Promise<
         status: {
           takaraDeployed,
           laikaConfigured,
+          wexelCollectionDeployed,
           infuraConfigured: config.ethereumRpcUrl?.includes('infura') || false,
           walletsGenerated: !!config.platformWallet && !!config.platformEthAddress
         },
         deploymentInfo: {
           takara: takaraDeploymentInfo,
-          laika: laikaDeploymentInfo
-        }
+          laika: laikaDeploymentInfo,
+          wexelCollection: wexelCollectionInfo
+        },
+        wexelCollectionAddress
       }
     });
   } catch (error: any) {
@@ -190,7 +205,7 @@ async function deployTakaraInBackground() {
     deploymentState.currentStep = 'Connecting to Solana';
     deploymentState.progress = 20;
 
-    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Check balance
@@ -252,17 +267,17 @@ async function deployTakaraInBackground() {
       name: 'Takara Gold',
       symbol: 'TAKARA',
       decimals: 9,
-      totalSupply: 600_000_000,
+      totalSupply: TAKARA_CONFIG.TOTAL_SUPPLY, // 21M TAKARA
       initialMint: 60_000_000,
       mintAddress: mint.toString(),
       tokenAccount: tokenAccount.address.toString(),
       mintAuthority: payer.publicKey.toString(),
       freezeAuthority: payer.publicKey.toString(),
-      network: 'mainnet-beta',
+      network: 'devnet',
       rpcUrl,
       deployedAt: new Date().toISOString(),
       deployedBy: 'admin',
-      solscanUrl: `https://solscan.io/token/${mint.toString()}`
+      solscanUrl: `https://solscan.io/token/${mint.toString()}?cluster=devnet`
     };
 
     deploymentState.currentStep = 'Saving deployment info';
@@ -366,7 +381,7 @@ export async function verifyTakaraToken(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Verify mint exists
@@ -401,9 +416,151 @@ export async function verifyTakaraToken(req: Request, res: Response): Promise<vo
   }
 }
 
+/**
+ * POST /api/admin/deployment/create-wexel-collection
+ * Create WEXEL NFT Collection on Solana
+ *
+ * Body: {
+ *   confirm: boolean
+ * }
+ */
+export async function createWexelCollection(req: Request, res: Response): Promise<void> {
+  try {
+    const schema = z.object({
+      confirm: z.boolean().refine(val => val === true, {
+        message: 'Confirmation required to create collection'
+      })
+    });
+
+    const data = schema.parse(req.body);
+
+    if (deploymentState.inProgress) {
+      res.status(409).json({
+        success: false,
+        message: 'Another deployment is already in progress'
+      });
+      return;
+    }
+
+    // Check if already deployed
+    const wexelCollectionAddress = process.env.WEXEL_COLLECTION_ADDRESS;
+    if (wexelCollectionAddress && wexelCollectionAddress !== 'TO_BE_DEPLOYED') {
+      res.status(400).json({
+        success: false,
+        message: 'WEXEL collection already exists',
+        collectionAddress: wexelCollectionAddress
+      });
+      return;
+    }
+
+    // Reset deployment state
+    deploymentState.inProgress = true;
+    deploymentState.currentStep = 'Initializing';
+    deploymentState.progress = 0;
+    deploymentState.logs = [];
+    deploymentState.error = undefined;
+    deploymentState.result = undefined;
+
+    // Log start
+    deploymentState.logs.push(`[${new Date().toISOString()}] Starting WEXEL collection creation`);
+
+    // Return immediately and create in background
+    res.json({
+      success: true,
+      message: 'WEXEL collection creation started. Monitor progress via /api/admin/deployment/status',
+      deploymentId: Date.now()
+    });
+
+    // Create in background
+    createWexelCollectionInBackground().catch(error => {
+      logger.error({ error }, 'Background WEXEL collection creation failed');
+      deploymentState.error = error.message;
+      deploymentState.inProgress = false;
+    });
+
+  } catch (error: any) {
+    deploymentState.inProgress = false;
+    logger.error({ error: error.message }, 'Failed to start WEXEL collection creation');
+    res.status(400).json({
+      success: false,
+      message: 'Failed to start collection creation',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Create WEXEL collection in background
+ */
+async function createWexelCollectionInBackground() {
+  try {
+    deploymentState.currentStep = 'Running collection script';
+    deploymentState.progress = 10;
+    deploymentState.logs.push(`[${new Date().toISOString()}] Executing WEXEL collection creation script`);
+
+    const scriptPath = path.join(__dirname, '../../scripts/create-wexel-collection.js');
+
+    // Execute script
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    deploymentState.progress = 30;
+
+    const { stdout, stderr } = await execAsync(`node ${scriptPath}`, {
+      cwd: path.join(__dirname, '../..'),
+      env: process.env
+    });
+
+    deploymentState.progress = 80;
+
+    // Log output
+    if (stdout) {
+      stdout.split('\n').forEach(line => {
+        if (line.trim()) {
+          deploymentState.logs.push(`[${new Date().toISOString()}] ${line}`);
+        }
+      });
+    }
+
+    if (stderr) {
+      stderr.split('\n').forEach(line => {
+        if (line.trim()) {
+          deploymentState.logs.push(`[${new Date().toISOString()}] ERROR: ${line}`);
+        }
+      });
+    }
+
+    // Read collection info
+    const collectionPath = path.join(__dirname, '../../wexel-collection-mainnet.json');
+    const collectionData = await fs.readFile(collectionPath, 'utf-8');
+    const collectionInfo = JSON.parse(collectionData);
+
+    deploymentState.currentStep = 'Complete';
+    deploymentState.progress = 100;
+    deploymentState.result = collectionInfo;
+    deploymentState.inProgress = false;
+
+    deploymentState.logs.push(`[${new Date().toISOString()}] ✅ WEXEL collection created successfully!`);
+    deploymentState.logs.push(`[${new Date().toISOString()}] 📊 Collection Address: ${collectionInfo.collection.address}`);
+    deploymentState.logs.push(`[${new Date().toISOString()}] 📊 View on Solscan: ${collectionInfo.solscanUrl}`);
+    deploymentState.logs.push(`[${new Date().toISOString()}] ⚠️ NEXT STEP: Update .env with WEXEL_COLLECTION_ADDRESS=${collectionInfo.collection.address}`);
+
+    logger.info({ collectionAddress: collectionInfo.collection.address }, 'WEXEL collection created successfully');
+
+  } catch (error: any) {
+    deploymentState.error = error.message;
+    deploymentState.inProgress = false;
+    deploymentState.logs.push(`[${new Date().toISOString()}] ❌ Error: ${error.message}`);
+    logger.error({ error }, 'WEXEL collection creation failed');
+    throw error;
+  }
+}
+
 export default {
   getDeploymentStatus,
   deployTakaraToken,
+  createWexelCollection,
   updateEnvironment,
   verifyTakaraToken
 };

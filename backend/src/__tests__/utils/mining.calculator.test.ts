@@ -263,7 +263,7 @@ describe('TAKARA Mining Calculator', () => {
   describe('getMiningStats', () => {
     it('should return comprehensive mining statistics', () => {
       const stats = getMiningStats({
-        totalMined: 60000000, // 10% of total supply
+        totalMined: 2100000, // 10% of 21M total supply
         activeMiners: 5000
       });
 
@@ -275,10 +275,10 @@ describe('TAKARA Mining Calculator', () => {
       expect(stats).toHaveProperty('currentDifficulty');
       expect(stats).toHaveProperty('averageDifficultyIncrease');
 
-      expect(stats.totalMined).toBe(60000000);
+      expect(stats.totalMined).toBe(2100000);
       expect(stats.totalSupply).toBe(TAKARA_CONFIG.TOTAL_SUPPLY);
       expect(stats.percentMined).toBeCloseTo(10, 2);
-      expect(stats.remaining).toBe(TAKARA_CONFIG.TOTAL_SUPPLY - 60000000);
+      expect(stats.remaining).toBe(TAKARA_CONFIG.TOTAL_SUPPLY - 2100000);
     });
 
     it('should calculate percent mined correctly', () => {
@@ -365,7 +365,7 @@ describe('TAKARA Mining Calculator', () => {
 
   describe('TAKARA_CONFIG constants', () => {
     it('should have correct total supply', () => {
-      expect(TAKARA_CONFIG.TOTAL_SUPPLY).toBe(600_000_000);
+      expect(TAKARA_CONFIG.TOTAL_SUPPLY).toBe(21_000_000);
     });
 
     it('should have 5 year mining period', () => {

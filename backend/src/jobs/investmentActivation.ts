@@ -12,6 +12,8 @@ import { prisma } from '../config/database';
 import { INVESTMENT_CONFIG } from '../config/constants';
 import { mintInvestmentNFT } from '../services/nft.service';
 import { getLogger } from '../config/logger';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 const logger = getLogger('activation-job');
 
@@ -21,6 +23,21 @@ const logger = getLogger('activation-job');
 export async function processInvestmentActivation(): Promise<void> {
   try {
     logger.info('Starting investment activation process');
+
+    // Load platform wallet for NFT minting
+    let platformWallet: Keypair | null = null;
+    try {
+      const privateKeyEnv = process.env.PLATFORM_WALLET_PRIVATE_KEY;
+      if (privateKeyEnv) {
+        const privateKey = bs58.decode(privateKeyEnv);
+        platformWallet = Keypair.fromSecretKey(privateKey);
+        logger.info({ wallet: platformWallet.publicKey.toBase58() }, 'Platform wallet loaded for NFT minting');
+      } else {
+        logger.warn('PLATFORM_WALLET_PRIVATE_KEY not set, NFT minting will be skipped');
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to load platform wallet, NFT minting will be skipped');
+    }
 
     // Calculate activation threshold (72 hours ago)
     const activationThreshold = new Date();
@@ -61,33 +78,41 @@ export async function processInvestmentActivation(): Promise<void> {
           userId: investment.userId
         }, 'Activating investment');
 
-        // TODO: Mint NFT (currently using placeholder)
-        // Uncomment when Metaplex is properly implemented
-        /*
-        const nftData = await mintInvestmentNFT(
-          {
-            investmentId: investment.id,
-            vaultName: investment.vault.name,
-            vaultTier: investment.vault.tier,
-            usdtAmount: Number(investment.usdtAmount),
-            finalAPY: Number(investment.finalAPY),
-            duration: investment.vault.duration,
-            miningPower: Number(investment.vault.miningPower),
-            hasLaikaBoost: !!investment.laikaBoost,
-            ownerWallet: investment.user.walletAddress
-          },
-          platformWallet // TODO: Pass actual platform wallet
-        );
-        */
+        // Mint WEXEL NFT for investment
+        let nftData = null;
+        if (platformWallet && investment.user.walletAddress) {
+          try {
+            nftData = await mintInvestmentNFT(
+              {
+                investmentId: investment.id,
+                vaultName: investment.vault.name,
+                vaultTier: investment.vault.tier,
+                usdtAmount: Number(investment.usdtAmount),
+                finalAPY: Number(investment.finalAPY),
+                duration: investment.vault.duration,
+                takaraAPY: Number(investment.vault.takaraAPY),
+                hasLaikaBoost: !!investment.laikaBoost,
+                ownerWallet: investment.user.walletAddress
+              },
+              platformWallet
+            );
+            logger.info({
+              investmentId: investment.id,
+              nftMint: nftData.mintAddress
+            }, 'WEXEL NFT minted successfully');
+          } catch (error) {
+            logger.error({ error, investmentId: investment.id }, 'Failed to mint WEXEL NFT, continuing activation');
+          }
+        }
 
         // Activate investment (with or without NFT)
         await prisma.investment.update({
           where: { id: investment.id },
           data: {
             status: 'ACTIVE',
-            // nftMintAddress: nftData.mintAddress,
-            // nftMetadataUri: nftData.metadataUri,
-            // isNFTMinted: true
+            nftMintAddress: nftData?.mintAddress || null,
+            nftMetadataUri: nftData?.metadataUri || null,
+            isNFTMinted: !!nftData
           }
         });
 

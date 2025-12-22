@@ -95,7 +95,7 @@ export async function createTestVault(overrides?: any): Promise<Vault> {
     requireTAKARA: false,
     baseAPY: 4.0,
     maxAPY: 8.0,
-    miningPower: 50,
+    takaraAPY: 50,
     isActive: true,
     currentFilled: new Prisma.Decimal(0),
     ...overrides,

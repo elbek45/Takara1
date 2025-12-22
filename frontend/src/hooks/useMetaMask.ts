@@ -206,10 +206,12 @@ export function useMetaMask() {
   }, [state.address, disconnect])
 
   /**
-   * Auto-connect if previously connected
+   * Auto-connect if user is authenticated and previously connected
    */
   useEffect(() => {
     const autoConnect = async () => {
+      // Only auto-connect if user is authenticated
+      if (!api.isAuthenticated()) return
       if (!ethereumService.isMetaMaskInstalled()) return
 
       try {

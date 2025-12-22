@@ -12,6 +12,7 @@ export enum VaultTier {
 }
 
 export enum PayoutSchedule {
+  DAILY = 'DAILY',
   MONTHLY = 'MONTHLY',
   QUARTERLY = 'QUARTERLY',
   END_OF_TERM = 'END_OF_TERM',
@@ -44,7 +45,7 @@ export interface Vault {
   maxInvestment: number
   baseAPY: number
   maxAPY: number
-  miningPower: number
+  takaraAPY: number // v2.2: renamed from miningPower
   requireTAKARA: boolean
   takaraRatio?: number
   currentFilled: number
@@ -82,6 +83,18 @@ export interface Investment {
     additionalAPY: number
     isReturned: boolean
   }
+  // v2.2: TAKARA boost support
+  takaraBoost?: {
+    takaraAmount: number
+    takaraValueUSD: number
+    maxAllowedUSD: number
+    boostPercentage: number
+    additionalAPY: number
+    isReturned: boolean
+  }
+  // v2.2: Instant sale support
+  instantSalePrice?: number
+  isInstantSaleEnabled: boolean
   lastMiningDate?: string
 }
 
@@ -96,10 +109,10 @@ export interface InvestmentCalculation {
     usdtAmount: number
     requiredTAKARA: number
     laikaBoostUSD: number
-    lkiToUsdtRate?: number
+    laikaToUsdtRate?: number
     laikaValueUSD?: number
     // v2.2 - LAIKA price and discount fields
-    laikaAmountLKI?: number
+    laikaAmount?: number
     laikaPrice?: number
     laikaMarketValueUSD?: number
     laikaDiscountPercent?: number
@@ -122,7 +135,7 @@ export interface InvestmentCalculation {
     payoutAmount: number
   }
   mining: {
-    miningPower: number
+    takaraAPY: number // v2.2: renamed from miningPower
     currentDifficulty: number
     dailyTAKARA: number
     monthlyTAKARA: number
@@ -244,5 +257,5 @@ export interface CreateInvestmentInput {
 export interface CalculateInvestmentInput {
   usdtAmount: number
   laikaBoostUSD?: number
-  laikaAmountLKI?: number
+  laikaAmount?: number
 }

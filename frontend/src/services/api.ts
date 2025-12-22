@@ -44,9 +44,15 @@ class ApiClient {
       (response) => response,
       (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-          // Clear token and redirect to login
-          localStorage.removeItem('auth_token')
-          window.location.href = '/'
+          // Don't redirect if it's a login/register request (expected 401 for wrong credentials)
+          const isAuthRequest = error.config?.url?.includes('/auth/login') ||
+                                error.config?.url?.includes('/auth/register')
+
+          if (!isAuthRequest) {
+            // Clear token and redirect to home only for protected endpoints
+            localStorage.removeItem('auth_token')
+            window.location.href = '/'
+          }
         }
         return Promise.reject(error)
       }
@@ -232,6 +238,40 @@ class ApiClient {
 
   async getMyListings(): Promise<ApiResponse<any[]>> {
     const { data } = await this.client.get<ApiResponse<any[]>>('/marketplace/my-listings')
+    return data
+  }
+
+  // ==================== TAKARA BOOST (v2.2) ====================
+
+  async applyTakaraBoost(investmentId: string, takaraAmount: number, takaraPrice: number): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>(`/investments/${investmentId}/boost/takara`, {
+      takaraAmount,
+      takaraPrice,
+    })
+    return data
+  }
+
+  async getTakaraBoost(investmentId: string): Promise<ApiResponse> {
+    const { data } = await this.client.get<ApiResponse>(`/investments/${investmentId}/boost/takara`)
+    return data
+  }
+
+  // ==================== INSTANT SALE (v2.2) ====================
+
+  async toggleInstantSale(investmentId: string, enabled: boolean): Promise<ApiResponse> {
+    const { data } = await this.client.put<ApiResponse>(`/investments/${investmentId}/instant-sale`, {
+      enabled,
+    })
+    return data
+  }
+
+  async executeInstantSale(investmentId: string): Promise<ApiResponse> {
+    const { data} = await this.client.post<ApiResponse>(`/investments/${investmentId}/instant-sale/execute`)
+    return data
+  }
+
+  async getInstantSalePrice(investmentId: string): Promise<ApiResponse> {
+    const { data } = await this.client.get<ApiResponse>(`/investments/${investmentId}/instant-sale/price`)
     return data
   }
 }

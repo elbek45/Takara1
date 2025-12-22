@@ -14,9 +14,15 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-SERVER_IP="159.203.104.235"
-SERVER_USER="root"
-SERVER_PASS="eLBEK451326a"
+# Load deployment credentials from deploy.env
+if [ -f "deploy.env" ]; then
+  source deploy.env
+else
+  echo "Error: deploy.env file not found!"
+  echo "Create deploy.env from deploy.env.example and fill in your credentials."
+  exit 1
+fi
+
 PROJECT_DIR="/var/www/takara-gold"
 BACKUP_DIR="/var/backups/takara-gold"
 
@@ -55,7 +61,7 @@ JWT_EXPIRES_IN=7d
 REDIS_URL=redis://localhost:6379
 FRONTEND_URL=https://sitpool.org
 CORS_ORIGIN=https://sitpool.org
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+SOLANA_RPC_URL=https://api.devnet.solana.com
 LOG_LEVEL=info
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
@@ -64,14 +70,21 @@ ADMIN_RATE_LIMIT_MAX=5
 ENVEOF
 "
 
-# Step 4: Install dependencies and build
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm install && npm run build && npm prune --production"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/frontend && npm install && npm run build"
+# Step 4: Install dependencies, generate Prisma, migrate, and build
+echo -e "${YELLOW}📦 Installing backend dependencies...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm install"
 
-# Step 5: Database migrations
+echo -e "${YELLOW}🔧 Generating Prisma Client...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npx prisma generate"
+
 echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && npx prisma migrate deploy"
+
+echo -e "${YELLOW}🏗️  Building backend...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && npm run build && npm prune --production"
+
+echo -e "${YELLOW}📦 Installing and building frontend...${NC}"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/frontend && npm install && npm run build"
 
 # Step 6: Restart services
 echo -e "${YELLOW}🔄 Restarting services...${NC}"
@@ -79,10 +92,10 @@ sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SER
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && pm2 start dist/app.js --name takara-backend"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "systemctl restart nginx"
 
-# Step 7: Health check
+# Step 7: Health check (via SSH to check localhost on server)
 echo -e "${YELLOW}🏥 Running health check...${NC}"
 sleep 5
-if curl -f http://${SERVER_IP}:3000/health; then
+if sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "curl -f http://localhost:3000/health"; then
   echo -e "${GREEN}✅ Backend is healthy${NC}"
 else
   echo -e "${RED}❌ Backend health check failed${NC}"

@@ -16,6 +16,17 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env
+
+# Deployment credentials (NEVER commit!)
+deploy.env
+
+# Allow .env.example files (templates)
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+!deploy.env.example
 
 # Logs
 logs/
@@ -58,3 +69,6 @@ Thumbs.db
 # Solana keys (NEVER commit private keys!)
 .solana-keys/
 *.json
+
+# Test wallet keys
+.keys/

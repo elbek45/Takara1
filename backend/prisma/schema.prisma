@@ -32,6 +32,7 @@ model User {
   listings          MarketplaceListing[]
   referrals         Referral[]          @relation("Referrer")
   referredBy        Referral?           @relation("Referred")
+  taxRecords        TaxRecord[]         // Tax history (v2.2)
 
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -53,10 +54,10 @@ enum UserRole {
 
 model Vault {
   id              String        @id @default(uuid())
-  name            String        @unique // e.g., "Starter Vault 12M"
+  name            String        @unique // e.g., "Pro Vault 12M"
   tier            VaultTier     // STARTER, PRO, ELITE
   duration        Int           // months: 12, 30, 36
-  payoutSchedule  PayoutSchedule // MONTHLY, QUARTERLY, END_OF_TERM
+  payoutSchedule  PayoutSchedule @default(MONTHLY) // All payouts are now MONTHLY
 
   // Requirements
   minInvestment   Decimal       @db.Decimal(20, 2) // Min USDT
@@ -64,10 +65,10 @@ model Vault {
   requireTAKARA   Boolean       @default(false)
   takaraRatio     Decimal?      @db.Decimal(10, 2) // e.g., 30 or 50 per 100 USDT
 
-  // Rewards
-  baseAPY         Decimal       @db.Decimal(5, 2) // e.g., 4.0, 5.5, 8.0
-  maxAPY          Decimal       @db.Decimal(5, 2) // Max with LAIKA boost
-  miningPower     Decimal       @db.Decimal(6, 2) // e.g., 50, 100, 350
+  // Rewards (Updated v2.2)
+  baseAPY         Decimal       @db.Decimal(5, 2) // Base APY (e.g., 12.0, 20.5, 25.0)
+  maxAPY          Decimal       @db.Decimal(5, 2) // Max APY with boost (LAIKA/TAKARA)
+  takaraAPY       Decimal       @db.Decimal(6, 2) // Takara APY (formerly miningPower)
 
   // Status
   isActive        Boolean       @default(true)
@@ -92,6 +93,7 @@ enum VaultTier {
 }
 
 enum PayoutSchedule {
+  DAILY         // Every day
   MONTHLY       // Every 30 days
   QUARTERLY     // Every 90 days
   END_OF_TERM   // Only at the end
@@ -113,13 +115,18 @@ model Investment {
   takaraRequired      Decimal             @default(0) @db.Decimal(20, 6) // TAKARA required
   takaraLocked        Decimal             @default(0) @db.Decimal(20, 6) // TAKARA actually locked
 
-  // LAIKA Boost
+  // Boost System (v2.2)
   laikaBoost          LaikaBoost?
+  takaraBoost         TakaraBoost?        // NEW: TAKARA boost support
   finalAPY            Decimal             @db.Decimal(5, 2) // After boost
 
   // NFT
   nftMintAddress      String?             @unique // Solana NFT mint address
   nftMetadataUri      String?
+
+  // Instant Sale (v2.2)
+  instantSalePrice    Decimal?            @db.Decimal(20, 6) // 20% below market value
+  isInstantSaleEnabled Boolean            @default(false)
 
   // Timeline
   startDate           DateTime            @default(now())
@@ -207,6 +214,37 @@ model LaikaBoost {
   @@map("laika_boosts")
 }
 
+// ==================== TAKARA BOOST (v2.2) ====================
+
+model TakaraBoost {
+  id                String        @id @default(uuid())
+
+  investmentId      String        @unique
+  investment        Investment    @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  // TAKARA Details
+  takaraAmount      Decimal       @db.Decimal(20, 6) // TAKARA tokens deposited
+  takaraValueUSD    Decimal       @db.Decimal(20, 2) // USD value at deposit
+  maxAllowedUSD     Decimal       @db.Decimal(20, 2) // 90% of USDT investment
+
+  // Boost Calculation
+  boostPercentage   Decimal       @db.Decimal(5, 2) // % of max boost applied
+  additionalAPY     Decimal       @db.Decimal(5, 2) // APY added by boost
+
+  // Return
+  isReturned        Boolean       @default(false)
+  returnDate        DateTime?
+  returnTxSignature String?
+
+  depositTxSignature String?      // TAKARA deposit transaction
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([investmentId])
+  @@map("takara_boosts")
+}
+
 // ==================== TAKARA MINING ====================
 
 model TakaraMining {
@@ -217,7 +255,7 @@ model TakaraMining {
 
   // Mining Details
   miningDate        DateTime      @default(now())
-  miningPower       Decimal       @db.Decimal(6, 2) // From vault config
+  takaraAPY         Decimal       @db.Decimal(6, 2) // Takara APY from vault config (v2.2)
   difficulty        Decimal       @db.Decimal(10, 6) // Network difficulty that day
 
   // Rewards
@@ -240,7 +278,17 @@ model MiningStats {
   id                String        @id @default(uuid())
 
   date              DateTime      @unique @default(now())
+
+  // TAKARA Supply Tracking (v2.3 - User requirement)
   totalMined        Decimal       @db.Decimal(20, 6) // Total TAKARA mined to date
+  totalEntryLocked  Decimal       @default(0) @db.Decimal(20, 6) // Entry requirement TAKARA (will be returned)
+  totalBoostLocked  Decimal       @default(0) @db.Decimal(20, 6) // Boost TAKARA (will be returned)
+  totalClaimTax     Decimal       @default(0) @db.Decimal(20, 6) // 5% claim tax (stays in treasury)
+
+  // Circulating Supply = totalMined + totalEntryLocked + totalBoostLocked (excludes claim tax)
+  // This represents all TAKARA that belongs to users (mined + will be returned)
+  circulatingSupply Decimal       @default(0) @db.Decimal(20, 6)
+
   activeMiners      Int           // Active investments mining
   currentDifficulty Decimal       @db.Decimal(10, 6)
 
@@ -453,4 +501,78 @@ model SystemConfig {
   updatedAt         DateTime      @updatedAt
 
   @@map("system_config")
+}
+
+// ==================== BOOST TOKEN CONFIG (v2.2) ====================
+
+model BoostTokenConfig {
+  id                String        @id @default(uuid())
+
+  tokenSymbol       String        @unique // 'LAIKA' or 'TAKARA'
+  tokenName         String        // 'LAIKA The Cosmodog' or 'Takara Gold'
+  tokenMint         String        // Solana mint address
+
+  isEnabled         Boolean       @default(true) // Admin can enable/disable
+  maxBoostPercent   Decimal       @db.Decimal(5, 2) // Max boost this token provides
+
+  // Display order in UI
+  displayOrder      Int           @default(0)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([isEnabled])
+  @@map("boost_token_config")
+}
+
+// ==================== TAX RECORDS (v2.2) ====================
+
+model TaxRecord {
+  id                String        @id @default(uuid())
+
+  // Source
+  sourceType        TaxSourceType // TAKARA_CLAIM or WEXEL_SALE
+  sourceId          String        // Transaction ID or Investment ID
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+
+  // Tax Details
+  tokenSymbol       String        // 'TAKARA' or 'USDT'
+  amountBeforeTax   Decimal       @db.Decimal(20, 6)
+  taxPercent        Decimal       @db.Decimal(5, 2) // 5.00
+  taxAmount         Decimal       @db.Decimal(20, 6) // Amount sent to treasury
+  amountAfterTax    Decimal       @db.Decimal(20, 6)
+
+  // Transaction
+  txSignature       String?       // Solana transaction signature
+  treasuryWallet    String        // Where tax was sent
+
+  createdAt         DateTime      @default(now())
+
+  @@index([userId])
+  @@index([sourceType])
+  @@index([createdAt])
+  @@map("tax_records")
+}
+
+enum TaxSourceType {
+  TAKARA_CLAIM    // 5% tax on TAKARA claim
+  WEXEL_SALE      // 5% tax on WEXEL NFT sale
+}
+
+// ==================== TREASURY BALANCE (v2.2) ====================
+
+model TreasuryBalance {
+  id                String        @id @default(uuid())
+
+  tokenSymbol       String        @unique // 'TAKARA' or 'USDT'
+  balance           Decimal       @default(0) @db.Decimal(20, 6)
+
+  // Stats
+  totalCollected    Decimal       @default(0) @db.Decimal(20, 6) // All-time collected
+  totalWithdrawn    Decimal       @default(0) @db.Decimal(20, 6) // All-time withdrawn by admin
+
+  updatedAt         DateTime      @updatedAt
+
+  @@map("treasury_balance")
 }

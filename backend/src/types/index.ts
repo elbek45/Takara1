@@ -152,7 +152,7 @@ export interface VaultWithStats {
   maxInvestment: number;
   baseAPY: number;
   maxAPY: number;
-  miningPower: number;
+  takaraAPY: number;
   requireTAKARA: boolean;
   takaraRatio?: number;
   currentFilled: number;
@@ -185,7 +185,7 @@ export interface MiningReward {
   investmentId: string;
   takaraAmount: number;
   difficulty: number;
-  miningPower: number;
+  takaraAPY: number;
 }
 
 export interface DailyMiningResult {
