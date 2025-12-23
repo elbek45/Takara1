@@ -132,6 +132,21 @@ export default function VaultDetailPage() {
                 </div>
               </div>
 
+              {/* Total Return Highlight */}
+              <div className="mt-4 p-4 bg-gradient-to-r from-gold-500/20 to-gold-600/10 border border-gold-500/30 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">Total Return ({vault.duration}M)</div>
+                    <div className="text-xs text-gray-500">APY × Duration</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-gold-400">
+                      {(vault.baseAPY * vault.duration / 12).toFixed(0)}% → {(vault.maxAPY * vault.duration / 12).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Investment Range */}
               <div className="mt-6 p-4 bg-background-elevated rounded-lg">
                 <div className="flex items-center gap-2 mb-3">

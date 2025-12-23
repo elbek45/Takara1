@@ -168,6 +168,12 @@ export default function VaultsPage() {
                       {vault.maxAPY}%
                     </span>
                   </div>
+                  <div className="flex justify-between items-center bg-gold-500/10 -mx-2 px-2 py-2 rounded">
+                    <span className="text-sm text-gray-400">Total Return</span>
+                    <span className="text-lg font-bold text-gold-400">
+                      {(vault.baseAPY * vault.duration / 12).toFixed(0)}% → {(vault.maxAPY * vault.duration / 12).toFixed(0)}%
+                    </span>
+                  </div>
                   {vault.requireTAKARA && vault.takaraRatio && (
                     <div className="flex justify-between items-center bg-green-900/10 -mx-2 px-2 py-2 rounded">
                       <span className="text-sm text-gray-400">TAKARA Required</span>
