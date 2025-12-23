@@ -44,9 +44,12 @@ class ApiClient {
       (response) => response,
       (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-          // Don't redirect if it's a login/register request (expected 401 for wrong credentials)
-          const isAuthRequest = error.config?.url?.includes('/auth/login') ||
-                                error.config?.url?.includes('/auth/register')
+          // Don't redirect for auth-related requests where 401 is expected
+          const url = error.config?.url || ''
+          const isAuthRequest = url.includes('/auth/login') ||
+                                url.includes('/auth/register') ||
+                                url.includes('/connect-ethereum') ||
+                                url.includes('/connect-solana')
 
           if (!isAuthRequest) {
             // Clear token and redirect to home only for protected endpoints
