@@ -508,6 +508,14 @@ export async function connectEthereum(req: Request, res: Response): Promise<void
     const userId = (req as any).user?.userId;
     const { ethereumAddress } = req.body;
 
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+      return;
+    }
+
     if (!ethereumAddress) {
       res.status(400).json({
         success: false,
@@ -537,7 +545,7 @@ export async function connectEthereum(req: Request, res: Response): Promise<void
 
     res.json({
       success: true,
-      message: 'MetaMask wallet connected successfully',
+      message: 'Phantom wallet connected successfully',
       data: {
         ethereumAddress: updatedUser.ethereumAddress
       }
