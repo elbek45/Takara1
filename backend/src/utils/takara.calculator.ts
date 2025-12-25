@@ -236,7 +236,7 @@ export function formatBoostResult(result: TakaraBoostResult): string {
  * Calculate combined boost (LAIKA + TAKARA)
  *
  * When both boosts are applied:
- * 1. Calculate LAIKA boost first (platform values at 10% below market = 90%)
+ * 1. Calculate LAIKA boost first (platform values at 50% ABOVE market = 150%)
  * 2. Use LAIKA-boosted APY as base for TAKARA
  * 3. TAKARA boost adds on top (uses full market value, no discount)
  * 4. Final APY capped at vault maxAPY
@@ -255,10 +255,11 @@ export function calculateCombinedBoost(params: {
 } {
   const { baseAPY, maxAPY, usdtInvested, laikaMarketValueUSD, takaraMarketValueUSD } = params;
 
-  // Step 1: Calculate LAIKA boost (platform values LAIKA 10% below market = 90%)
-  const laikaDiscountedValue = laikaMarketValueUSD * 0.50;
+  // Step 1: Calculate LAIKA boost (platform requires 50% more LAIKA)
+  // boostValue = marketValue / 1.50
+  const laikaBoostValue = laikaMarketValueUSD / 1.50;
   const maxBoostValue = usdtInvested * 0.50;
-  const effectiveLaikaValue = Math.min(laikaDiscountedValue, maxBoostValue);
+  const effectiveLaikaValue = Math.min(laikaBoostValue, maxBoostValue);
   const laikaBoostFill = maxBoostValue > 0 ? (effectiveLaikaValue / maxBoostValue) * 100 : 0;
 
   const boostRange = maxAPY - baseAPY;

@@ -1,4 +1,4 @@
-# 🏆 Takara Gold v2.1.1
+# 🏆 Takara Gold v2.6
 
 **Premium Dual-Blockchain Investment Platform & NFT Marketplace**
 
@@ -227,17 +227,39 @@ daily_takara = (mining_power / 100) × (usdt_invested / 1000) × base_rate / dif
 ## 💜 LAIKA Boost System
 
 ### How It Works
-1. Deposit LAIKA tokens (max 90% of USDT value)
-2. APY increases proportionally to LAIKA deposited
-3. LAIKA returned to NFT owner at term end
+1. **Real-time pricing** from DexScreener API (Solana DEX aggregator)
+2. **Platform rate**: 50% more LAIKA required than market rate
+   - Market: 0.5 LAIKA = 1 USDT
+   - Platform: 0.75 LAIKA = 1 USDT (for boost calculation)
+3. **Max boost**: 50% of USDT investment value
+4. APY increases proportionally to effective LAIKA boost value
+5. LAIKA returned to NFT owner at term end
+
+### Boost Formula
+```typescript
+boost_value = laika_market_value / 1.50  // Platform requires 50% more LAIKA
+max_boost = usdt_invested * 0.50         // Max 50% of investment
+effective_boost = min(boost_value, max_boost)
+```
 
 ### Example
 ```
 Investment: $10,000 USDT in Elite Vault 36M
 Base APY: 8%
-LAIKA Deposited: $9,000 (100% boost)
-Final APY: 12% (max for Elite tier)
+Max APY: 12%
+Max Boost Value: $5,000 (50% of $10,000)
+
+To achieve full boost:
+- Need $7,500 worth of LAIKA at market price
+- Boost value: $7,500 / 1.5 = $5,000 (100% fill)
+- Final APY: 12% (max for Elite tier)
 ```
+
+### LAIKA Token
+- **Mint**: `Euoq6CyQFCjCVSLR9wFaUPDW19Y6ZHwEcJoZsEi643i1`
+- **Chain**: Solana
+- **Price Source**: DexScreener (primary), CoinGecko (fallback)
+- **Cache**: 1 hour TTL
 
 ## 🎨 NFT Marketplace
 
@@ -348,5 +370,24 @@ Contributions welcome! Please read CONTRIBUTING.md first.
 
 ---
 
-Version: 2.1.1
+## Changelog
+
+### v2.6 (December 2025)
+- **LAIKA Boost v2.6**: Platform requires 50% more LAIKA than market rate
+- **DexScreener Integration**: Real-time LAIKA pricing from Solana DEXes
+- **Price Sources Priority**: DexScreener -> CoinGecko -> CoinMarketCap
+- **Boost Formula**: `boost_value = market_value / 1.50`
+
+### v2.5 (December 2025)
+- LAIKA boost system improvements
+- Price caching (1 hour TTL)
+
+### v2.2 (December 2025)
+- Dual-blockchain architecture (Ethereum + Solana)
+- MetaMask and Phantom wallet integration
+- TronLink support for TRC-20 USDT
+
+---
+
+Version: 2.6
 Last Updated: December 2025

@@ -20,8 +20,9 @@ import { TAKARA_CONFIG } from '../utils/mining.calculator';
 const logger = getLogger('price-service');
 
 // API endpoints
+const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex/tokens'; // Primary - free, no auth
 const COINMARKETCAP_API = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest';
-const JUPITER_PRICE_API = 'https://api.jup.ag/price/v2';
+const JUPITER_PRICE_API = 'https://api.jup.ag/price/v2'; // Requires auth now
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 
 // API Keys
@@ -45,9 +46,9 @@ const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour (as requested)
  * Get LAIKA token price in USDT
  *
  * Priority order:
- * 1. CoinMarketCap (Primary - most reliable)
- * 2. Jupiter API (Fallback - Solana DEX aggregator)
- * 3. CoinGecko (Last resort)
+ * 1. DexScreener (Primary - free, no auth, real-time DEX prices)
+ * 2. CoinGecko (Fallback)
+ * 3. CoinMarketCap (Last resort - requires API key)
  *
  * Cache duration: 1 hour
  */
@@ -65,31 +66,19 @@ export async function getLaikaPrice(): Promise<number> {
     return cached.price;
   }
 
-  // Try CoinMarketCap first (Primary source)
+  // Try DexScreener first (Primary source - free, no auth required)
   try {
-    const cmcPrice = await fetchLaikaPriceFromCoinMarketCap();
-    if (cmcPrice > 0) {
-      priceCache.set(cacheKey, { price: cmcPrice, timestamp: Date.now() });
-      logger.info({ price: cmcPrice, source: 'coinmarketcap' }, 'Fetched LAIKA price from CoinMarketCap');
-      return cmcPrice;
+    const dexScreenerPrice = await fetchLaikaPriceFromDexScreener();
+    if (dexScreenerPrice > 0) {
+      priceCache.set(cacheKey, { price: dexScreenerPrice, timestamp: Date.now() });
+      logger.info({ price: dexScreenerPrice, source: 'dexscreener' }, 'Fetched LAIKA price from DexScreener');
+      return dexScreenerPrice;
     }
   } catch (error: any) {
-    logger.warn({ error: error.message }, 'Failed to fetch LAIKA price from CoinMarketCap, trying Jupiter');
+    logger.warn({ error: error.message }, 'Failed to fetch LAIKA price from DexScreener, trying CoinGecko');
   }
 
-  // Fallback to Jupiter API
-  try {
-    const jupiterPrice = await fetchLaikaPriceFromJupiter();
-    if (jupiterPrice > 0) {
-      priceCache.set(cacheKey, { price: jupiterPrice, timestamp: Date.now() });
-      logger.info({ price: jupiterPrice, source: 'jupiter' }, 'Fetched LAIKA price from Jupiter');
-      return jupiterPrice;
-    }
-  } catch (error: any) {
-    logger.warn({ error: error.message }, 'Failed to fetch LAIKA price from Jupiter, trying CoinGecko');
-  }
-
-  // Last resort: CoinGecko
+  // Fallback to CoinGecko
   try {
     const coinGeckoPrice = await fetchLaikaPriceFromCoinGecko();
     if (coinGeckoPrice > 0) {
@@ -98,7 +87,19 @@ export async function getLaikaPrice(): Promise<number> {
       return coinGeckoPrice;
     }
   } catch (error: any) {
-    logger.error({ error: error.message }, 'Failed to fetch LAIKA price from CoinGecko');
+    logger.warn({ error: error.message }, 'Failed to fetch LAIKA price from CoinGecko, trying CoinMarketCap');
+  }
+
+  // Last resort: CoinMarketCap (requires API key)
+  try {
+    const cmcPrice = await fetchLaikaPriceFromCoinMarketCap();
+    if (cmcPrice > 0) {
+      priceCache.set(cacheKey, { price: cmcPrice, timestamp: Date.now() });
+      logger.info({ price: cmcPrice, source: 'coinmarketcap' }, 'Fetched LAIKA price from CoinMarketCap');
+      return cmcPrice;
+    }
+  } catch (error: any) {
+    logger.error({ error: error.message }, 'Failed to fetch LAIKA price from CoinMarketCap');
   }
 
   // If all sources fail, return cached price if available (even if expired)
@@ -111,9 +112,49 @@ export async function getLaikaPrice(): Promise<number> {
   }
 
   // Last resort: return a default price
-  const defaultPrice = 0.0001; // Adjust based on typical LAIKA price
+  const defaultPrice = 0.0000007; // Based on current LAIKA price
   logger.error({ defaultPrice }, 'All price sources failed, using default price');
   return defaultPrice;
+}
+
+/**
+ * Fetch LAIKA price from DexScreener API (Primary)
+ *
+ * DexScreener aggregates prices from all DEXes (Raydium, Orca, etc.)
+ * Free API, no authentication required
+ * https://docs.dexscreener.com/api/reference
+ */
+async function fetchLaikaPriceFromDexScreener(): Promise<number> {
+  const response = await axios.get(`${DEXSCREENER_API}/${LAIKA_MINT}`, {
+    timeout: 10000,
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  const data = response.data;
+
+  // DexScreener returns pairs array, get the first pair with priceUsd
+  if (data && data.pairs && data.pairs.length > 0) {
+    // Find the pair with highest liquidity or just use first one
+    const sortedPairs = data.pairs.sort((a: any, b: any) =>
+      (Number(b.liquidity?.usd) || 0) - (Number(a.liquidity?.usd) || 0)
+    );
+
+    const bestPair = sortedPairs[0];
+    if (bestPair && bestPair.priceUsd) {
+      const price = Number(bestPair.priceUsd);
+      logger.debug({
+        price,
+        pair: bestPair.pairAddress,
+        dexId: bestPair.dexId,
+        liquidity: bestPair.liquidity?.usd
+      }, 'DexScreener LAIKA price details');
+      return price;
+    }
+  }
+
+  throw new Error('No valid LAIKA pairs found on DexScreener');
 }
 
 /**
@@ -314,63 +355,90 @@ async function calculateTakaraBasePrice(): Promise<number> {
 }
 
 /**
- * Calculate LAIKA value in USDT with platform valuation
+ * Calculate LAIKA value in USDT with platform rate for boost
  *
- * Platform accepts LAIKA at 10% below market price
- * Formula: laikaValueUSD = laikaAmount × laikaPrice × 0.90
+ * Platform requires 50% MORE LAIKA than market rate for boost calculations
+ * This means: if market rate is 0.5 LAIKA = 1 USDT, platform rate is 0.75 LAIKA = 1 USDT
+ * Formula: boostValueUSD = laikaAmount × laikaPrice / 1.50
  *
- * This is NOT a discount for users - platform values LAIKA cheaper than market
+ * Example: $100 worth of LAIKA at market = $66.67 boost value
+ * Or: to get $100 boost, you need $150 worth of LAIKA at market price
  */
-export async function calculateLaikaValueWithDiscount(laikaAmount: number): Promise<{
+export async function calculateLaikaValueWithPremium(laikaAmount: number): Promise<{
   laikaAmount: number;
   laikaPrice: number;
-  marketValue: number; // Market price
-  discountPercent: number; // Platform valuation discount (10%)
+  marketValue: number; // Market price in USD
+  premiumPercent: number; // Platform premium (50% more LAIKA required)
   discountAmount: number; // Difference from market
-  finalValue: number; // Platform accepts at 90% of market
+  finalValue: number; // Boost value (market / 1.5)
 }> {
   const laikaPrice = await getLaikaPrice();
   const marketValue = laikaAmount * laikaPrice;
-  const discountPercent = 10; // Platform values LAIKA 10% below market
-  const discountAmount = marketValue * (discountPercent / 100);
-  const finalValue = marketValue - discountAmount; // 90% of market value
+  const premiumPercent = 50; // 50% more LAIKA required than market rate
+  const finalValue = marketValue / 1.50; // Boost value = market value / 1.5
+  const discountAmount = marketValue - finalValue;
 
   return {
     laikaAmount,
     laikaPrice,
     marketValue: Number(marketValue.toFixed(6)),
-    discountPercent,
+    premiumPercent,
     discountAmount: Number(discountAmount.toFixed(6)),
     finalValue: Number(finalValue.toFixed(6))
   };
 }
 
 /**
- * Calculate required LAIKA amount for desired USD value
+ * Backward compatible alias for calculateLaikaValueWithPremium
+ * @deprecated Use calculateLaikaValueWithPremium instead
+ */
+export async function calculateLaikaValueWithDiscount(laikaAmount: number): Promise<{
+  laikaAmount: number;
+  laikaPrice: number;
+  marketValue: number;
+  discountPercent: number;
+  discountAmount: number;
+  finalValue: number;
+}> {
+  const result = await calculateLaikaValueWithPremium(laikaAmount);
+  return {
+    laikaAmount: result.laikaAmount,
+    laikaPrice: result.laikaPrice,
+    marketValue: result.marketValue,
+    discountPercent: result.premiumPercent,
+    discountAmount: result.discountAmount,
+    finalValue: result.finalValue
+  };
+}
+
+/**
+ * Calculate required LAIKA amount (at market value) for desired boost USD value
  *
- * Takes into account platform valuation (10% below market)
+ * Platform requires 50% more LAIKA than market rate
+ * If you need $100 boost value, you need $150 worth of LAIKA at market
  */
 export async function calculateRequiredLaika(desiredUSDValue: number): Promise<{
   desiredUSDValue: number;
   laikaPrice: number;
   requiredLaikaAmount: number;
   marketValue: number;
-  discountAmount: number;
+  extraRequired: number;
 }> {
   const laikaPrice = await getLaikaPrice();
 
-  // Since finalValue = laikaAmount × laikaPrice × 0.90
-  // laikaAmount = desiredUSDValue / (laikaPrice × 0.90)
-  const requiredLaikaAmount = desiredUSDValue / (laikaPrice * 0.90);
-  const marketValue = requiredLaikaAmount * laikaPrice;
-  const discountAmount = marketValue * 0.10;
+  // Since finalValue = marketValue / 1.50
+  // marketValue = desiredUSDValue × 1.50
+  // laikaAmount = marketValue / laikaPrice
+  const marketValue = desiredUSDValue * 1.50;
+  const requiredLaikaAmount = marketValue / laikaPrice;
+  const extraRequired = marketValue - desiredUSDValue; // 50% extra
 
   return {
     desiredUSDValue,
     laikaPrice,
     requiredLaikaAmount: Number(requiredLaikaAmount.toFixed(2)),
     marketValue: Number(marketValue.toFixed(6)),
-    discountAmount: Number(discountAmount.toFixed(6))
+    extraRequired: Number(extraRequired.toFixed(6))
   };
 }
 
@@ -460,7 +528,8 @@ export async function getTakaraPricingCalculations(): Promise<{
     investment: number;
     takaraRequired: number;
     takaraRequiredCost: number;
-    takaraAPY: number;
+    baseTakaraAPY: number;
+    maxTakaraAPY: number;
     dailyMining: number;
     monthlyMining: number;
     totalMined: number;
@@ -524,7 +593,7 @@ export async function getTakaraPricingCalculations(): Promise<{
 
     // Calculate mining
     const miningResult = calculateMining({
-      takaraAPY: vault.takaraAPY,
+      maxTakaraAPY: vault.maxTakaraAPY,
       usdtInvested: exampleInvestment,
       currentDifficulty,
       durationMonths: vault.duration
@@ -542,7 +611,7 @@ export async function getTakaraPricingCalculations(): Promise<{
       investment: exampleInvestment,
       takaraRequired,
       takaraRequiredCost: Number(takaraRequiredCost.toFixed(2)),
-      takaraAPY: vault.takaraAPY,
+      maxTakaraAPY: vault.maxTakaraAPY,
       dailyMining: miningResult.dailyTakaraFinal,
       monthlyMining: miningResult.monthlyTakara,
       totalMined: miningResult.totalTakaraExpected,

@@ -17,7 +17,7 @@ import { calculateMining } from '../utils/mining.calculator';
 import { calculateEarnings } from '../utils/apy.calculator';
 import { VaultTier } from '../config/vaults.config';
 import { getLogger } from '../config/logger';
-import { getLaikaPrice, calculateLaikaValueWithDiscount } from '../services/price.service';
+import { getLaikaPrice, calculateLaikaValueWithPremium } from '../services/price.service';
 
 const logger = getLogger('vault-controller');
 
@@ -67,7 +67,8 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      takaraAPY: Number(vault.takaraAPY),
+      baseTakaraAPY: Number(vault.baseTakaraAPY),
+      maxTakaraAPY: Number(vault.maxTakaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -164,7 +165,8 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
       maxInvestment: Number(vault.maxInvestment),
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
-      takaraAPY: Number(vault.takaraAPY),
+      baseTakaraAPY: Number(vault.baseTakaraAPY),
+      maxTakaraAPY: Number(vault.maxTakaraAPY),
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
@@ -266,10 +268,10 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     const laikaAmountValue = laikaAmount || 0;
     const laikaMarketValueUSD = laikaAmountValue * laikaPrice;
 
-    // Calculate LAIKA value (platform accepts at 10% below market)
-    const laikaDiscountInfo = await calculateLaikaValueWithDiscount(laikaAmountValue);
+    // Calculate LAIKA value (platform requires 50% MORE LAIKA than market rate)
+    const laikaPremiumInfo = await calculateLaikaValueWithPremium(laikaAmountValue);
 
-    // Calculate LAIKA boost (platform values LAIKA 10% below market)
+    // Calculate LAIKA boost (boost value = market value / 1.50)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
@@ -297,7 +299,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
 
     // Calculate TAKARA mining
     const miningResult = calculateMining({
-      takaraAPY: Number(vault.takaraAPY),
+      maxTakaraAPY: Number(vault.maxTakaraAPY),
       usdtInvested: usdtAmount,
       currentDifficulty,
       durationMonths: vault.duration
@@ -316,13 +318,12 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           usdtAmount,
           requiredTAKARA,
           laikaAmount: laikaAmountValue,
-          laikaPrice: laikaPrice, // Real-time price from Jupiter
+          laikaPrice: laikaPrice, // Real-time price from DexScreener
           laikaMarketValueUSD: laikaMarketValueUSD, // Market price
-          laikaDiscountPercent: laikaDiscountInfo.discountPercent, // Platform valuation: 10% below market
-          laikaDiscountAmount: laikaDiscountInfo.discountAmount, // Difference from market
-          laikaDiscountedValueUSD: laikaDiscountInfo.finalValue, // Platform accepts at 50% of market
+          laikaPremiumPercent: laikaPremiumInfo.premiumPercent, // 50% more LAIKA required
+          laikaBoostValueUSD: laikaPremiumInfo.finalValue, // Boost value (market / 1.5)
           // For backward compatibility
-          laikaValueUSD: laikaDiscountInfo.finalValue,
+          laikaValueUSD: laikaPremiumInfo.finalValue,
           laikaToUsdtRate: laikaPrice
         },
         laika: {
@@ -342,14 +343,15 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           payoutAmount: earningsResult.payoutAmount
         },
         mining: {
-          takaraAPY: Number(vault.takaraAPY),
+          baseTakaraAPY: Number(vault.baseTakaraAPY),
+      maxTakaraAPY: Number(vault.maxTakaraAPY),
           currentDifficulty,
           dailyTAKARA: miningResult.dailyTakaraFinal,
           monthlyTAKARA: miningResult.monthlyTakara,
           totalTAKARA: miningResult.totalTakaraExpected
         },
         summary: {
-          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaDiscountInfo.finalValue,
+          totalInvestment: usdtAmount + (requiredTAKARA > 0 ? requiredTAKARA : 0) + laikaPremiumInfo.finalValue,
           totalUSDTReturn: usdtAmount + earningsResult.totalEarnings,
           totalTAKARAMined: miningResult.totalTakaraExpected,
           roi: ((earningsResult.totalEarnings / usdtAmount) * 100).toFixed(2) + '%'
