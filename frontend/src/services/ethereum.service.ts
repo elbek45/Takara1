@@ -37,9 +37,9 @@ class EthereumService {
   private signer: ethers.JsonRpcSigner | null = null;
   private usdtContract: ethers.Contract | null = null;
 
-  // Network configuration
-  private readonly MAINNET_CHAIN_ID = 1;
-  private readonly MAINNET_NAME = 'Ethereum Mainnet';
+  // Network configuration from environment
+  private readonly EXPECTED_CHAIN_ID = Number(import.meta.env.VITE_ETHEREUM_CHAIN_ID) || 1;
+  private readonly NETWORK_NAME = import.meta.env.VITE_ETHEREUM_NETWORK === 'sepolia' ? 'Sepolia Testnet' : 'Ethereum Mainnet';
   private readonly USDT_CONTRACT_ADDRESS = import.meta.env.VITE_USDT_CONTRACT_ETH;
   private readonly USDT_DECIMALS = 6; // USDT has 6 decimals
 
@@ -155,20 +155,26 @@ class EthereumService {
    * Get USDT balance
    */
   async getUSDTBalance(address?: string): Promise<number> {
-    if (!this.usdtContract) {
-      throw new Error('USDT contract not initialized');
+    if (!this.usdtContract || !this.provider) {
+      return 0; // Silently return 0 if not initialized
+    }
+
+    // Check network before trying to get balance
+    const isCorrectNetwork = await this.checkNetwork();
+    if (!isCorrectNetwork) {
+      return 0; // Wrong network, return 0 silently
     }
 
     const addr = address || await this.getAddress();
     if (!addr) {
-      throw new Error('No address provided');
+      return 0;
     }
 
     try {
       const balance = await this.usdtContract.balanceOf(addr);
       return Number(ethers.formatUnits(balance, this.USDT_DECIMALS));
     } catch (error: any) {
-      console.error('Error getting USDT balance:', error);
+      // Silently return 0 on error (wrong network, contract not deployed, etc.)
       return 0;
     }
   }
@@ -182,13 +188,13 @@ class EthereumService {
     const network = await this.provider.getNetwork();
     const chainId = Number(network.chainId);
 
-    return chainId === this.MAINNET_CHAIN_ID;
+    return chainId === this.EXPECTED_CHAIN_ID;
   }
 
   /**
-   * Switch to Ethereum Mainnet
+   * Switch to expected network
    */
-  async switchToMainnet(): Promise<void> {
+  async switchToExpectedNetwork(): Promise<void> {
     if (!window.ethereum) {
       throw new Error('Phantom wallet not found');
     }
@@ -196,12 +202,19 @@ class EthereumService {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${this.MAINNET_CHAIN_ID.toString(16)}` }],
+        params: [{ chainId: `0x${this.EXPECTED_CHAIN_ID.toString(16)}` }],
       });
     } catch (error: any) {
       console.error('Error switching network:', error);
-      throw new WrongNetworkError(this.MAINNET_NAME, 'Unknown network');
+      throw new WrongNetworkError(this.NETWORK_NAME, 'Unknown network');
     }
+  }
+
+  /**
+   * Alias for backward compatibility
+   */
+  async switchToMainnet(): Promise<void> {
+    return this.switchToExpectedNetwork();
   }
 
   /**
@@ -215,7 +228,7 @@ class EthereumService {
     // Check network
     const isCorrectNetwork = await this.checkNetwork();
     if (!isCorrectNetwork) {
-      throw new WrongNetworkError(this.MAINNET_NAME, 'Wrong network');
+      throw new WrongNetworkError(this.NETWORK_NAME, 'Wrong network');
     }
 
     try {

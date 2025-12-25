@@ -135,6 +135,7 @@ export interface InvestmentCalculation {
     payoutAmount: number
   }
   mining: {
+    baseTakaraAPY: number // Base TAKARA mining APY
     maxTakaraAPY: number // Max TAKARA mining APY
     currentDifficulty: number
     dailyTAKARA: number
@@ -184,7 +185,8 @@ export interface MarketplaceListing {
 
 export interface User {
   id: string
-  walletAddress: string
+  walletAddress?: string       // Solana (Phantom) - for TAKARA/LAIKA
+  tronAddress?: string         // TRON (Trust Wallet) - for USDT
   username?: string
   email?: string
   totalInvested: number

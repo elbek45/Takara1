@@ -4,15 +4,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Wallet, User, Mail, Bell, Save, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
+import { useTronLink } from '../hooks/useTronLink'
 
 export default function ProfilePage() {
   const { connected, publicKey } = useWallet()
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
+  const { isConnected: isTronConnected, address: tronAddress } = useTronLink()
   const queryClient = useQueryClient()
 
   const [username, setUsername] = useState(user?.username || '')
   const [email, setEmail] = useState(user?.email || '')
-  const [copied, setCopied] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   // Update profile mutation (placeholder - backend endpoint may need to be created)
   const updateProfile = useMutation({
@@ -33,22 +35,20 @@ export default function ProfilePage() {
     updateProfile.mutate({ username, email })
   }
 
-  const copyWalletAddress = () => {
-    if (publicKey) {
-      navigator.clipboard.writeText(publicKey.toBase58())
-      setCopied(true)
-      toast.success('Wallet address copied!')
-      setTimeout(() => setCopied(false), 2000)
-    }
+  const copyAddress = (address: string, fieldName: string) => {
+    navigator.clipboard.writeText(address)
+    setCopiedField(fieldName)
+    toast.success('Address copied!')
+    setTimeout(() => setCopiedField(null), 2000)
   }
 
-  if (!connected) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <Wallet className="h-16 w-16 text-gray-500 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-          <p className="text-gray-400">Please connect your wallet to view your profile</p>
+          <h2 className="text-2xl font-bold text-white">Sign In Required</h2>
+          <p className="text-gray-400">Please sign in to view your profile</p>
         </div>
       </div>
     )
@@ -68,24 +68,55 @@ export default function ProfilePage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Wallet Info Card */}
             <div className="bg-background-card rounded-xl p-6 border border-green-900/20">
-              <h3 className="text-lg font-semibold text-white mb-4">Wallet Info</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Connected Wallets</h3>
               <div className="space-y-4">
+                {/* Solana (Phantom) Wallet - for TAKARA/LAIKA */}
                 <div>
-                  <div className="text-sm text-gray-400 mb-2">Connected Wallet</div>
+                  <div className="text-sm text-gray-400 mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                    Phantom (Solana) - TAKARA/LAIKA
+                  </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-background-elevated rounded-lg p-3 font-mono text-sm text-white break-all">
-                      {publicKey?.toBase58()}
+                      {connected && publicKey ? publicKey.toBase58() : user?.walletAddress || 'Not connected'}
                     </div>
-                    <button
-                      onClick={copyWalletAddress}
-                      className="p-3 bg-background-elevated hover:bg-green-900/20 rounded-lg transition-colors"
-                    >
-                      {copied ? (
-                        <Check className="h-5 w-5 text-green-400" />
-                      ) : (
-                        <Copy className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
+                    {(connected && publicKey) || user?.walletAddress ? (
+                      <button
+                        onClick={() => copyAddress(connected && publicKey ? publicKey.toBase58() : user?.walletAddress || '', 'solana')}
+                        className="p-3 bg-background-elevated hover:bg-purple-900/20 rounded-lg transition-colors"
+                      >
+                        {copiedField === 'solana' ? (
+                          <Check className="h-5 w-5 text-green-400" />
+                        ) : (
+                          <Copy className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* TRON (Trust Wallet) - for USDT */}
+                <div>
+                  <div className="text-sm text-gray-400 mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    Trust Wallet (TRON) - USDT
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-background-elevated rounded-lg p-3 font-mono text-sm text-white break-all">
+                      {isTronConnected && tronAddress ? tronAddress : user?.tronAddress || 'Not connected'}
+                    </div>
+                    {(isTronConnected && tronAddress) || user?.tronAddress ? (
+                      <button
+                        onClick={() => copyAddress(isTronConnected && tronAddress ? tronAddress : user?.tronAddress || '', 'tron')}
+                        className="p-3 bg-background-elevated hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        {copiedField === 'tron' ? (
+                          <Check className="h-5 w-5 text-green-400" />
+                        ) : (
+                          <Copy className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
 

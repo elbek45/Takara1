@@ -2,7 +2,7 @@
  * Investment 2-Step Process Controller
  *
  * New Flow:
- * Step 1: User pays USDT via MetaMask (Ethereum)
+ * Step 1: User pays USDT via Trust Wallet (TRON) or MetaMask (Ethereum)
  * Step 2: User deposits LAIKA (optional) and TAKARA (if required) via Phantom (Solana)
  *
  * Endpoints:
@@ -17,6 +17,7 @@ import { prisma } from '../config/database';
 import { getLogger } from '../config/logger';
 import { AuthenticatedRequest } from '../types';
 import { verifyUSDTTransaction } from '../services/ethereum.service';
+import { verifyUSDTTransactionTron } from '../services/tron.service';
 import { verifyTransaction } from '../services/solana.service';
 import { PublicKey } from '@solana/web3.js';
 

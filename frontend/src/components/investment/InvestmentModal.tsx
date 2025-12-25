@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
+import { X, ArrowRight, Loader2, CheckCircle, Wallet } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
-import { useEVMWallet } from '../../hooks/useEVMWallet'
+import { useTronLink } from '../../hooks/useTronLink'
 import { toast } from 'sonner'
 import type { InvestmentCalculation } from '../../types'
 
@@ -28,16 +28,40 @@ export default function InvestmentModal({
   laikaAmount,
 }: InvestmentModalProps) {
   const { publicKey, signTransaction } = useWallet()
-  const { transferUSDT, isConnected: evmConnected, address: ethAddress } = useEVMWallet()
+  const { transferUSDT, isConnected: tronConnected, address: tronAddress, usdtBalance, trxBalance } = useTronLink()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
+  const [takaraBalance, setTakaraBalance] = useState<number>(0)
+  const [laikaBalance, setLaikaBalance] = useState<number>(0)
+  const [solBalance, setSolBalance] = useState<number>(0)
+
+  // Fetch Solana balances when wallet is connected
+  useEffect(() => {
+    const fetchSolanaBalances = async () => {
+      if (publicKey) {
+        try {
+          const [takara, laika, sol] = await Promise.all([
+            solanaService.getTAKARABalance(publicKey),
+            solanaService.getLAIKABalance(publicKey),
+            solanaService.getBalance(publicKey),
+          ])
+          setTakaraBalance(takara)
+          setLaikaBalance(laika)
+          setSolBalance(sol)
+        } catch (error) {
+          console.error('Failed to fetch Solana balances:', error)
+        }
+      }
+    }
+    fetchSolanaBalances()
+  }, [publicKey])
 
   const investMutation = useMutation({
     mutationFn: async () => {
       // Critical validation: Check all required wallets are connected
-      if (!evmConnected) {
-        throw new Error('Phantom must be connected for USDT payment')
+      if (!tronConnected) {
+        throw new Error('TronLink/Trust Wallet must be connected for USDT payment (TRON network)')
       }
 
       if (calculation.investment.requiredTAKARA > 0 && (!publicKey || !signTransaction)) {
@@ -48,18 +72,16 @@ export default function InvestmentModal({
         throw new Error('Phantom wallet must be connected for LAIKA boost')
       }
 
-      // Step 1: Transfer USDT via Phantom (Ethereum Mainnet)
-      if (!ethAddress) {
-        throw new Error('Phantom EVM address not available')
+      // Step 1: Transfer USDT via TronLink/Trust Wallet (TRON Network)
+      if (!tronAddress) {
+        throw new Error('TRON wallet address not available')
       }
 
-      toast.info('Step 1/3: Transferring USDT via Phantom (Ethereum Mainnet)...')
+      toast.info('Step 1/3: Transferring USDT via TronLink (TRON Network)...')
 
-      // Get platform wallet address from environment
-      const platformWalletETH = import.meta.env.VITE_PLATFORM_WALLET_ETH || ethAddress
-
-      const result = await transferUSDT(platformWalletETH, usdtAmount)
-      const usdtSignature = result.txHash
+      // Transfer USDT on TRON network
+      const result = await transferUSDT(usdtAmount.toString())
+      const usdtSignature = result.hash
 
       toast.success('✓ USDT transferred successfully!')
 
@@ -183,10 +205,10 @@ export default function InvestmentModal({
                   <div className="bg-black/20 rounded-lg p-4 border border-gold-500/30">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold text-lg">1</div>
-                      <div className="font-bold text-white text-base">USDT Payment (Phantom)</div>
+                      <div className="font-bold text-white text-base">USDT Payment (TronLink/Trust Wallet)</div>
                     </div>
                     <div className="pl-11 space-y-1 text-sm">
-                      <div className="text-gray-300">Network: <span className="text-blue-400 font-medium">Ethereum Mainnet</span></div>
+                      <div className="text-gray-300">Network: <span className="text-red-400 font-medium">TRON Network</span></div>
                       <div className="text-gray-300">Amount: <span className="text-gold-500 font-bold">${usdtAmount.toLocaleString()} USDT</span></div>
                       <div className="text-gray-400 text-xs italic">Main investment deposit</div>
                     </div>
@@ -199,7 +221,7 @@ export default function InvestmentModal({
                       <div className="font-bold text-white text-base">TAKARA + LAIKA (Phantom)</div>
                     </div>
                     <div className="pl-11 space-y-2 text-sm">
-                      <div className="text-gray-300">Network: <span className="text-purple-400 font-medium">Solana Mainnet</span></div>
+                      <div className="text-gray-300">Network: <span className="text-purple-400 font-medium">Solana</span></div>
                       {calculation.investment.requiredTAKARA > 0 && (
                         <div className="bg-green-500/10 border border-green-500/20 rounded p-2">
                           <div className="text-green-400 font-medium">✓ TAKARA Required: <span className="font-bold">{calculation.investment.requiredTAKARA.toLocaleString()} TAKARA</span></div>
@@ -227,7 +249,7 @@ export default function InvestmentModal({
               </div>
 
               {/* Wallet Connection Status - CRITICAL WARNING */}
-              {(!evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
+              {(!tronConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
                 <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
                   <div className="text-sm text-red-400 font-bold mb-3">
                     ⚠️ CRITICAL: Required Wallets Not Connected!
@@ -236,10 +258,10 @@ export default function InvestmentModal({
                     <div className="text-red-300 font-medium">
                       You MUST connect these wallets BEFORE proceeding with payment:
                     </div>
-                    {!evmConnected && (
+                    {!tronConnected && (
                       <div className="flex items-center gap-2">
                         <span className="text-red-400">✗</span>
-                        <span><strong>Phantom</strong> - Required for USDT payment (${usdtAmount.toLocaleString()})</span>
+                        <span><strong>TronLink/Trust Wallet</strong> - Required for USDT payment (${usdtAmount.toLocaleString()})</span>
                       </div>
                     )}
                     {calculation.investment.requiredTAKARA > 0 && !publicKey && (
@@ -250,26 +272,89 @@ export default function InvestmentModal({
                     )}
                   </div>
                   <div className="bg-red-500/20 border border-red-500/40 rounded p-3 text-xs text-red-300">
-                    <strong>WARNING:</strong> If you pay USDT without connecting Phantom for TAKARA payment, your investment will be REJECTED and you may lose funds!
+                    <strong>WARNING:</strong> Connect all required wallets before proceeding. Your investment may fail without proper wallet connections!
                   </div>
                 </div>
               )}
 
-              {/* Wallet Connection Status - Success */}
-              {evmConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+              {/* Wallet Connection Status - Success with Balances */}
+              {tronConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                  <div className="text-sm text-green-400 font-medium mb-2">
-                    ✓ All Required Wallets Connected
+                  <div className="flex items-center gap-2 text-sm text-green-400 font-medium mb-3">
+                    <Wallet className="h-4 w-4" />
+                    <span>Connected Wallets & Balances</span>
                   </div>
-                  <div className="text-sm text-gray-300 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-400">✓</span>
-                      <span>Phantom connected - Ready for USDT payment</span>
+                  <div className="space-y-3">
+                    {/* TRON Wallet */}
+                    <div className="bg-black/20 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-300 flex items-center gap-2">
+                          <span className="text-green-400">✓</span>
+                          TronLink (TRON)
+                        </span>
+                        <span className="text-xs text-gray-500 font-mono">
+                          {tronAddress?.slice(0, 6)}...{tronAddress?.slice(-4)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="bg-gold-500/10 rounded px-2 py-1">
+                          <span className="text-gray-400">USDT: </span>
+                          <span className={`font-bold ${parseFloat(usdtBalance) >= usdtAmount ? 'text-green-400' : 'text-red-400'}`}>
+                            {usdtBalance}
+                          </span>
+                        </div>
+                        <div className="bg-gray-500/10 rounded px-2 py-1">
+                          <span className="text-gray-400">TRX: </span>
+                          <span className="text-white font-bold">{trxBalance}</span>
+                        </div>
+                      </div>
+                      {parseFloat(usdtBalance) < usdtAmount && (
+                        <div className="text-xs text-red-400 mt-2">
+                          ⚠️ Insufficient USDT! Need {usdtAmount}, have {usdtBalance}
+                        </div>
+                      )}
                     </div>
-                    {calculation.investment.requiredTAKARA > 0 && publicKey && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-400">✓</span>
-                        <span>Phantom connected - Ready for TAKARA payment</span>
+
+                    {/* Solana Wallet */}
+                    {publicKey && (
+                      <div className="bg-black/20 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-green-400">✓</span>
+                            Phantom (Solana)
+                          </span>
+                          <span className="text-xs text-gray-500 font-mono">
+                            {publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div className="bg-green-500/10 rounded px-2 py-1">
+                            <span className="text-gray-400">TAKARA: </span>
+                            <span className={`font-bold ${takaraBalance >= (calculation.investment.requiredTAKARA || 0) ? 'text-green-400' : 'text-red-400'}`}>
+                              {takaraBalance.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="bg-purple-500/10 rounded px-2 py-1">
+                            <span className="text-gray-400">LAIKA: </span>
+                            <span className={`font-bold ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
+                              {laikaBalance.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="bg-gray-500/10 rounded px-2 py-1">
+                            <span className="text-gray-400">SOL: </span>
+                            <span className="text-white font-bold">{solBalance.toFixed(4)}</span>
+                          </div>
+                        </div>
+                        {calculation.investment.requiredTAKARA > 0 && takaraBalance < calculation.investment.requiredTAKARA && (
+                          <div className="text-xs text-red-400 mt-2">
+                            ⚠️ Insufficient TAKARA! Need {calculation.investment.requiredTAKARA}, have {takaraBalance}
+                          </div>
+                        )}
+                        {laikaAmount > 0 && laikaBalance < laikaAmount && (
+                          <div className="text-xs text-red-400 mt-2">
+                            ⚠️ Insufficient LAIKA! Need {laikaAmount}, have {laikaBalance}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -374,34 +459,39 @@ export default function InvestmentModal({
                     <strong>📊 Vault Activation Process:</strong>
                   </div>
                   <div className="pl-4 space-y-1">
-                    <div>• Vault must collect minimum <strong>$100,000 USDT</strong> in total investments</div>
-                    <div>• After reaching this target, a <strong>72-hour countdown</strong> begins</div>
-                    <div>• During pending period, you cannot withdraw</div>
+                    <div>• Vault must reach its target capacity to activate</div>
                     <div>• Earnings start accruing after activation</div>
+                    <div>• Payouts according to vault schedule</div>
                   </div>
                 </div>
               </div>
 
-              <button
-                onClick={handleInvest}
-                disabled={
-                  investMutation.isPending ||
-                  !evmConnected ||
-                  (calculation.investment.requiredTAKARA > 0 && !publicKey)
-                }
-                className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
-                  !evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'btn-gold'
-                }`}
-              >
-                {!evmConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
-                  ? 'Connect Required Wallets First'
-                  : 'Proceed to Transfer'}
-                {evmConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
-                  <ArrowRight className="h-5 w-5" />
-                )}
-              </button>
+              {(() => {
+                const hasInsufficientUSDT = parseFloat(usdtBalance) < usdtAmount
+                const hasInsufficientTAKARA = calculation.investment.requiredTAKARA > 0 && takaraBalance < calculation.investment.requiredTAKARA
+                const hasInsufficientLAIKA = laikaAmount > 0 && laikaBalance < laikaAmount
+                const walletsNotConnected = !tronConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
+                const isDisabled = investMutation.isPending || walletsNotConnected || hasInsufficientUSDT || hasInsufficientTAKARA || hasInsufficientLAIKA
+
+                let buttonText = 'Proceed to Transfer'
+                if (walletsNotConnected) buttonText = 'Connect Required Wallets First'
+                else if (hasInsufficientUSDT) buttonText = 'Insufficient USDT Balance'
+                else if (hasInsufficientTAKARA) buttonText = 'Insufficient TAKARA Balance'
+                else if (hasInsufficientLAIKA) buttonText = 'Insufficient LAIKA Balance'
+
+                return (
+                  <button
+                    onClick={handleInvest}
+                    disabled={isDisabled}
+                    className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
+                      isDisabled ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'btn-gold'
+                    }`}
+                  >
+                    {buttonText}
+                    {!isDisabled && <ArrowRight className="h-5 w-5" />}
+                  </button>
+                )
+              })()}
             </div>
           )}
 
@@ -425,13 +515,13 @@ export default function InvestmentModal({
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Investment Created!</h3>
                 <p className="text-gray-400 mb-4">
-                  Your investment has been created successfully. It will be activated once the vault reaches $100,000 USDT and the 72-hour countdown completes.
+                  Your investment has been created successfully. Earnings will start accruing once the vault is activated.
                 </p>
                 {txSignature && (
                   <div className="bg-background-elevated rounded-lg p-4 mb-4">
-                    <div className="text-sm text-gray-400 mb-2">USDT Transaction Hash (Ethereum)</div>
+                    <div className="text-sm text-gray-400 mb-2">USDT Transaction Hash (TRON)</div>
                     <a
-                      href={`https://etherscan.io/tx/${txSignature}`}
+                      href={`https://shasta.tronscan.org/#/transaction/${txSignature}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gold-500 hover:text-gold-400 text-sm break-all"

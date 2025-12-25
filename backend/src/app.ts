@@ -59,13 +59,9 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, curl)
-    // But only in development
+    // Allow requests with no origin (same-origin requests via nginx proxy, mobile apps)
+    // Same-origin requests don't send Origin header
     if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        logger.warn('Request without origin blocked in production');
-        return callback(new Error('Not allowed by CORS'));
-      }
       return callback(null, true);
     }
 

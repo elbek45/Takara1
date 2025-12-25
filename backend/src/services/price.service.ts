@@ -355,35 +355,35 @@ async function calculateTakaraBasePrice(): Promise<number> {
 }
 
 /**
- * Calculate LAIKA value in USDT with platform rate for boost
+ * Calculate LAIKA value in USDT with platform PREMIUM for boost
  *
- * Platform requires 50% MORE LAIKA than market rate for boost calculations
- * This means: if market rate is 0.5 LAIKA = 1 USDT, platform rate is 0.75 LAIKA = 1 USDT
- * Formula: boostValueUSD = laikaAmount × laikaPrice / 1.50
+ * Platform values LAIKA 50% HIGHER than market for boost calculations
+ * This is a BONUS for users - they need LESS LAIKA!
+ * Formula: boostValueUSD = laikaAmount × laikaPrice × 1.50
  *
- * Example: $100 worth of LAIKA at market = $66.67 boost value
- * Or: to get $100 boost, you need $150 worth of LAIKA at market price
+ * Example: $100 worth of LAIKA at market = $150 boost value
+ * Or: to get $100 boost, you only need $66.67 worth of LAIKA at market price
  */
 export async function calculateLaikaValueWithPremium(laikaAmount: number): Promise<{
   laikaAmount: number;
   laikaPrice: number;
   marketValue: number; // Market price in USD
-  premiumPercent: number; // Platform premium (50% more LAIKA required)
-  discountAmount: number; // Difference from market
-  finalValue: number; // Boost value (market / 1.5)
+  premiumPercent: number; // Platform premium (50% bonus!)
+  premiumAmount: number; // Bonus amount
+  finalValue: number; // Boost value (market * 1.5)
 }> {
   const laikaPrice = await getLaikaPrice();
   const marketValue = laikaAmount * laikaPrice;
-  const premiumPercent = 50; // 50% more LAIKA required than market rate
-  const finalValue = marketValue / 1.50; // Boost value = market value / 1.5
-  const discountAmount = marketValue - finalValue;
+  const premiumPercent = 50; // 50% bonus on LAIKA value!
+  const premiumAmount = marketValue * 0.50; // Bonus
+  const finalValue = marketValue * 1.50; // Boost value = market value * 1.5
 
   return {
     laikaAmount,
     laikaPrice,
     marketValue: Number(marketValue.toFixed(6)),
     premiumPercent,
-    discountAmount: Number(discountAmount.toFixed(6)),
+    premiumAmount: Number(premiumAmount.toFixed(6)),
     finalValue: Number(finalValue.toFixed(6))
   };
 }
@@ -406,7 +406,7 @@ export async function calculateLaikaValueWithDiscount(laikaAmount: number): Prom
     laikaPrice: result.laikaPrice,
     marketValue: result.marketValue,
     discountPercent: result.premiumPercent,
-    discountAmount: result.discountAmount,
+    discountAmount: result.premiumAmount,
     finalValue: result.finalValue
   };
 }
@@ -414,31 +414,32 @@ export async function calculateLaikaValueWithDiscount(laikaAmount: number): Prom
 /**
  * Calculate required LAIKA amount (at market value) for desired boost USD value
  *
- * Platform requires 50% more LAIKA than market rate
- * If you need $100 boost value, you need $150 worth of LAIKA at market
+ * Platform values LAIKA 50% HIGHER than market for boost
+ * If you need $100 boost value, you only need $66.67 worth of LAIKA at market
+ * Users need 50% LESS LAIKA!
  */
 export async function calculateRequiredLaika(desiredUSDValue: number): Promise<{
   desiredUSDValue: number;
   laikaPrice: number;
   requiredLaikaAmount: number;
   marketValue: number;
-  extraRequired: number;
+  savings: number;
 }> {
   const laikaPrice = await getLaikaPrice();
 
-  // Since finalValue = marketValue / 1.50
-  // marketValue = desiredUSDValue × 1.50
+  // Since boostValue = marketValue × 1.50
+  // marketValue = desiredUSDValue / 1.50 (need LESS!)
   // laikaAmount = marketValue / laikaPrice
-  const marketValue = desiredUSDValue * 1.50;
+  const marketValue = desiredUSDValue / 1.50;
   const requiredLaikaAmount = marketValue / laikaPrice;
-  const extraRequired = marketValue - desiredUSDValue; // 50% extra
+  const savings = desiredUSDValue - marketValue; // 33% savings!
 
   return {
     desiredUSDValue,
     laikaPrice,
     requiredLaikaAmount: Number(requiredLaikaAmount.toFixed(2)),
     marketValue: Number(marketValue.toFixed(6)),
-    extraRequired: Number(extraRequired.toFixed(6))
+    savings: Number(savings.toFixed(6))
   };
 }
 
@@ -528,8 +529,7 @@ export async function getTakaraPricingCalculations(): Promise<{
     investment: number;
     takaraRequired: number;
     takaraRequiredCost: number;
-    baseTakaraAPY: number;
-    maxTakaraAPY: number;
+    takaraAPY: number;
     dailyMining: number;
     monthlyMining: number;
     totalMined: number;
@@ -593,7 +593,7 @@ export async function getTakaraPricingCalculations(): Promise<{
 
     // Calculate mining
     const miningResult = calculateMining({
-      maxTakaraAPY: vault.maxTakaraAPY,
+      takaraAPY: vault.takaraAPY,
       usdtInvested: exampleInvestment,
       currentDifficulty,
       durationMonths: vault.duration
@@ -611,7 +611,7 @@ export async function getTakaraPricingCalculations(): Promise<{
       investment: exampleInvestment,
       takaraRequired,
       takaraRequiredCost: Number(takaraRequiredCost.toFixed(2)),
-      maxTakaraAPY: vault.maxTakaraAPY,
+      takaraAPY: vault.takaraAPY,
       dailyMining: miningResult.dailyTakaraFinal,
       monthlyMining: miningResult.monthlyTakara,
       totalMined: miningResult.totalTakaraExpected,

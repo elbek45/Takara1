@@ -13,8 +13,8 @@ import {
   RegisterSchema,
   PasswordLoginSchema,
   AdminLoginSchema,
-  ConnectEthereumSchema,
   ConnectSolanaSchema,
+  ConnectTronSchema,
 } from '../validators/auth.validators';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.post('/admin/login', adminLoginLimiter, validateBody(AdminLoginSchema), a
 
 // Protected routes
 router.get('/me', authenticateUser, authController.getCurrentUser);
-router.post('/connect-ethereum', authenticateUser, validateBody(ConnectEthereumSchema), authController.connectEthereum);
 router.post('/connect-solana', authenticateUser, validateBody(ConnectSolanaSchema), authController.connectSolana);
+router.post('/connect-tron', authenticateUser, validateBody(ConnectTronSchema), authController.connectTron);
 
 export default router;

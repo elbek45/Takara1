@@ -10,6 +10,7 @@ import vaultRoutes from './vault.routes';
 import investmentRoutes from './investment.routes';
 import marketplaceRoutes from './marketplace.routes';
 import adminRoutes from './admin.routes';
+import priceRoutes from './price.routes';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/vaults', vaultRoutes);
 router.use('/investments', investmentRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/admin', adminRoutes);
+router.use('/prices', priceRoutes);
 
 export default router;

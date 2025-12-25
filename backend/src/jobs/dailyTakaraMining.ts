@@ -69,7 +69,7 @@ export async function processDailyMining(): Promise<void> {
       try {
         // Calculate mining for this investment
         const miningResult = calculateMining({
-          takaraAPY: Number(investment.vault.takaraAPY),
+          takaraAPY: Number(investment.vault.maxTakaraAPY),
           usdtInvested: Number(investment.usdtAmount),
           currentDifficulty,
           durationMonths: investment.vault.duration
@@ -82,7 +82,7 @@ export async function processDailyMining(): Promise<void> {
         miningRecords.push({
           investmentId: investment.id,
           miningDate: new Date(),
-          takaraAPY: investment.vault.takaraAPY,
+          takaraAPY: investment.vault.maxTakaraAPY,
           difficulty: currentDifficulty,
           takaraMinedRaw: miningResult.dailyTakaraRaw,
           takaraMinedFinal: dailyTakara,

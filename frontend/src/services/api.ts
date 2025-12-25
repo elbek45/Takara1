@@ -48,8 +48,8 @@ class ApiClient {
           const url = error.config?.url || ''
           const isAuthRequest = url.includes('/auth/login') ||
                                 url.includes('/auth/register') ||
-                                url.includes('/connect-ethereum') ||
-                                url.includes('/connect-solana')
+                                url.includes('/connect-solana') ||
+                                url.includes('/connect-tron')
 
           if (!isAuthRequest) {
             // Clear token and redirect to home only for protected endpoints
@@ -124,16 +124,16 @@ class ApiClient {
     return !!localStorage.getItem('auth_token')
   }
 
-  async connectEthereum(ethereumAddress: string): Promise<ApiResponse> {
-    const { data } = await this.client.post<ApiResponse>('/auth/connect-ethereum', {
-      ethereumAddress,
+  async connectSolana(walletAddress: string): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>('/auth/connect-solana', {
+      walletAddress,
     })
     return data
   }
 
-  async connectSolana(walletAddress: string): Promise<ApiResponse> {
-    const { data } = await this.client.post<ApiResponse>('/auth/connect-solana', {
-      walletAddress,
+  async connectTron(tronAddress: string): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>('/auth/connect-tron', {
+      tronAddress,
     })
     return data
   }
@@ -256,6 +256,27 @@ class ApiClient {
 
   async getTakaraBoost(investmentId: string): Promise<ApiResponse> {
     const { data } = await this.client.get<ApiResponse>(`/investments/${investmentId}/boost/takara`)
+    return data
+  }
+
+  // ==================== PRICES (v2.7) ====================
+
+  async getLaikaPrice(): Promise<ApiResponse<{ token: string; price: number; currency: string; timestamp: string }>> {
+    const { data } = await this.client.get<ApiResponse<{ token: string; price: number; currency: string; timestamp: string }>>('/prices/laika')
+    return data
+  }
+
+  async getTakaraPrice(): Promise<ApiResponse<{ token: string; price: number; currency: string; timestamp: string }>> {
+    const { data } = await this.client.get<ApiResponse<{ token: string; price: number; currency: string; timestamp: string }>>('/prices/takara')
+    return data
+  }
+
+  async getAllPrices(): Promise<ApiResponse<{
+    laika: { token: string; price: number; currency: string };
+    takara: { token: string; price: number; currency: string };
+    timestamp: string;
+  }>> {
+    const { data } = await this.client.get<ApiResponse<any>>('/prices')
     return data
   }
 

@@ -2,7 +2,7 @@
 
 #################################################
 # Takara Gold v2.1.1 - Production Deployment
-# Server: 159.203.104.235
+# Server: takarafi.com (68.178.174.34)
 #################################################
 
 set -e  # Exit on error
@@ -31,9 +31,9 @@ echo "==========================================="
 
 # Step 1: Backup current version
 echo -e "${YELLOW}📦 Creating backup...${NC}"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "mkdir -p ${BACKUP_DIR} && \
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "echo '${SERVER_PASS}' | sudo -S mkdir -p ${BACKUP_DIR} && \
   if [ -d ${PROJECT_DIR} ]; then \
-    tar -czf ${BACKUP_DIR}/backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C ${PROJECT_DIR} .; \
+    echo '${SERVER_PASS}' | sudo -S tar -czf ${BACKUP_DIR}/backup-\$(date +%Y%m%d-%H%M%S).tar.gz -C ${PROJECT_DIR} .; \
     echo 'Backup created successfully'; \
   else \
     echo 'No existing installation to backup'; \
@@ -55,13 +55,16 @@ echo -e "${YELLOW}⚙️  Creating .env.production...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cat > ${PROJECT_DIR}/backend/.env.production <<'ENVEOF'
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://takara_user:TakaraSecure2025Pass@127.0.0.1:5432/takara_production
+DATABASE_URL=postgresql://takara:takara_password@127.0.0.1:5432/takara_gold
 JWT_SECRET=5518e3b09562c0335fce4022c6e6edc7a17f25c6cd309a1048296d960aa6b557
 JWT_EXPIRES_IN=7d
 REDIS_URL=redis://localhost:6379
-FRONTEND_URL=https://sitpool.org
-CORS_ORIGIN=https://sitpool.org
+FRONTEND_URL=https://takarafi.com
+CORS_ORIGIN=https://takarafi.com
 SOLANA_RPC_URL=https://api.devnet.solana.com
+TRON_FULL_HOST=https://api.shasta.trongrid.io
+USDT_CONTRACT_TRON=TWkXs3GmUt9FKs2ELztpULrGnAXGcT1YtK
+PLATFORM_WALLET_TRON=TPs3TqoQq24X46Zmw3JA5hZ7kyx2F1tKg2
 LOG_LEVEL=info
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
@@ -90,7 +93,7 @@ sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SER
 echo -e "${YELLOW}🔄 Restarting services...${NC}"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && pm2 delete takara-backend 2>/dev/null || true"
 sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cd ${PROJECT_DIR}/backend && export \$(cat .env.production | xargs) && pm2 start dist/app.js --name takara-backend"
-sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "systemctl restart nginx"
+sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "echo '${SERVER_PASS}' | sudo -S systemctl restart nginx"
 
 # Step 7: Health check (via SSH to check localhost on server)
 echo -e "${YELLOW}🏥 Running health check...${NC}"

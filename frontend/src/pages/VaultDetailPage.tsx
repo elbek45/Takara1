@@ -25,6 +25,21 @@ export default function VaultDetailPage() {
 
   const vault = vaultResponse?.data?.vault
 
+  // Fetch LAIKA price on page load (v2.7) - refetch when laikaAmount changes
+  const { data: laikaPriceResponse, isFetching: laikaPriceFetching, refetch: refetchLaikaPrice } = useQuery({
+    queryKey: ['laikaPrice'],
+    queryFn: () => api.getLaikaPrice(),
+    staleTime: 30 * 1000, // 30 seconds (shorter for more frequent updates)
+    refetchInterval: 60 * 1000, // Refresh every 1 minute
+  })
+
+  // Handler to update LAIKA amount and refresh price
+  const handleLaikaAmountChange = (newAmount: number) => {
+    setLaikaAmount(newAmount)
+    // Refresh price when amount changes
+    refetchLaikaPrice()
+  }
+
   const { data: calculationResponse, isLoading: calculating } = useQuery({
     queryKey: ['calculate', id, usdtAmount, laikaAmount],
     queryFn: () =>
@@ -40,14 +55,14 @@ export default function VaultDetailPage() {
   const calculation = calculationResponse?.data
 
   // Calculate max LAIKA based on 50% of USDT amount
-  // Platform applies 10% discount, so we need to account for that
-  // To get $X boost value after 10% discount, need market value = $X / 0.9
+  // Platform values LAIKA 50% HIGHER (boost = market * 1.5)
+  // So users need LESS LAIKA: to get $X boost, need $X/1.5 market value
   // @ts-ignore - Type definitions need updating
-  const laikaToUsdtRate = calculation?.investment?.laikaToUsdtRate || 0.01
+  const laikaToUsdtRate = calculation?.investment?.laikaPrice || laikaPriceResponse?.data?.price || 0.0000007
   const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.5 : 0
-  // Account for 10% platform discount
-  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 0.9
-  const maxLaikaBoost = maxLaikaMarketValueUSD / laikaToUsdtRate
+  // Platform values LAIKA 50% higher, so need less market value: divide by 1.5
+  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 1.5
+  const maxLaikaBoost = laikaToUsdtRate > 0 ? maxLaikaMarketValueUSD / laikaToUsdtRate : 0
 
   if (vaultLoading) {
     return (
@@ -245,7 +260,7 @@ export default function VaultDetailPage() {
                     type="button"
                     onClick={() => {
                       setBoostToken('LAIKA')
-                      setLaikaAmount(0)
+                      handleLaikaAmountChange(0)
                     }}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       boostToken === 'LAIKA'
@@ -260,7 +275,7 @@ export default function VaultDetailPage() {
                     type="button"
                     onClick={() => {
                       setBoostToken('TAKARA')
-                      setLaikaAmount(0)
+                      handleLaikaAmountChange(0)
                     }}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       boostToken === 'TAKARA'
@@ -313,7 +328,7 @@ export default function VaultDetailPage() {
                       value={laikaAmount || ''}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0
-                        setLaikaAmount(Math.min(value, maxLaikaBoost))
+                        handleLaikaAmountChange(Math.min(value, maxLaikaBoost))
                       }}
                       placeholder={`Enter ${boostToken} amount (0 for no boost)`}
                       disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
@@ -329,7 +344,7 @@ export default function VaultDetailPage() {
 
                     {/* Max Boost Button */}
                     <button
-                      onClick={() => setLaikaAmount(maxLaikaBoost)}
+                      onClick={() => handleLaikaAmountChange(maxLaikaBoost)}
                       disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
                       className={`mt-2 w-full py-2.5 rounded-lg font-semibold transition-all text-sm ${
                         boostToken === 'LAIKA'
@@ -354,8 +369,19 @@ export default function VaultDetailPage() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">1 {boostToken} Price:</span>
-                        <span className="text-white font-medium text-sm">
-                          ${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(4)} USDT
+                        <span className="text-white font-medium text-sm flex items-center gap-2">
+                          {laikaPriceFetching ? (
+                            <span className="animate-pulse">Updating...</span>
+                          ) : (
+                            <>${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)} USDT</>
+                          )}
+                          <button
+                            onClick={() => refetchLaikaPrice()}
+                            className="text-xs text-laika-purple hover:text-laika-green transition-colors"
+                            title="Refresh price"
+                          >
+                            🔄
+                          </button>
                         </span>
                       </div>
                       <div className="flex justify-between items-center border-t border-gray-700 pt-2">

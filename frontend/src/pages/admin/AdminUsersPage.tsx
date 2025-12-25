@@ -97,13 +97,27 @@ export default function AdminUsersPage() {
               <tbody className="divide-y divide-green-900/20">
                 {users.map((user: any) => (
                   <tr key={user.id} className="hover:bg-green-900/5">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-white">
+                        <div className="text-sm font-medium text-white mb-1">
                           {user.username || 'No username'}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {user.walletAddress ? `${user.walletAddress.slice(0, 8)}...` : 'No wallet'}
+                        <div className="space-y-0.5">
+                          {user.walletAddress && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-purple-500" title="Phantom (Solana) - TAKARA/LAIKA"></span>
+                              <span className="text-xs text-gray-500">{user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}</span>
+                            </div>
+                          )}
+                          {user.tronAddress && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-red-500" title="Trust Wallet (TRON) - USDT"></span>
+                              <span className="text-xs text-gray-500">{user.tronAddress.slice(0, 6)}...{user.tronAddress.slice(-4)}</span>
+                            </div>
+                          )}
+                          {!user.walletAddress && !user.tronAddress && (
+                            <span className="text-xs text-gray-600">No wallets connected</span>
+                          )}
                         </div>
                       </div>
                     </td>

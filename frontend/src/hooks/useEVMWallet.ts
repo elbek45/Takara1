@@ -1,11 +1,11 @@
 /**
  * useEVMWallet Hook
  * Manages Phantom EVM connection and Ethereum state
+ * NOTE: This hook is deprecated - we now use Phantom for Solana and Trust Wallet for TRON
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import { ethereumService } from '../services/ethereum.service'
-import { api } from '../services/api'
 import { toast } from 'sonner'
 import type { EthereumWallet } from '../types/blockchain'
 
@@ -61,18 +61,7 @@ export function useEVMWallet() {
         ethBalance: wallet.balance,
       })
 
-      // Save Ethereum address to backend if user is authenticated (with debounce)
-      if (api.isAuthenticated()) {
-        try {
-          await api.connectEthereum(wallet.address)
-          toast.success('Phantom connected and saved')
-        } catch (backendError: any) {
-          console.error('Failed to save Ethereum address:', backendError)
-          // Don't show error toast to avoid annoying the user
-        }
-      } else {
-        toast.success('Phantom connected successfully')
-      }
+      toast.success('Phantom connected successfully')
     } catch (error: any) {
       console.error('Phantom connection error:', error)
       toast.error(error.message || 'Failed to connect Phantom')
@@ -178,13 +167,6 @@ export function useEVMWallet() {
           ...prev,
           address: accounts[0],
         }))
-
-        // Save new address if authenticated
-        if (api.isAuthenticated()) {
-          api.connectEthereum(accounts[0]).catch((err) => {
-            console.error('Failed to save new Ethereum address:', err)
-          })
-        }
       }
     }
 
@@ -206,12 +188,10 @@ export function useEVMWallet() {
   }, [state.address, disconnect])
 
   /**
-   * Auto-connect if user is authenticated and previously connected
+   * Auto-connect if previously connected
    */
   useEffect(() => {
     const autoConnect = async () => {
-      // Only auto-connect if user is authenticated
-      if (!api.isAuthenticated()) return
       if (!ethereumService.isWalletInstalled()) return
 
       try {

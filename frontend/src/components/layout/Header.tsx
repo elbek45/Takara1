@@ -1,13 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { Menu, X, User, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
-import { EVMWalletButton, EVMWalletButtonCompact } from '../wallet'
-import { useEVMWallet } from '../../hooks/useEVMWallet'
+import { TronLinkButton, TronLinkButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
+import { useTronLink } from '../../hooks/useTronLink'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -20,7 +19,7 @@ const navigation = [
 export default function Header() {
   const location = useLocation()
   const { connected, disconnect: disconnectPhantom } = useWallet()
-  const { disconnect: disconnectEVM } = useEVMWallet()
+  const { disconnect: disconnectTronLink } = useTronLink()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -46,9 +45,9 @@ export default function Header() {
     }
 
     try {
-      disconnectEVM()
+      disconnectTronLink()
     } catch (error) {
-      console.log('EVM wallet already disconnected')
+      console.log('TronLink wallet already disconnected')
     }
 
     // Clear all cached data
@@ -130,11 +129,11 @@ export default function Header() {
             {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
               <>
-                {/* EVM Wallet Button (Phantom) */}
-                <EVMWalletButton variant="secondary" size="md" />
+                {/* Phantom Wallet Button (Solana - TAKARA/LAIKA) */}
+                <PhantomButton variant="primary" size="md" />
 
-                {/* Phantom Wallet Button (Solana) */}
-                <WalletMultiButton className="!bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
+                {/* Trust Wallet Button (TRON - USDT) */}
+                <TronLinkButton variant="secondary" size="md" />
               </>
             )}
           </div>
@@ -207,11 +206,11 @@ export default function Header() {
             {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
               <div className="pt-2 space-y-2">
-                {/* EVM Wallet Button (Phantom) */}
-                <EVMWalletButtonCompact className="w-full" />
+                {/* Phantom Wallet Button (Solana - TAKARA/LAIKA) */}
+                <PhantomButtonCompact className="w-full" />
 
-                {/* Phantom Wallet Button (Solana) */}
-                <WalletMultiButton className="!w-full !bg-gradient-gold !text-background-primary !rounded-lg !px-6 !py-2.5 !font-semibold hover:!opacity-90 !transition-opacity" />
+                {/* Trust Wallet Button (TRON - USDT) */}
+                <TronLinkButtonCompact className="w-full" />
 
                 {/* Logout Button for mobile */}
                 {currentUser?.data && (

@@ -152,7 +152,8 @@ export interface VaultWithStats {
   maxInvestment: number;
   baseAPY: number;
   maxAPY: number;
-  takaraAPY: number;
+  baseTakaraAPY: number;
+  maxTakaraAPY: number;
   requireTAKARA: boolean;
   takaraRatio?: number;
   currentFilled: number;

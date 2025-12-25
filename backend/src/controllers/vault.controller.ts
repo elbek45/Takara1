@@ -297,9 +297,9 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
       ? Number(latestMiningStats.currentDifficulty)
       : 1.0;
 
-    // Calculate TAKARA mining
+    // Calculate TAKARA mining (use maxTakaraAPY for estimation)
     const miningResult = calculateMining({
-      maxTakaraAPY: Number(vault.maxTakaraAPY),
+      takaraAPY: Number(vault.maxTakaraAPY),
       usdtInvested: usdtAmount,
       currentDifficulty,
       durationMonths: vault.duration
@@ -344,7 +344,7 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
         },
         mining: {
           baseTakaraAPY: Number(vault.baseTakaraAPY),
-      maxTakaraAPY: Number(vault.maxTakaraAPY),
+          maxTakaraAPY: Number(vault.maxTakaraAPY),
           currentDifficulty,
           dailyTAKARA: miningResult.dailyTakaraFinal,
           monthlyTAKARA: miningResult.monthlyTakara,

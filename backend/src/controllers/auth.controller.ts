@@ -16,7 +16,7 @@ import { prisma } from '../config/database';
 import { UserRole } from '@prisma/client';
 import { verifyWalletSignature, generateSignatureMessage, isValidSolanaAddress } from '../services/solana.service';
 import { setNonce as storeNonce, getNonce as retrieveNonce, deleteNonce as removeNonce } from '../services/redis.service';
-import { LoginResponse, AdminLoginResponse } from '../types';
+import { LoginResponse, AdminLoginResponse, AuthenticatedRequest } from '../types';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/constants';
 import { getEnv } from '../config/env';
 import { getLogger } from '../config/logger';
@@ -501,70 +501,11 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
 }
 
 /**
- * Connect Ethereum Wallet (MetaMask)
- */
-export async function connectEthereum(req: Request, res: Response): Promise<void> {
-  try {
-    const userId = (req as any).user?.userId;
-    const { ethereumAddress } = req.body;
-
-    if (!userId) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
-      return;
-    }
-
-    if (!ethereumAddress) {
-      res.status(400).json({
-        success: false,
-        message: 'Ethereum address is required'
-      });
-      return;
-    }
-
-    // Check if address is already used by another user
-    const existingUser = await prisma.user.findFirst({
-      where: { ethereumAddress }
-    });
-
-    if (existingUser && existingUser.id !== userId) {
-      res.status(400).json({
-        success: false,
-        message: 'This Ethereum address is already connected to another account'
-      });
-      return;
-    }
-
-    // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { ethereumAddress }
-    });
-
-    res.json({
-      success: true,
-      message: 'Phantom wallet connected successfully',
-      data: {
-        ethereumAddress: updatedUser.ethereumAddress
-      }
-    });
-  } catch (error: any) {
-    logger.error({ error }, 'Failed to connect Ethereum wallet');
-    res.status(500).json({
-      success: false,
-      message: ERROR_MESSAGES.INTERNAL_ERROR
-    });
-  }
-}
-
-/**
  * Connect Solana Wallet (Phantom)
  */
 export async function connectSolana(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).userId;
     const { walletAddress } = req.body;
 
     if (!walletAddress) {
@@ -610,6 +551,67 @@ export async function connectSolana(req: Request, res: Response): Promise<void> 
   }
 }
 
+/**
+ * Connect TRON wallet (Trust Wallet) to existing user
+ */
+export async function connectTron(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as AuthenticatedRequest).userId;
+    const { tronAddress } = req.body;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+      return;
+    }
+
+    if (!tronAddress) {
+      res.status(400).json({
+        success: false,
+        message: 'TRON address is required'
+      });
+      return;
+    }
+
+    // Check if address is already used by another user
+    const existingUser = await prisma.user.findFirst({
+      where: { tronAddress }
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      res.status(400).json({
+        success: false,
+        message: 'This TRON address is already connected to another account'
+      });
+      return;
+    }
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { tronAddress }
+    });
+
+    logger.info({ userId, tronAddress }, 'TRON wallet connected');
+
+    res.json({
+      success: true,
+      message: 'Trust Wallet connected successfully',
+      data: {
+        tronAddress: updatedUser.tronAddress
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Failed to connect TRON wallet');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
 export default {
   getNonce,
   login,
@@ -617,6 +619,6 @@ export default {
   loginWithPassword,
   adminLogin,
   getCurrentUser,
-  connectEthereum,
-  connectSolana
+  connectSolana,
+  connectTron
 };

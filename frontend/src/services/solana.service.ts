@@ -21,9 +21,9 @@ const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || 'devnet'
 const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || `https://api.${SOLANA_NETWORK}.solana.com`
 
 // Token mint addresses (Devnet)
-const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') // Devnet USDT
-const TAKARA_MINT = new PublicKey('8i5QWiMc8SQL6uNp3qiARM58dt2pXRVLRzP8PmAmjts2') // TAKARA Token
-const LAIKA_MINT = new PublicKey('Fv4cN5kDN8R4AHgCAzj1AuVFC1hsxxGyjuGGaj2YUF8f') // LAIKA Token
+const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') // Not used - USDT via TRON
+const TAKARA_MINT = new PublicKey('6biyv9NcaHmf8rKfLFGmj6eTwR9LBQtmi8dGUp2vRsgA') // TAKARA Token (Devnet - 21M supply)
+const LAIKA_MINT = new PublicKey('8o5XXBWEGmKJ7hn6hPaEzYNfuMxCWhwBQu5NSZSReKPd') // LAIKA Token (Devnet - 1B supply)
 
 class SolanaService {
   private connection: Connection
@@ -215,8 +215,9 @@ class SolanaService {
    * Get platform wallet address (where to send tokens)
    */
   getPlatformWalletAddress(): PublicKey {
-    // Platform wallet address (devnet)
-    return new PublicKey('543g91E4ytvkEfg3JFxBb6aU7NbrokHan3GxYCrXB2kM')
+    // Platform wallet address from environment
+    const walletAddress = import.meta.env.VITE_PLATFORM_WALLET_SOL || '39YVQH3mg5ZpXKYiszHpxLkept8wsNmYHM3fLi6f7cVy'
+    return new PublicKey(walletAddress)
   }
 }
 

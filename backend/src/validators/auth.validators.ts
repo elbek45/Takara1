@@ -15,12 +15,12 @@ export const SolanaAddressSchema = z.string()
   .regex(solanaAddressRegex, 'Invalid Solana wallet address');
 
 /**
- * Ethereum wallet address validation
+ * TRON wallet address validation (base58, starts with T)
  */
-const ethereumAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+const tronAddressRegex = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 
-export const EthereumAddressSchema = z.string()
-  .regex(ethereumAddressRegex, 'Invalid Ethereum wallet address');
+export const TronAddressSchema = z.string()
+  .regex(tronAddressRegex, 'Invalid TRON wallet address');
 
 /**
  * GET /api/auth/nonce
@@ -87,17 +87,17 @@ export const AdminLoginSchema = z.object({
 });
 
 /**
- * POST /api/auth/connect-ethereum
- */
-export const ConnectEthereumSchema = z.object({
-  ethereumAddress: EthereumAddressSchema,
-});
-
-/**
  * POST /api/auth/connect-solana
  */
 export const ConnectSolanaSchema = z.object({
   walletAddress: SolanaAddressSchema,
+});
+
+/**
+ * POST /api/auth/connect-tron
+ */
+export const ConnectTronSchema = z.object({
+  tronAddress: TronAddressSchema,
 });
 
 export default {
@@ -106,6 +106,6 @@ export default {
   RegisterSchema,
   PasswordLoginSchema,
   AdminLoginSchema,
-  ConnectEthereumSchema,
   ConnectSolanaSchema,
+  ConnectTronSchema,
 };
