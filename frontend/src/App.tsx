@@ -27,6 +27,7 @@ import AdminBoostTokensPage from './pages/admin/AdminBoostTokensPage'
 import AdminTreasuryPage from './pages/admin/AdminTreasuryPage'
 import AdminTakaraStatsPage from './pages/admin/AdminTakaraStatsPage'
 import AdminPricingPage from './pages/admin/AdminPricingPage'
+import AdminPartnersPage from './pages/admin/AdminPartnersPage'
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
         <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
         <Route path="/admin/takara-stats" element={<AdminTakaraStatsPage />} />
         <Route path="/admin/pricing" element={<AdminPricingPage />} />
+        <Route path="/admin/partners" element={<AdminPartnersPage />} />
       </Routes>
 
       <Toaster

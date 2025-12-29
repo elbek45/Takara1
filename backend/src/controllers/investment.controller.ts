@@ -19,6 +19,7 @@ import { calculateEarnings, calculatePendingEarnings } from '../utils/apy.calcul
 import { VaultTier } from '../config/vaults.config';
 import { verifyTransaction, transferTAKARAReward } from '../services/solana.service';
 import { verifyUSDTTransaction, transferUSDTFromPlatform } from '../services/ethereum.service';
+import { verifyUSDTTransactionTron, verifyTRXTransaction } from '../services/tron.service';
 import { applyTakaraClaimTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 
@@ -33,13 +34,22 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
     const userId = (req as AuthenticatedRequest).userId!;
     const input: CreateInvestmentInput = req.body;
 
-    const { vaultId, usdtAmount, takaraAmount, laikaBoost, txSignature } = input;
+    const { vaultId, usdtAmount, takaraAmount, laikaBoost, txSignature, paymentMethod = 'USDT', trxAmount } = input;
 
     // Validate input
     if (!vaultId || !usdtAmount || !txSignature) {
       res.status(400).json({
         success: false,
         message: 'Vault ID, USDT amount, and transaction signature are required'
+      });
+      return;
+    }
+
+    // Validate TRX amount if paying with TRX
+    if (paymentMethod === 'TRX' && (!trxAmount || trxAmount <= 0)) {
+      res.status(400).json({
+        success: false,
+        message: 'TRX amount is required when paying with TRX'
       });
       return;
     }
@@ -79,26 +89,26 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Verify USDT transaction on Ethereum
+    // Verify payment transaction on TRON network
     if (!process.env.SKIP_TX_VERIFICATION) {
-      // Get user's Ethereum address
+      // Get user's TRON address
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { ethereumAddress: true }
+        select: { tronAddress: true }
       });
 
-      if (!user?.ethereumAddress) {
+      if (!user?.tronAddress) {
         res.status(400).json({
           success: false,
-          message: 'Please connect your MetaMask wallet first'
+          message: 'Please connect your Trust Wallet/TronLink first'
         });
         return;
       }
 
-      // Get platform Ethereum wallet address
-      const platformEthAddress = process.env.PLATFORM_ETHEREUM_ADDRESS;
-      if (!platformEthAddress) {
-        logger.error('PLATFORM_ETHEREUM_ADDRESS not configured');
+      // Get platform TRON wallet address
+      const platformTronAddress = process.env.PLATFORM_WALLET_TRON;
+      if (!platformTronAddress) {
+        logger.error('PLATFORM_WALLET_TRON not configured');
         res.status(500).json({
           success: false,
           message: 'Platform wallet not configured'
@@ -106,29 +116,59 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
         return;
       }
 
-      // Verify USDT transaction on Ethereum
-      const txVerified = await verifyUSDTTransaction(
-        txSignature,
-        user.ethereumAddress, // from user's MetaMask
-        platformEthAddress,   // platform's Ethereum wallet
-        usdtAmount
-      );
+      let txVerified = false;
 
-      if (!txVerified) {
-        res.status(400).json({
-          success: false,
-          message: 'USDT transaction verification failed. Please ensure the transaction is confirmed on Ethereum.'
-        });
-        return;
+      if (paymentMethod === 'TRX') {
+        // Verify TRX transaction
+        txVerified = await verifyTRXTransaction(
+          txSignature,
+          user.tronAddress,
+          platformTronAddress,
+          trxAmount!
+        );
+
+        if (!txVerified) {
+          res.status(400).json({
+            success: false,
+            message: 'TRX transaction verification failed. Please ensure the transaction is confirmed on TRON network.'
+          });
+          return;
+        }
+
+        logger.info({
+          userId,
+          txSignature,
+          paymentMethod: 'TRX',
+          from: user.tronAddress,
+          to: platformTronAddress,
+          trxAmount
+        }, 'TRX transaction verified on TRON');
+      } else {
+        // Verify USDT (TRC20) transaction
+        txVerified = await verifyUSDTTransactionTron(
+          txSignature,
+          user.tronAddress,
+          platformTronAddress,
+          usdtAmount
+        );
+
+        if (!txVerified) {
+          res.status(400).json({
+            success: false,
+            message: 'USDT transaction verification failed. Please ensure the transaction is confirmed on TRON network.'
+          });
+          return;
+        }
+
+        logger.info({
+          userId,
+          txSignature,
+          paymentMethod: 'USDT',
+          from: user.tronAddress,
+          to: platformTronAddress,
+          amount: usdtAmount
+        }, 'USDT transaction verified on TRON');
       }
-
-      logger.info({
-        userId,
-        txSignature,
-        from: user.ethereumAddress,
-        to: platformEthAddress,
-        amount: usdtAmount
-      }, 'USDT transaction verified on Ethereum');
     }
 
     // Calculate final APY (with LAIKA boost if provided)

@@ -5,7 +5,6 @@
  */
 
 import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { Application } from 'express';
 import { logger } from './logger';
 
@@ -39,7 +38,6 @@ export function initializeSentry(app: Application): void {
       // Profiling
       profilesSampleRate: parseFloat(process.env.SENTRY_PROFILES_SAMPLE_RATE || '0.1'), // 10% of transactions
       integrations: [
-        nodeProfilingIntegration(),
         Sentry.httpIntegration(),
         Sentry.expressIntegration(),
       ],

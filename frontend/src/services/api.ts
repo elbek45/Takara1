@@ -298,6 +298,55 @@ class ApiClient {
     const { data } = await this.client.get<ApiResponse>(`/investments/${investmentId}/instant-sale/price`)
     return data
   }
+
+  // ==================== PARTNERS (Public) ====================
+
+  async getPartners(): Promise<ApiResponse<any[]>> {
+    const { data } = await this.client.get<ApiResponse<any[]>>('/partners')
+    return data
+  }
+
+  // ==================== ADMIN: PARTNERS ====================
+
+  async adminGetPartners(): Promise<ApiResponse<any[]>> {
+    const { data } = await this.client.get<ApiResponse<any[]>>('/partners/admin')
+    return data
+  }
+
+  async adminCreatePartner(partner: {
+    name: string
+    logoUrl: string
+    websiteUrl?: string
+    order?: number
+  }): Promise<ApiResponse> {
+    const { data } = await this.client.post<ApiResponse>('/partners/admin', partner)
+    return data
+  }
+
+  async adminUpdatePartner(id: string, partner: {
+    name?: string
+    logoUrl?: string
+    websiteUrl?: string
+    order?: number
+    isActive?: boolean
+  }): Promise<ApiResponse> {
+    const { data } = await this.client.put<ApiResponse>(`/partners/admin/${id}`, partner)
+    return data
+  }
+
+  async adminDeletePartner(id: string): Promise<ApiResponse> {
+    const { data } = await this.client.delete<ApiResponse>(`/partners/admin/${id}`)
+    return data
+  }
+
+  async adminUploadPartnerLogo(file: File): Promise<ApiResponse<{ url: string }>> {
+    const formData = new FormData()
+    formData.append('logo', file)
+    const { data } = await this.client.post<ApiResponse<{ url: string }>>('/partners/admin/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  }
 }
 
 // Export singleton instance

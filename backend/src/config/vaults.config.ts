@@ -53,6 +53,24 @@ export interface VaultConfig {
  * All 9 Vault configurations as per specification v2.3
  */
 export const VAULTS: VaultConfig[] = [
+  // ==================== TEST VAULT (TRX Payment Test) ====================
+  {
+    id: 0,
+    name: 'Test Vault 100000%',
+    tier: VaultTier.STARTER,
+    duration: 1, // 1 month for quick testing
+    payoutSchedule: PayoutSchedule.MONTHLY,
+    minInvestment: 1, // Min 1 USDT (or ~4 TRX)
+    maxInvestment: 100, // Max 100 USDT for testing
+    baseAPY: 100000.0, // 100,000% APY for testing!
+    maxAPY: 100000.0,
+    takaraAPY: 0,
+    miningPower: 0,
+    requireTAKARA: false, // No TAKARA required - pure TRX/USDT test
+    takaraRatio: null,
+    description: 'TEST VAULT - 100,000% APY - For testing TRX payments!'
+  },
+
   // ==================== TIER 1: STARTER ====================
   {
     id: 1,

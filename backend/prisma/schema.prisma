@@ -68,10 +68,10 @@ model Vault {
   takaraRatio     Decimal?      @db.Decimal(10, 2) // e.g., 30 or 50 per 100 USDT
 
   // Rewards (Updated v2.2)
-  baseAPY         Decimal       @db.Decimal(5, 2) // Base APY (e.g., 12.0, 20.5, 25.0)
-  maxAPY          Decimal       @db.Decimal(5, 2) // Max APY with boost (LAIKA/TAKARA)
-  baseTakaraAPY   Decimal       @db.Decimal(6, 2) // Base TAKARA mining APY
-  maxTakaraAPY    Decimal       @db.Decimal(6, 2) // Max TAKARA mining APY with boost
+  baseAPY         Decimal       @db.Decimal(10, 2) // Base APY (e.g., 12.0, 20.5, 25.0, or 100000 for test)
+  maxAPY          Decimal       @db.Decimal(10, 2) // Max APY with boost (LAIKA/TAKARA)
+  baseTakaraAPY   Decimal       @db.Decimal(10, 2) // Base TAKARA mining APY
+  maxTakaraAPY    Decimal       @db.Decimal(10, 2) // Max TAKARA mining APY with boost
 
   // Status
   isActive        Boolean       @default(true)
@@ -579,4 +579,24 @@ model TreasuryBalance {
   updatedAt         DateTime      @updatedAt
 
   @@map("treasury_balance")
+}
+
+// ==================== PARTNERS (Powered By Slider) ====================
+
+model Partner {
+  id                String        @id @default(uuid())
+
+  name              String        // Partner/technology name
+  logoUrl           String        // Path to logo image
+  websiteUrl        String?       // Optional website link
+
+  // Display
+  displayOrder      Int           @default(0) // Order in slider
+  isActive          Boolean       @default(true)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([isActive, displayOrder])
+  @@map("partners")
 }

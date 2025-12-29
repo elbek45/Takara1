@@ -5,7 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
-import { TronLinkButton, TronLinkButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
+import { UnifiedWalletButton, UnifiedWalletButtonCompact } from '../wallet'
 import { useTronLink } from '../../hooks/useTronLink'
 
 const navigation = [
@@ -64,11 +64,9 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-gold flex items-center justify-center">
-                <span className="text-xl font-bold text-background-primary">T</span>
-              </div>
-              <span className="text-xl font-bold text-gradient-gold">
-                Takara <span className="text-gold-500">宝</span>
+              <span className="text-2xl text-gold-300">宝</span>
+              <span className="text-xl font-bold text-gold-300">
+                Takara
               </span>
             </Link>
           </div>
@@ -126,15 +124,9 @@ export default function Header() {
               </button>
             )}
 
-            {/* Wallet Buttons - Only show if authenticated */}
+            {/* Unified Wallet Button - Only show if authenticated */}
             {isAuthenticated && (
-              <>
-                {/* Phantom Wallet Button (Solana - TAKARA/LAIKA) */}
-                <PhantomButton variant="primary" size="md" />
-
-                {/* Trust Wallet Button (TRON - USDT) */}
-                <TronLinkButton variant="secondary" size="md" />
-              </>
+              <UnifiedWalletButton variant="primary" size="md" />
             )}
           </div>
 
@@ -203,14 +195,10 @@ export default function Header() {
               </button>
             )}
 
-            {/* Wallet Buttons - Only show if authenticated */}
+            {/* Unified Wallet Button - Only show if authenticated */}
             {isAuthenticated && (
               <div className="pt-2 space-y-2">
-                {/* Phantom Wallet Button (Solana - TAKARA/LAIKA) */}
-                <PhantomButtonCompact className="w-full" />
-
-                {/* Trust Wallet Button (TRON - USDT) */}
-                <TronLinkButtonCompact className="w-full" />
+                <UnifiedWalletButtonCompact className="w-full" />
 
                 {/* Logout Button for mobile */}
                 {currentUser?.data && (

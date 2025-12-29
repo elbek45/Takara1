@@ -16,7 +16,7 @@
     --popover: 150 30% 10%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 38 100% 50%;
+    --primary: 51 100% 50%;
     --primary-foreground: 0 0% 2%;
 
     --secondary: 150 30% 15%;
@@ -33,7 +33,7 @@
 
     --border: 150 30% 18%;
     --input: 150 30% 18%;
-    --ring: 38 100% 50%;
+    --ring: 51 100% 50%;
 
     --radius: 0.5rem;
   }
@@ -67,9 +67,17 @@
     @apply bg-green-700;
   }
 
-  /* Gradient backgrounds */
+  /* Gradient backgrounds (Brand Colors) */
   .gradient-gold {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%);
+  }
+
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%);
+  }
+
+  .gradient-navy {
+    background: linear-gradient(135deg, #0F1F40 0%, #0B0B0C 100%);
   }
 
   .gradient-green {
@@ -80,27 +88,55 @@
     background: linear-gradient(135deg, #9945ff 0%, #14f195 100%);
   }
 
-  /* Card glow effect */
+  /* Card glow effect (Brand Gold) */
   .card-glow {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
   }
 
   .card-glow:hover {
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
   }
 
-  /* Text gradient */
+  /* Text gradient (Brand Gold) */
   .text-gradient-gold {
-    @apply bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-gold-300 to-gold-600 bg-clip-text text-transparent;
   }
 
-  /* Button variants */
+  /* Button variants (Brand Colors) */
   .btn-gold {
-    @apply bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-black font-semibold px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl;
+    @apply bg-gradient-to-r from-gold-300 to-gold-600 hover:from-gold-400 hover:to-gold-700 text-navy-900 font-semibold px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl;
   }
 
   .btn-outline-gold {
-    @apply border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+    @apply border-2 border-gold-300 text-gold-300 hover:bg-gold-300 hover:text-navy-900 font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+  }
+
+  /* Zen circles pattern (concentric rings) */
+  .zen-circles {
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='60' cy='60' r='55' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='60' cy='60' r='45' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='60' cy='60' r='35' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='60' cy='60' r='25' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='60' cy='60' r='15' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
+  }
+
+  /* Japanese Seigaiha wave pattern */
+  .seigaiha-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='40' viewBox='0 0 80 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 Q20 0 40 40 Q60 0 80 40' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3Cpath d='M-40 40 Q-20 0 0 40' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3Cpath d='M80 40 Q100 0 120 40' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+    background-size: 80px 40px;
+  }
+
+  /* Japanese Asanoha (hemp leaf) pattern */
+  .asanoha-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L30 30 M0 30 L30 30 M60 30 L30 30 M30 60 L30 30 M0 0 L30 30 M60 0 L30 30 M0 60 L30 30 M60 60 L30 30' fill='none' stroke='%23FFD700' stroke-width='0.3' opacity='0.06'/%3E%3C/svg%3E");
+  }
+
+  /* Wave pattern background (legacy) */
+  .wave-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='%23FFD700' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+  }
+
+  /* Combined Japanese pattern */
+  .japan-pattern {
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='60' cy='60' r='55' fill='none' stroke='%23FFD700' stroke-width='0.4' opacity='0.06'/%3E%3Ccircle cx='60' cy='60' r='45' fill='none' stroke='%23FFD700' stroke-width='0.4' opacity='0.06'/%3E%3Ccircle cx='60' cy='60' r='35' fill='none' stroke='%23FFD700' stroke-width='0.4' opacity='0.06'/%3E%3Ccircle cx='60' cy='60' r='25' fill='none' stroke='%23FFD700' stroke-width='0.4' opacity='0.06'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg width='80' height='40' viewBox='0 0 80 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 Q20 0 40 40 Q60 0 80 40' fill='none' stroke='%23FFD700' stroke-width='0.3' opacity='0.05'/%3E%3C/svg%3E");
   }
 
   /* Tier badges */
@@ -113,7 +149,7 @@
   }
 
   .tier-elite {
-    @apply bg-gold-500/10 text-gold-400 border border-gold-500/30;
+    @apply bg-gold-300/10 text-gold-300 border border-gold-300/30;
   }
 
   /* Stats display */
@@ -123,8 +159,8 @@
 
   /* Loading spinner */
   .spinner {
-    border: 3px solid rgba(245, 158, 11, 0.1);
-    border-top: 3px solid #f59e0b;
+    border: 3px solid rgba(255, 215, 0, 0.2);
+    border-top: 3px solid #FFD700;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -134,6 +170,20 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
   }
 }
 

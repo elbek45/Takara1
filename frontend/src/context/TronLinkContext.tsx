@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
+import * as Sentry from '@sentry/react'
 import { api } from '../services/api'
 
 interface TronLinkState {
@@ -20,6 +21,7 @@ interface TronLinkContextType extends TronLinkState {
   disconnect: () => void
   refreshBalances: () => Promise<void>
   transferUSDT: (amount: string) => Promise<{ hash: string }>
+  transferTRX: (amount: string) => Promise<{ hash: string }>
   isTronLinkInstalled: boolean
 }
 
@@ -29,8 +31,8 @@ const TronLinkContext = createContext<TronLinkContextType | null>(null)
 const USDT_CONTRACT_ADDRESS = import.meta.env.VITE_USDT_CONTRACT_TRON || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
 // Platform wallet address for receiving USDT
 const PLATFORM_WALLET = import.meta.env.VITE_PLATFORM_WALLET_TRON || ''
-// TRON Network endpoint (Shasta testnet)
-const TRON_FULL_HOST = import.meta.env.VITE_TRON_FULL_HOST || 'https://api.shasta.trongrid.io'
+// TRON Network endpoint (Mainnet)
+const TRON_FULL_HOST = import.meta.env.VITE_TRON_FULL_HOST || 'https://api.trongrid.io'
 
 declare global {
   interface Window {
@@ -220,7 +222,78 @@ export function TronLinkProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   /**
-   * Transfer USDT (TRC20)
+   * Wait for TronWeb to be ready
+   */
+  const waitForTronWeb = async (maxAttempts = 30): Promise<any> => {
+    // Debug: Log all available wallet objects
+    console.log('Checking available TRON wallets:', {
+      tronWeb: typeof window.tronWeb,
+      tronLink: typeof window.tronLink,
+      trustwallet: typeof (window as any).trustwallet,
+    })
+
+    // Try to request accounts first
+    if (window.tronLink) {
+      try {
+        console.log('Requesting Trust Wallet accounts...')
+        const res = await window.tronLink.request({ method: 'tron_requestAccounts' })
+        console.log('Request result:', res)
+      } catch (e: any) {
+        console.log('Request attempt:', e?.message || e)
+      }
+    }
+
+    // Wait for tronWeb with address
+    for (let i = 0; i < maxAttempts; i++) {
+      const tronWeb = window.tronWeb
+
+      if (tronWeb) {
+        // Trust Wallet may not set ready=true, so check for address instead
+        const address = tronWeb.defaultAddress?.base58 ||
+                       tronWeb.defaultAddress?.hex
+
+        console.log(`Attempt ${i + 1}: ready=${tronWeb.ready}, address=${address}`)
+
+        // Accept if we have an address, even if ready is false
+        if (address && address !== 'false' && address.length > 10) {
+          console.log('TronWeb available! Address:', address)
+
+          // Verify essential methods exist
+          if (tronWeb.transactionBuilder && tronWeb.trx) {
+            console.log('TronWeb methods available:', {
+              transactionBuilder: !!tronWeb.transactionBuilder,
+              trx: !!tronWeb.trx,
+              contract: !!tronWeb.contract,
+            })
+            return tronWeb
+          }
+        }
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+
+    // Final debug info
+    const debugInfo = {
+      tronWeb: !!window.tronWeb,
+      tronWebReady: window.tronWeb?.ready,
+      tronWebAddress: window.tronWeb?.defaultAddress,
+      tronLink: !!window.tronLink,
+    }
+    console.error('TRON wallet debug:', debugInfo)
+
+    // Send to Sentry
+    Sentry.captureMessage('TRON wallet not ready', {
+      level: 'error',
+      tags: { component: 'TronLinkContext', action: 'waitForTronWeb' },
+      extra: debugInfo
+    })
+
+    throw new Error('TRON wallet not ready. Please make sure Trust Wallet is unlocked and connected to this site.')
+  }
+
+  /**
+   * Transfer USDT (TRC20) using Trust Wallet's tronWeb
    */
   const transferUSDT = useCallback(
     async (amount: string): Promise<{ hash: string }> => {
@@ -228,21 +301,177 @@ export function TronLinkProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Trust Wallet not connected')
       }
 
-      try {
-        const tronWeb = window.tronWeb
-        const contract = await tronWeb.contract().at(USDT_CONTRACT_ADDRESS)
-        const amountInSun = Math.floor(parseFloat(amount) * 1e6)
+      if (!PLATFORM_WALLET) {
+        throw new Error('Platform wallet address not configured')
+      }
 
-        const tx = await contract.transfer(PLATFORM_WALLET, amountInSun).send({
-          feeLimit: 100_000_000,
-          callValue: 0,
-          shouldPollResponse: true,
+      // Wait for wallet to be ready
+      const tronWeb = await waitForTronWeb()
+
+      try {
+        console.log('Starting USDT transfer via Trust Wallet:', {
+          amount,
+          from: state.address,
+          to: PLATFORM_WALLET,
+          contract: USDT_CONTRACT_ADDRESS,
         })
 
-        return { hash: tx }
+        const amountInSun = Math.floor(parseFloat(amount) * 1e6)
+
+        // Method 1: Try using transactionBuilder.triggerSmartContract directly
+        console.log('Building TRC20 transfer transaction...')
+
+        const functionSelector = 'transfer(address,uint256)'
+        const parameter = [
+          { type: 'address', value: PLATFORM_WALLET },
+          { type: 'uint256', value: amountInSun }
+        ]
+
+        const tx = await tronWeb.transactionBuilder.triggerSmartContract(
+          USDT_CONTRACT_ADDRESS,
+          functionSelector,
+          {
+            feeLimit: 100000000,
+            callValue: 0,
+          },
+          parameter,
+          state.address
+        )
+
+        console.log('Transaction built:', tx)
+
+        if (!tx.result || !tx.result.result) {
+          throw new Error(tx.result?.message || 'Failed to build transaction')
+        }
+
+        // Sign transaction
+        console.log('Requesting signature from Trust Wallet...')
+        const signedTx = await tronWeb.trx.sign(tx.transaction)
+        console.log('Transaction signed:', signedTx)
+
+        // Broadcast transaction
+        console.log('Broadcasting transaction...')
+        const result = await tronWeb.trx.sendRawTransaction(signedTx)
+        console.log('Broadcast result:', result)
+
+        if (!result.result) {
+          throw new Error(result.message || 'Failed to broadcast transaction')
+        }
+
+        return { hash: result.txid || signedTx.txID }
       } catch (error: any) {
         console.error('USDT transfer error:', error)
-        throw new Error(error.message || 'Failed to transfer USDT')
+
+        // Send to Sentry
+        Sentry.captureException(error, {
+          tags: { component: 'TronLinkContext', action: 'transferUSDT' },
+          extra: { amount, from: state.address, to: PLATFORM_WALLET }
+        })
+
+        let errorMessage = 'Failed to transfer USDT'
+
+        if (typeof error === 'string') {
+          errorMessage = error
+        } else if (error?.message) {
+          errorMessage = error.message
+        } else if (error?.error) {
+          errorMessage = typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+        }
+
+        if (errorMessage.includes('Confirmation declined') || errorMessage.includes('cancel') || errorMessage.includes('rejected')) {
+          errorMessage = 'Transaction was cancelled by user'
+        } else if (errorMessage.includes('balance') || errorMessage.includes('BALANCE_NOT_ENOUGH')) {
+          errorMessage = 'Insufficient TRX balance for transaction fees'
+        } else if (errorMessage.includes('401')) {
+          errorMessage = 'Trust Wallet session expired. Please reconnect your wallet.'
+        }
+
+        throw new Error(errorMessage)
+      }
+    },
+    [state.isConnected, state.address]
+  )
+
+  /**
+   * Transfer TRX (native token) using Trust Wallet's tronWeb
+   */
+  const transferTRX = useCallback(
+    async (amount: string): Promise<{ hash: string }> => {
+      if (!state.isConnected || !state.address) {
+        throw new Error('Trust Wallet not connected')
+      }
+
+      if (!PLATFORM_WALLET) {
+        throw new Error('Platform wallet address not configured')
+      }
+
+      // Wait for wallet to be ready
+      const tronWeb = await waitForTronWeb()
+
+      try {
+        console.log('Starting TRX transfer via Trust Wallet:', {
+          amount,
+          from: state.address,
+          to: PLATFORM_WALLET,
+        })
+
+        // Convert TRX to SUN (1 TRX = 1,000,000 SUN)
+        const amountInSun = Math.floor(parseFloat(amount) * 1e6)
+
+        console.log('Building TRX transfer transaction...')
+
+        // Build native TRX transfer transaction
+        const tx = await tronWeb.transactionBuilder.sendTrx(
+          PLATFORM_WALLET,
+          amountInSun,
+          state.address
+        )
+
+        console.log('Transaction built:', tx)
+
+        // Sign transaction
+        console.log('Requesting signature from Trust Wallet...')
+        const signedTx = await tronWeb.trx.sign(tx)
+        console.log('Transaction signed:', signedTx)
+
+        // Broadcast transaction
+        console.log('Broadcasting transaction...')
+        const result = await tronWeb.trx.sendRawTransaction(signedTx)
+        console.log('Broadcast result:', result)
+
+        if (!result.result) {
+          throw new Error(result.message || 'Failed to broadcast transaction')
+        }
+
+        return { hash: result.txid || signedTx.txID }
+      } catch (error: any) {
+        console.error('TRX transfer error:', error)
+
+        // Send to Sentry
+        Sentry.captureException(error, {
+          tags: { component: 'TronLinkContext', action: 'transferTRX' },
+          extra: { amount, from: state.address, to: PLATFORM_WALLET }
+        })
+
+        let errorMessage = 'Failed to transfer TRX'
+
+        if (typeof error === 'string') {
+          errorMessage = error
+        } else if (error?.message) {
+          errorMessage = error.message
+        } else if (error?.error) {
+          errorMessage = typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+        }
+
+        if (errorMessage.includes('Confirmation declined') || errorMessage.includes('cancel') || errorMessage.includes('rejected')) {
+          errorMessage = 'Transaction was cancelled by user'
+        } else if (errorMessage.includes('balance') || errorMessage.includes('BALANCE_NOT_ENOUGH')) {
+          errorMessage = 'Insufficient TRX balance'
+        } else if (errorMessage.includes('401')) {
+          errorMessage = 'Trust Wallet session expired. Please reconnect your wallet.'
+        }
+
+        throw new Error(errorMessage)
       }
     },
     [state.isConnected, state.address]
@@ -400,6 +629,7 @@ export function TronLinkProvider({ children }: { children: React.ReactNode }) {
     disconnect,
     refreshBalances,
     transferUSDT,
+    transferTRX,
     isTronLinkInstalled: isTronLinkInstalled(),
   }
 

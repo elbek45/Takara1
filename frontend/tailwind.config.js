@@ -8,18 +8,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Gold primary colors
+        // Brand Gold (vibrant & bright)
         gold: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b', // Primary Gold
-          600: '#d97706',
-          700: '#b45309',
+          50: '#FFFDE7',
+          100: '#FFF9C4',
+          200: '#FFF176',
+          300: '#FFD700', // Bright Gold
+          400: '#FFC000', // Vivid Gold
+          500: '#FFAB00', // Deep Vibrant Gold
+          600: '#FF9500', // Rich Orange-Gold
+          700: '#E68A00',
         },
-        // Dark green accents
+        // Navy Blue (from Brandbook #0F1F40)
+        navy: {
+          900: '#0B0B0C', // Darkest
+          800: '#0F1F40', // Brand Navy
+          700: '#1a2d52',
+          600: '#253b64',
+        },
+        // Green accents (kept for compatibility)
         green: {
           900: '#064e3b',
           800: '#065f46',
@@ -31,12 +38,12 @@ export default {
           purple: '#9945ff',
           green: '#14f195',
         },
-        // Background colors
+        // Background colors (updated to navy theme)
         background: {
-          primary: '#0a0f0d',
-          secondary: '#111916',
-          card: '#1a2420',
-          elevated: '#243029',
+          primary: '#0B0B0C',
+          secondary: '#0F1F40',
+          card: '#0F1F40',
+          elevated: '#1a2d52',
         },
         // Border colors
         border: 'hsl(var(--border))',

@@ -2,16 +2,16 @@
  * TRON Service
  *
  * Handles USDT (TRC20) verification on TRON network
- * Configured for Shasta testnet
+ * Configured for TRON Mainnet
  */
 
 import { getLogger } from '../config/logger';
 
 const logger = getLogger('tron-service');
 
-// Configuration
-const TRON_FULL_HOST = process.env.TRON_FULL_HOST || 'https://api.shasta.trongrid.io';
-const USDT_CONTRACT_TRON = process.env.USDT_CONTRACT_TRON || 'TWkXs3GmUt9FKs2ELztpULrGnAXGcT1YtK';
+// Configuration - Mainnet defaults
+const TRON_FULL_HOST = process.env.TRON_FULL_HOST || 'https://api.trongrid.io';
+const USDT_CONTRACT_TRON = process.env.USDT_CONTRACT_TRON || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 const PLATFORM_WALLET_TRON = process.env.PLATFORM_WALLET_TRON || 'TPs3TqoQq24X46Zmw3JA5hZ7kyx2F1tKg2';
 
 /**
@@ -178,6 +178,96 @@ export async function verifyUSDTTransactionTron(
 }
 
 /**
+ * Verify native TRX transaction on TRON
+ */
+export async function verifyTRXTransaction(
+  txHash: string,
+  expectedFrom: string,
+  expectedTo: string,
+  expectedAmount: number
+): Promise<boolean> {
+  try {
+    logger.info({ txHash }, 'Verifying TRON TRX transaction');
+
+    // Get transaction info
+    const response = await fetch(`${TRON_FULL_HOST}/wallet/gettransactioninfobyid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: txHash })
+    });
+
+    const txInfo: any = await response.json();
+
+    if (!txInfo || !txInfo.id) {
+      logger.warn({ txHash }, 'TRON TRX transaction not found');
+      return false;
+    }
+
+    // Check if transaction was successful
+    if (txInfo.receipt?.result && txInfo.receipt.result !== 'SUCCESS') {
+      logger.warn({ txHash, result: txInfo.receipt?.result }, 'TRON TRX transaction failed');
+      return false;
+    }
+
+    // Get transaction details
+    const txResponse = await fetch(`${TRON_FULL_HOST}/wallet/gettransactionbyid`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: txHash })
+    });
+
+    const tx: any = await txResponse.json();
+
+    if (!tx || !tx.raw_data) {
+      logger.warn({ txHash }, 'TRON TRX transaction details not found');
+      return false;
+    }
+
+    // Parse TRX transfer (TransferContract)
+    const contract = tx.raw_data.contract?.[0];
+    if (!contract || contract.type !== 'TransferContract') {
+      logger.warn({ txHash, type: contract?.type }, 'Not a TRX transfer transaction');
+      return false;
+    }
+
+    const { owner_address, to_address, amount } = contract.parameter?.value || {};
+
+    if (!owner_address || !to_address || !amount) {
+      logger.warn({ txHash }, 'Missing transaction fields');
+      return false;
+    }
+
+    // Convert hex addresses to base58 for comparison
+    const expectedFromHex = base58ToHex(expectedFrom);
+    const expectedToHex = base58ToHex(expectedTo);
+
+    // Amount in TRX (convert from SUN)
+    const amountTRX = amount / 1e6;
+
+    const isValid =
+      owner_address.toLowerCase() === expectedFromHex.toLowerCase() &&
+      to_address.toLowerCase() === expectedToHex.toLowerCase() &&
+      Math.abs(amountTRX - expectedAmount) < 0.01;
+
+    logger.info({
+      txHash,
+      fromHex: owner_address,
+      toHex: to_address,
+      amountTRX,
+      expectedFromHex,
+      expectedToHex,
+      expectedAmount,
+      isValid
+    }, 'TRON TRX transaction verified');
+
+    return isValid;
+  } catch (error: any) {
+    logger.error({ error, txHash }, 'Failed to verify TRON TRX transaction');
+    return false;
+  }
+}
+
+/**
  * Get platform wallet USDT balance on TRON
  */
 export async function getPlatformUSDTBalanceTron(): Promise<number> {
@@ -195,6 +285,7 @@ export default {
   getUSDTBalanceTron,
   getTRXBalance,
   verifyUSDTTransactionTron,
+  verifyTRXTransaction,
   getPlatformUSDTBalanceTron,
   getPlatformTRXBalance
 };

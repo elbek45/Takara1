@@ -1,203 +1,482 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, TrendingUp, Shield, Zap, Coins, ChevronDown, Pickaxe, Rocket, CreditCard } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowRight, Shield, Zap, Coins, ChevronDown, Pickaxe, Rocket, CreditCard, Building2, Loader2 } from 'lucide-react'
+import { PoweredBySlider } from '../components/landing'
+import { api } from '../services/api'
+
+// Gold color constant for inline styles
+const GOLD = '#FFD700'
+const GOLD_DARK = '#FFC000'
+
+// Mining threshold - starts when vault reaches this amount
+const MINING_THRESHOLD = 100000
 
 export default function LandingPage() {
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null)
 
+  // Fetch vaults from API
+  const { data: vaultsData, isLoading: vaultsLoading } = useQuery({
+    queryKey: ['vaults'],
+    queryFn: () => api.getVaults(),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const vaults = vaultsData?.data || []
+
+  // Calculate total funded amount across all vaults
+  const totalFunded = vaults.reduce((sum: number, vault: any) => sum + (vault.currentFilled || 0), 0)
+  const fundingProgress = Math.min((totalFunded / MINING_THRESHOLD) * 100, 100)
+  const isMiningActive = totalFunded >= MINING_THRESHOLD
+
+  // Group vaults by tier and get max APY for each tier
+  const getTierStats = (tier: string) => {
+    const tierVaults = vaults.filter((v: any) => v.tier === tier)
+    if (tierVaults.length === 0) return null
+
+    const maxBaseAPY = Math.max(...tierVaults.map((v: any) => v.maxAPY || v.baseAPY || 0))
+    const maxTakaraAPY = Math.max(...tierVaults.map((v: any) => v.takaraAPY || 0))
+    const minDeposit = Math.min(...tierVaults.map((v: any) => v.minDeposit || 0))
+
+    return { maxBaseAPY, maxTakaraAPY, minDeposit }
+  }
+
+  const starterStats = getTierStats('STARTER')
+  const proStats = getTierStats('PRO')
+  const eliteStats = getTierStats('ELITE')
+
   const toggleBlock = (blockId: number) => {
     setExpandedBlock(expandedBlock === blockId ? null : blockId)
   }
+
   return (
     <div className="relative">
-      {/* Token Listing Banner - v2.2 */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-3 px-4 text-center">
-        <p className="text-white font-semibold text-sm sm:text-base">
-          🚀 Listing will start when all 21,000,000 TAKARA tokens are mined!
+      {/* Solana Ecosystem Badge */}
+      <div className="bg-navy-800 py-2 px-4 text-center border-b border-gold-300/20">
+        <p style={{ color: GOLD }} className="font-medium text-sm sm:text-base flex items-center justify-center gap-2">
+          <span className="px-2 py-0.5 bg-gold-300/10 rounded text-xs uppercase tracking-wider">Solana Ecosystem</span>
+          <span className="hidden sm:inline">|</span>
+          <span className="hidden sm:inline">Mining starts when vault reaches $100,000</span>
         </p>
       </div>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 to-transparent"></div>
+      <section className="relative overflow-hidden bg-navy-900 min-h-[80vh] flex items-center">
+        {/* Japanese Background Patterns */}
+        <div className="absolute inset-0 zen-circles"></div>
+        <div className="absolute inset-0 seigaiha-pattern opacity-50"></div>
+
+        {/* Gold Tree */}
+        <div className="absolute top-20 right-0 w-[600px] h-[600px] opacity-20">
+          <img src="/images/brand/gold-tree.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
+        {/* Decorative gold circles */}
+        <div className="absolute top-10 left-10 w-64 h-64 rounded-full opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+        <div className="absolute bottom-20 left-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+
+        {/* Animated floating circles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-pulse"
+              style={{
+                width: `${20 + i * 10}px`,
+                height: `${20 + i * 10}px`,
+                background: `radial-gradient(circle, ${GOLD}20 0%, transparent 70%)`,
+                top: `${10 + i * 12}%`,
+                left: `${5 + i * 12}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${3 + i * 0.5}s`
+              }}
+            />
+          ))}
+        </div>
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
-          <div className="text-center space-y-8">
-            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-              <span className="block text-gradient-gold">Premium Takara Vaults</span>
-            </h1>
-
-            <p className="mx-auto max-w-2xl text-lg sm:text-xl text-gray-300">
-              Stake USDT in Takara treasury premium vaults, boost APY and earn TAKARA tokens through mining.
-              Secured on Solana blockchain.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                to="/vaults"
-                className="btn-gold inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-lg"
-              >
-                Explore Vaults
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/marketplace"
-                className="btn-outline-gold inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-lg"
-              >
-                View Marketplace
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12">
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">9</div>
-                <div className="text-sm text-gray-400">Takara Vaults</div>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              {/* Logo */}
+              <div className="flex items-center gap-3">
+                <span className="text-5xl" style={{ color: GOLD }}>宝</span>
+                <span className="text-4xl font-bold text-white">Takara</span>
               </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">7.73-29%</div>
-                <div className="text-sm text-gray-400">Base APY Range</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">Up to 450%</div>
-                <div className="text-sm text-gray-400">Takara APY</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gradient-gold">Monthly</div>
-                <div className="text-sm text-gray-400">Payouts</div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+                Where DeFi Meets{' '}
+                <span style={{ color: GOLD }}>Real-World Assets</span>
+              </h1>
+
+              <p className="text-xl text-gray-300 leading-relaxed">
+                Mine $TKR and earn insured RWA yield with principal-protected USDT vaults.
+                100% community mined, no pre-mint.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/vaults"
+                  className="btn-gold inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg"
+                >
+                  Start Earning
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link
+                  to="/faq"
+                  className="btn-outline-gold inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg"
+                >
+                  Learn More
+                </Link>
               </div>
             </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-8 border-t border-gold-300/20">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-bold" style={{ color: GOLD }}>Up to 20%</div>
+              <div className="text-sm text-gray-400 mt-1">USDT APY</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-bold" style={{ color: GOLD }}>Up to 60%</div>
+              <div className="text-sm text-gray-400 mt-1">Total USDT Returns</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-bold" style={{ color: GOLD }}>Up to 1000%</div>
+              <div className="text-sm text-gray-400 mt-1">Takara APY</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-bold" style={{ color: GOLD }}>Monthly</div>
+              <div className="text-sm text-gray-400 mt-1">Payouts</div>
+            </div>
+          </div>
+
+          {/* Mining Progress Section */}
+          <div className="mt-12 bg-navy-800/50 rounded-2xl p-6 border border-gold-300/20 backdrop-blur-sm">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Pickaxe className="h-5 w-5" style={{ color: GOLD }} />
+                  Mining Status
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {isMiningActive
+                    ? 'Mining is active! Deposit to start earning $TKR'
+                    : `Mining starts when total deposits reach $${MINING_THRESHOLD.toLocaleString()}`
+                  }
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold" style={{ color: GOLD }}>
+                  ${totalFunded.toLocaleString()} <span className="text-sm text-gray-400">/ ${MINING_THRESHOLD.toLocaleString()}</span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  {fundingProgress.toFixed(1)}% funded
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="relative h-4 bg-navy-900 rounded-full overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out"
+                style={{
+                  width: `${fundingProgress}%`,
+                  background: isMiningActive
+                    ? `linear-gradient(90deg, ${GOLD}, #22c55e)`
+                    : `linear-gradient(90deg, ${GOLD}, ${GOLD_DARK})`
+                }}
+              />
+              {/* Animated shimmer effect */}
+              <div
+                className="absolute inset-y-0 left-0 rounded-full opacity-30"
+                style={{
+                  width: `${fundingProgress}%`,
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                  animation: 'shimmer 2s infinite'
+                }}
+              />
+            </div>
+
+            {isMiningActive && (
+              <div className="mt-3 flex items-center gap-2 text-green-400 text-sm">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                Mining Active - New $TKR mined daily
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 bg-background-secondary">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Key Benefits Section */}
+      <section className="py-24 bg-navy-800 relative overflow-hidden">
+        {/* Japanese pattern background */}
+        <div className="absolute inset-0 asanoha-pattern"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 60%)` }}></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 60%)` }}></div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              Why Choose Takara <span className="text-gold-500">宝</span>?
+              Why Choose Takara <span style={{ color: GOLD }}>宝</span>?
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              Experience the next generation of DeFi vaults with multiple earning opportunities
+              Principal protected, community mined, insured RWA yield
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Feature 1 */}
-            <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
-                <TrendingUp className="h-6 w-6 text-gold-500" />
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Principal Protected */}
+            <div className="bg-navy-900 p-8 rounded-2xl border border-gold-300/20 card-glow relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative">
+                <div className="h-14 w-14 bg-gold-300/10 rounded-xl flex items-center justify-center mb-6">
+                  <Shield className="h-7 w-7" style={{ color: GOLD }} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Principal Protected</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  USDT funds sit in secure structures, avoiding high-volatility leverage trades
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">High APY</h3>
-              <p className="text-gray-400">
-                Earn 7.73-25% base APY on USDT deposits, up to 29% max APY with optional LAIKA boost
-              </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Coins className="h-6 w-6 text-gold-500" />
+            {/* Community Mined */}
+            <div className="bg-navy-900 p-8 rounded-2xl border border-gold-300/20 card-glow relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative">
+                <div className="h-14 w-14 bg-gold-300/10 rounded-xl flex items-center justify-center mb-6">
+                  <Pickaxe className="h-7 w-7" style={{ color: GOLD }} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Community Mined</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  100% of the 21M $TKR supply is mined by users. No pre-mint, no team allocation
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">TAKARA Mining</h3>
-              <p className="text-gray-400">
-                Mine TAKARA tokens daily with dynamic difficulty based on your vault's mining power
-              </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-gold-500" />
+            {/* Insured RWA Yield */}
+            <div className="bg-navy-900 p-8 rounded-2xl border border-gold-300/20 card-glow relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative">
+                <div className="h-14 w-14 bg-gold-300/10 rounded-xl flex items-center justify-center mb-6">
+                  <Building2 className="h-7 w-7" style={{ color: GOLD }} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Insured RWA Yield</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  Yield engine supported by Digital Commercial Bank connecting on-chain to real world
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">LAIKA Boost 🎁</h3>
-              <p className="text-gray-400">
-                Boost APY up to +4%. Deposit up to 50% of USDT value in LAIKA. LAIKA returned at term end.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-background-card p-6 rounded-xl border border-green-900/20 card-glow">
-              <div className="h-12 w-12 bg-gold-500/20 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-gold-500" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Marketplace</h3>
-              <p className="text-gray-400">
-                Trade your Wexel on the marketplace before maturity term
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Takara Utility Section - Scarcity, Yield & Real-World Utility */}
-      <section className="py-24 bg-gradient-to-b from-background-secondary via-background-primary to-background-secondary relative overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-20 right-10 w-72 h-72 bg-green-500 rounded-full blur-[100px]"></div>
+      {/* Powered By Slider */}
+      <PoweredBySlider />
+
+      {/* How It Works Section */}
+      <section className="py-24 bg-navy-900 relative overflow-hidden">
+        {/* Japanese zen circles background */}
+        <div className="absolute inset-0 zen-circles opacity-50"></div>
+        {/* Decorative lines */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-1/2 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}></div>
+          <div className="absolute top-1/3 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}></div>
+          <div className="absolute top-2/3 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}></div>
+        </div>
+        {/* Corner circles */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 60%)` }}></div>
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 60%)` }}></div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              User Journey
+            </h2>
+            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+              Start earning in four simple steps
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              { step: 1, title: 'Deposit USDT', desc: 'Into a term-based vault' },
+              { step: 2, title: 'Receive Wexel NFT', desc: 'Proof of Position' },
+              { step: 3, title: 'Mine $TKR', desc: '+ Earn Monthly Yield' },
+              { step: 4, title: 'Stake $TKR', desc: 'To boost APY tiers' },
+            ].map((item) => (
+              <div key={item.step} className="relative">
+                <div className="bg-navy-800 p-6 rounded-xl border border-gold-300/20 text-center h-full relative overflow-hidden">
+                  <div className="absolute -top-6 -right-6 w-24 h-24 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+                  <div className="relative">
+                    <div className="w-12 h-12 text-navy-900 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-4" style={{ background: GOLD }}>
+                      {item.step}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                    <p className="text-gray-400 text-sm">{item.desc}</p>
+                  </div>
+                </div>
+                {item.step < 4 && (
+                  <div className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2">
+                    <ArrowRight className="h-6 w-6 text-gold-300/40" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tokenomics Section */}
+      <section className="py-24 bg-navy-800 relative overflow-hidden">
+        {/* Japanese wave pattern */}
+        <div className="absolute inset-0 seigaiha-pattern opacity-30"></div>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 rounded-full blur-[100px]" style={{ background: GOLD }}></div>
+          <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full blur-[100px]" style={{ background: GOLD }}></div>
+        </div>
+        {/* Floating concentric circles */}
+        <div className="absolute top-1/4 left-1/4 w-40 h-40 opacity-5">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="25" fill="none" stroke={GOLD} strokeWidth="0.5" />
+          </svg>
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Slogan Section */}
-          <div className="text-center space-y-6 mb-16">
-            <div className="inline-block">
-              <div className="text-5xl sm:text-6xl font-bold mb-2">
-                <span className="text-gradient-gold">宝</span>
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left - Coin Image */}
+            <div className="flex justify-center relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-[300px] h-[300px] rounded-full opacity-20 blur-3xl" style={{ background: GOLD }}></div>
               </div>
-              <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4">
-                Takara - Scarcity, Yield, and Real-World Utility in One Token
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-                A 21 million supply crafted like Bitcoin, a stake-to-mine system built for users,
-                and a path toward real-world spending through crypto to fiat card utility.
-              </p>
+              <img
+                src="/images/brand/coin-swirl.png"
+                alt="$TKR Token"
+                className="w-[350px] h-auto relative z-10"
+              />
+            </div>
+
+            {/* Right - Tokenomics Info */}
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                  Tokenomics: <span style={{ color: GOLD }}>$TKR</span>
+                </h2>
+                <p className="text-gray-400 text-lg">
+                  A Bitcoin-inspired supply model designed for long-term scarcity
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-4 border-b border-gold-300/20">
+                  <span className="text-gray-300">Total Supply (Hard Cap)</span>
+                  <span style={{ color: GOLD }} className="font-bold text-xl">21,000,000 TKR</span>
+                </div>
+                <div className="flex justify-between items-center py-4 border-b border-gold-300/20">
+                  <span className="text-gray-300">Distribution Method</span>
+                  <span style={{ color: GOLD }} className="font-bold text-xl">100% User Mined</span>
+                </div>
+              </div>
+
+              <div className="bg-navy-900 rounded-xl p-6 border border-gold-300/20">
+                <p className="text-gray-300 leading-relaxed">
+                  <strong style={{ color: GOLD }}>Utility Loop:</strong> Holding and staking $TKR unlocks higher USDT APY tiers across vaults. The more you mine, the stronger your stablecoin reward stream becomes.
+                </p>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Three Clickable Blocks */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+      {/* Three Clickable Blocks - Takara Utility */}
+      <section className="py-24 bg-navy-900 relative overflow-hidden">
+        {/* Japanese combined pattern */}
+        <div className="absolute inset-0 japan-pattern"></div>
+        {/* Floating particles effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full opacity-20 animate-pulse"
+              style={{
+                width: `${8 + (i % 4) * 4}px`,
+                height: `${8 + (i % 4) * 4}px`,
+                background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)`,
+                top: `${10 + (i * 7) % 80}%`,
+                left: `${5 + (i * 8) % 90}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${2 + (i % 3)}s`
+              }}
+            />
+          ))}
+        </div>
+        {/* Large decorative circles */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 50%)` }}></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 50%)` }}></div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              Takara - Scarcity, Yield, and Real-World Utility in One Token
+            </h2>
+            <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              A 21 million supply designed like Bitcoin, stake-to-mine mechanics built for users,
+              and a path toward real-world spending through future crypto-to-fiat card utility.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Block 1 - Stake to Mine */}
             <div
               onClick={() => toggleBlock(1)}
-              className="group bg-background-card p-8 rounded-2xl border border-gold-500/30 hover:border-gold-500/60 transition-all duration-300 cursor-pointer card-glow"
+              className="group bg-navy-800 p-8 rounded-2xl border border-gold-300/30 hover:border-gold-300/60 transition-all duration-300 cursor-pointer card-glow relative overflow-hidden"
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="h-16 w-16 bg-gold-500/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Pickaxe className="h-8 w-8 text-gold-500" />
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative flex flex-col items-center text-center space-y-4">
+                <div className="h-16 w-16 bg-gold-300/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Pickaxe className="h-8 w-8" style={{ color: GOLD }} />
                 </div>
-                <h3 className="text-2xl font-bold text-white group-hover:text-gold-400 transition-colors">
+                <h3 className="text-xl font-bold text-white group-hover:text-gold-300 transition-colors">
                   Stake to Mine, Not to Dilute
                 </h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Takara isn't pre-mined. 90% of its 21M supply can only be earned by staking.
+                <p className="text-gray-400 leading-relaxed text-sm">
+                  The token features no pre-mining, with all 21M supply earned exclusively through staking mechanisms.
                 </p>
-                <div className="flex items-center gap-2 text-gold-400 font-medium">
-                  <span>Click to learn how Takara enters circulation</span>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${expandedBlock === 1 ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: GOLD }}>
+                  <span>Learn more</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedBlock === 1 ? 'rotate-180' : ''}`} />
                 </div>
               </div>
 
               {/* Expanded Content */}
-              <div className={`mt-6 pt-6 border-t border-gold-500/20 overflow-hidden transition-all duration-500 ${expandedBlock === 1 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="space-y-4 text-gray-300">
-                  <p className="leading-relaxed">
-                    Takara's supply follows a <span className="text-gold-400 font-semibold">Bitcoin-inspired model</span>: a fixed 21 million tokens designed for long-term scarcity.
+              <div className={`mt-6 pt-6 border-t border-gold-300/20 overflow-hidden transition-all duration-500 ${expandedBlock === 1 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="space-y-4 text-gray-300 text-sm">
+                  <p>
+                    Fixed <span style={{ color: GOLD }} className="font-semibold">21 million token cap</span> inspired by Bitcoin's scarcity model.
                   </p>
-                  <p className="leading-relaxed">
-                    <span className="text-gold-400 font-semibold">90% of the entire supply</span> will be mined directly by users through staking vaults, while only 10% is reserved for the team to fund development, growth, and operations.
-                  </p>
-                  <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4 my-4">
-                    <p className="text-gold-400 font-semibold text-center">
-                      There are no insider mints and no hidden allocations.
-                    </p>
+                  <div className="bg-gold-300/10 border border-gold-300/30 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Users accumulate tokens entirely through staking vaults</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Team reserves only 10% for development and operations</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>No insider allocations or hidden distributions</span>
+                    </div>
                   </div>
-                  <p className="leading-relaxed">
-                    Takara enters circulation only through user participation, making it one of the few tokens where distribution is <span className="text-gold-400 font-semibold">earned, not granted</span>.
-                  </p>
-                  <p className="leading-relaxed">
-                    Holders mine Takara over time by staking, reinforcing a fair, transparent, and community-driven supply model.
+                  <p className="text-center font-semibold" style={{ color: GOLD }}>
+                    Distribution mechanism prioritizes community participation.
                   </p>
                 </div>
               </div>
@@ -206,49 +485,47 @@ export default function LandingPage() {
             {/* Block 2 - Boost APY */}
             <div
               onClick={() => toggleBlock(2)}
-              className="group bg-background-card p-8 rounded-2xl border border-green-500/30 hover:border-green-500/60 transition-all duration-300 cursor-pointer card-glow"
+              className="group bg-navy-800 p-8 rounded-2xl border border-gold-300/30 hover:border-gold-300/60 transition-all duration-300 cursor-pointer card-glow relative overflow-hidden"
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="h-16 w-16 bg-green-500/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Rocket className="h-8 w-8 text-green-500" />
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative flex flex-col items-center text-center space-y-4">
+                <div className="h-16 w-16 bg-gold-300/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Rocket className="h-8 w-8" style={{ color: GOLD }} />
                 </div>
-                <h3 className="text-2xl font-bold text-white group-hover:text-green-400 transition-colors">
+                <h3 className="text-xl font-bold text-white group-hover:text-gold-300 transition-colors">
                   Boost Your APY the Smart Way
                 </h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Takara unlocks higher APY tiers in every vault. No-risk staking with USDT APY, while Takara yields can reach up to 500%.
+                <p className="text-gray-400 leading-relaxed text-sm">
+                  Takara functions as an exclusive APY enhancement tool within the ecosystem.
                 </p>
-                <div className="flex items-center gap-2 text-green-400 font-medium">
-                  <span>Click to see how boosts work</span>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${expandedBlock === 2 ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: GOLD }}>
+                  <span>See how boosts work</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedBlock === 2 ? 'rotate-180' : ''}`} />
                 </div>
               </div>
 
               {/* Expanded Content */}
-              <div className={`mt-6 pt-6 border-t border-green-500/20 overflow-hidden transition-all duration-500 ${expandedBlock === 2 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="space-y-4 text-gray-300">
-                  <p className="leading-relaxed">
-                    Takara is the ecosystem's <span className="text-green-400 font-semibold">exclusive APY booster</span>.
+              <div className={`mt-6 pt-6 border-t border-gold-300/20 overflow-hidden transition-all duration-500 ${expandedBlock === 2 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="space-y-4 text-gray-300 text-sm">
+                  <p>
+                    Takara is the ecosystem's <span style={{ color: GOLD }} className="font-semibold">exclusive APY booster</span>.
                   </p>
-                  <p className="leading-relaxed">
-                    USDT vaults offer competitive base APY with <span className="text-green-400 font-semibold">NO RISK</span> and Takara allows users to climb toward the maximum APY tier for some vaults.
-                  </p>
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 my-4 space-y-2">
+                  <div className="bg-gold-300/10 border border-gold-300/30 rounded-lg p-4 space-y-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-green-400">•</span>
-                      <span>Base APY stays steady</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Base USDT vault APY up to 20%</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-green-400">•</span>
-                      <span>Takara APY increases dynamically with vault choice</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Takara holdings unlock progressive APY tier increases</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-gold-400">⚡</span>
-                      <span className="text-gold-400 font-semibold">Advanced vaults offer up to 500% Takara APY</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Advanced vault options offer up to 1000% Takara APY</span>
                     </div>
                   </div>
-                  <p className="leading-relaxed text-center text-green-400 font-semibold">
-                    Holding Takara is the key to unlocking deeper yield.
+                  <p className="text-center font-semibold" style={{ color: GOLD }}>
+                    Token holdings determine maximum achievable yield levels.
                   </p>
                 </div>
               </div>
@@ -257,157 +534,175 @@ export default function LandingPage() {
             {/* Block 3 - Card Utility */}
             <div
               onClick={() => toggleBlock(3)}
-              className="group bg-background-card p-8 rounded-2xl border border-gold-500/30 hover:border-gold-500/60 transition-all duration-300 cursor-pointer card-glow"
+              className="group bg-navy-800 p-8 rounded-2xl border border-gold-300/30 hover:border-gold-300/60 transition-all duration-300 cursor-pointer card-glow relative overflow-hidden"
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="h-16 w-16 bg-gold-500/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <CreditCard className="h-8 w-8 text-gold-500" />
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative flex flex-col items-center text-center space-y-4">
+                <div className="h-16 w-16 bg-gold-300/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CreditCard className="h-8 w-8" style={{ color: GOLD }} />
                 </div>
-                <h3 className="text-2xl font-bold text-white group-hover:text-gold-400 transition-colors">
+                <h3 className="text-xl font-bold text-white group-hover:text-gold-300 transition-colors">
                   Your Token, Your Card, Your Rewards
                 </h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Future Takara Visa/Mastercard integration brings real-world utility. Spend crypto anywhere and earn Takara rewards.
+                <p className="text-gray-400 leading-relaxed text-sm">
+                  Future integration with Visa/Mastercard platforms for real-world spending capability.
                 </p>
-                <div className="flex items-center gap-2 text-gold-400 font-medium">
-                  <span>Click to explore upcoming card benefits</span>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${expandedBlock === 3 ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-2 font-medium text-sm" style={{ color: GOLD }}>
+                  <span>Explore card benefits</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedBlock === 3 ? 'rotate-180' : ''}`} />
                 </div>
               </div>
 
               {/* Expanded Content */}
-              <div className={`mt-6 pt-6 border-t border-gold-500/20 overflow-hidden transition-all duration-500 ${expandedBlock === 3 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="space-y-4 text-gray-300">
-                  <p className="leading-relaxed">
-                    Takara is building <span className="text-gold-400 font-semibold">real-world utility</span> through a crypto to fiat Visa/Mastercard, allowing users to:
+              <div className={`mt-6 pt-6 border-t border-gold-300/20 overflow-hidden transition-all duration-500 ${expandedBlock === 3 ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="space-y-4 text-gray-300 text-sm">
+                  <p>
+                    <span style={{ color: GOLD }} className="font-semibold">Planned Functionality:</span>
                   </p>
-                  <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4 my-4 space-y-3">
+                  <div className="bg-gold-300/10 border border-gold-300/30 rounded-lg p-4 space-y-2">
                     <div className="flex items-start gap-3">
-                      <span className="text-gold-400 mt-1">💳</span>
-                      <span><span className="font-semibold">Spend crypto anywhere</span> cards are accepted</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Cryptocurrency spending at any card-accepting merchant</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <span className="text-gold-400 mt-1">🎁</span>
-                      <span><span className="font-semibold">Earn Takara rewards</span> for every purchase</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Takara reward accumulation on purchases</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <span className="text-gold-400 mt-1">⭐</span>
-                      <span><span className="font-semibold">Enjoy tiered benefits</span> based on Takara holdings</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Tiered benefits aligned with token holdings</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <span className="text-gold-400 mt-1">🔗</span>
-                      <span><span className="font-semibold">Combine daily spending</span> with ecosystem growth</span>
+                      <span style={{ color: GOLD }}>•</span>
+                      <span>Bridge between yield generation and everyday utility</span>
                     </div>
                   </div>
-                  <p className="leading-relaxed text-center text-gold-400 font-semibold italic">
-                    A seamless bridge between digital yield and real-world use, powered by Takara's scarcity and staking mechanics.
-                  </p>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Bottom CTA */}
-          <div className="text-center mt-12">
-            <p className="text-gray-400 mb-4">Ready to start earning Takara?</p>
-            <Link
-              to="/vaults"
-              className="btn-gold inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold"
-            >
-              Explore Vaults
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Vaults Preview Section */}
-      <section className="py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Vault Tiers Section - Dynamic from DB */}
+      <section className="py-24 bg-navy-800 relative overflow-hidden">
+        {/* Japanese asanoha pattern */}
+        <div className="absolute inset-0 asanoha-pattern opacity-50"></div>
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-1/4 w-px h-full" style={{ background: `linear-gradient(180deg, transparent, ${GOLD}, transparent)` }}></div>
+          <div className="absolute top-0 left-1/2 w-px h-full" style={{ background: `linear-gradient(180deg, transparent, ${GOLD}, transparent)` }}></div>
+          <div className="absolute top-0 left-3/4 w-px h-full" style={{ background: `linear-gradient(180deg, transparent, ${GOLD}, transparent)` }}></div>
+        </div>
+        {/* Concentric circles decoration */}
+        <div className="absolute top-10 right-10 w-60 h-60 opacity-5">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="48" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="40" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="32" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="24" fill="none" stroke={GOLD} strokeWidth="0.3" />
+          </svg>
+        </div>
+        <div className="absolute bottom-10 left-10 w-60 h-60 opacity-5">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="48" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="40" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="32" fill="none" stroke={GOLD} strokeWidth="0.3" />
+            <circle cx="50" cy="50" r="24" fill="none" stroke={GOLD} strokeWidth="0.3" />
+          </svg>
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
               Choose Your Vault
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-              9 vaults across 3 tiers: Starter, Pro, and Elite. Select based on your amount and duration.
+              9 vaults across 3 tiers: Starter, Pro, and Elite
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {/* Starter Tier */}
-            <div className="bg-background-card p-8 rounded-xl border border-blue-500/30">
-              <div className="tier-starter inline-block mb-4">STARTER</div>
-              <h3 className="text-2xl font-bold text-white mb-2">From $100</h3>
-              <div className="space-y-3 text-gray-300">
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 18M: 7.73-9.73% APY (11.6% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 24-26% APY (60% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 25-27% APY (75% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-blue-400">⚡</span> Up to 150% Takara APY
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> Monthly payouts
-                </p>
-              </div>
+          {vaultsLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" style={{ color: GOLD }} />
             </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              {/* Starter Tier */}
+              <div className="bg-navy-900 p-8 rounded-2xl border border-blue-500/30 relative overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 bg-blue-500 blur-3xl"></div>
+                <div className="relative">
+                  <div className="tier-starter inline-block px-3 py-1 rounded-full text-sm font-medium mb-4">STARTER</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    From ${starterStats?.minDeposit?.toLocaleString() || '300'}
+                  </h3>
+                  <div className="space-y-3 text-gray-300 mt-6">
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to {starterStats?.maxBaseAPY || 16}% USDT APY
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="text-blue-400">⚡</span> Up to {starterStats?.maxTakaraAPY || 300}% Takara APY
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {/* Pro Tier */}
-            <div className="bg-background-card p-8 rounded-xl border border-purple-500/30">
-              <div className="tier-pro inline-block mb-4">PRO</div>
-              <h3 className="text-2xl font-bold text-white mb-2">From $1,000</h3>
-              <div className="space-y-3 text-gray-300">
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 18M: 7.73-10.23% APY (11.6% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 24-27% APY (60% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 25-28% APY (75% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-purple-400">⚡</span> Up to 350% Takara APY
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> Monthly payouts
-                </p>
+              {/* Pro Tier */}
+              <div className="bg-navy-900 p-8 rounded-2xl border border-purple-500/30 relative overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 bg-purple-500 blur-3xl"></div>
+                <div className="relative">
+                  <div className="tier-pro inline-block px-3 py-1 rounded-full text-sm font-medium mb-4">PRO</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    From ${proStats?.minDeposit?.toLocaleString() || '1,000'}
+                  </h3>
+                  <div className="space-y-3 text-gray-300 mt-6">
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to {proStats?.maxBaseAPY || 18}% USDT APY
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="text-purple-400">⚡</span> Up to {proStats?.maxTakaraAPY || 600}% Takara APY
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Elite Tier */}
-            <div className="bg-background-card p-8 rounded-xl border border-gold-500/30">
-              <div className="tier-elite inline-block mb-4">ELITE</div>
-              <h3 className="text-2xl font-bold text-white mb-2">From $5,000</h3>
-              <div className="space-y-3 text-gray-300">
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 18M: 7.73-10.73% APY (11.6% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 30M: 24-27.5% APY (60% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-500">✓</span> 36M: 25-29% APY (75% total)
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-gold-400">⚡</span> Up to 450% Takara APY
-                </p>
-                <p className="flex items-center gap-2 text-sm">
-                  <span className="text-green-400">•</span> Monthly payouts
-                </p>
+              {/* Elite Tier */}
+              <div className="bg-navy-900 p-8 rounded-2xl border border-gold-300/30 relative overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-3xl" style={{ background: GOLD }}></div>
+                <div className="absolute top-0 right-0 text-navy-900 text-xs font-bold px-3 py-1" style={{ background: GOLD }}>
+                  BEST VALUE
+                </div>
+                <div className="relative">
+                  <div className="tier-elite inline-block px-3 py-1 rounded-full text-sm font-medium mb-4">ELITE</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    From ${eliteStats?.minDeposit?.toLocaleString() || '5,000'}
+                  </h3>
+                  <div className="space-y-3 text-gray-300 mt-6">
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to {eliteStats?.maxBaseAPY || 20}% USDT APY
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span style={{ color: GOLD }}>⚡</span> Up to {eliteStats?.maxTakaraAPY || 1000}% Takara APY
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="text-center">
             <Link
               to="/vaults"
-              className="btn-gold inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold"
+              className="btn-gold inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg"
             >
               View All Vaults
               <ArrowRight className="h-5 w-5" />
@@ -416,22 +711,90 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-green-900/20 to-transparent">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <h2 className="text-3xl sm:text-5xl font-bold text-white">
-            Ready to Start Earning?
+      {/* Treasury & Roadmap */}
+      <section className="py-24 bg-navy-900 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 50%)` }}></div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Treasury */}
+            <div className="bg-navy-800 p-8 rounded-2xl border border-gold-300/20 relative overflow-hidden">
+              <div className="absolute -top-10 -left-10 w-32 h-32 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-6">
+                  <Coins className="h-8 w-8" style={{ color: GOLD }} />
+                  <h3 className="text-2xl font-bold text-white">Treasury & Roadmap</h3>
+                </div>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Protocol growth is funded by a <span style={{ color: GOLD }} className="font-semibold">5% claiming fee</span> on rewards and early exit fees.
+                </p>
+                <div className="bg-navy-900 rounded-xl p-6 border border-gold-300/10">
+                  <h4 style={{ color: GOLD }} className="font-semibold mb-2">Future:</h4>
+                  <p className="text-gray-400">
+                    Crypto-to-fiat card integration for direct spending of rewards.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Wexel NFT */}
+            <div className="bg-navy-800 p-8 rounded-2xl border border-gold-300/20 relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-6">
+                  <Zap className="h-8 w-8" style={{ color: GOLD }} />
+                  <h3 className="text-2xl font-bold text-white">Wexel Account NFT</h3>
+                </div>
+                <p className="text-gray-300 leading-relaxed">
+                  Your entire position is represented by a single NFT. This provides a clear exit path:
+                  <span style={{ color: GOLD }} className="font-semibold"> keep for the full term</span> or
+                  <span style={{ color: GOLD }} className="font-semibold"> sell early</span> via the protocol's liquidity model (subject to discount fees).
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-24 bg-gradient-to-b from-navy-800 to-navy-900 relative overflow-hidden">
+        {/* Japanese patterns */}
+        <div className="absolute inset-0 zen-circles opacity-30"></div>
+        <div className="absolute inset-0 seigaiha-pattern opacity-20"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 40%)` }}></div>
+        {/* Animated concentric circles */}
+        <div className="absolute top-20 left-20 w-40 h-40 opacity-10 animate-float">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="25" fill="none" stroke={GOLD} strokeWidth="0.5" />
+          </svg>
+        </div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 opacity-10 animate-float" style={{ animationDelay: '1s' }}>
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
+            <circle cx="50" cy="50" r="25" fill="none" stroke={GOLD} strokeWidth="0.5" />
+          </svg>
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <div className="text-6xl mb-4" style={{ color: GOLD }}>宝</div>
+          <h2 className="text-3xl sm:text-5xl font-bold text-white leading-tight">
+            Takara is for users who want capital protection first and rewards second
           </h2>
-          <p className="text-xl text-gray-300">
-            Connect your Solana and Ethereum wallet and start stacking in Takara vaults today
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Aligning deposit safety, real world yield, and long-term token scarcity on Solana
           </p>
-          <Link
-            to="/vaults"
-            className="btn-gold inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-lg"
-          >
-            Get Started
-            <ArrowRight className="h-6 w-6" />
-          </Link>
+          <div className="pt-4">
+            <Link
+              to="/vaults"
+              className="btn-gold inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-lg"
+            >
+              Start Earning Today
+              <ArrowRight className="h-6 w-6" />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

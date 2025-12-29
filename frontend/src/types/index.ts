@@ -245,6 +245,8 @@ export interface DashboardStats {
 
 // ==================== FORM TYPES ====================
 
+export type PaymentMethod = 'USDT' | 'TRX'
+
 export interface CreateInvestmentInput {
   vaultId: string
   usdtAmount: number
@@ -254,6 +256,8 @@ export interface CreateInvestmentInput {
     laikaValueUSD: number
   }
   txSignature: string
+  paymentMethod?: PaymentMethod  // 'USDT' or 'TRX' (default: 'USDT')
+  trxAmount?: number  // If paying with TRX, this is the TRX amount
 }
 
 export interface CalculateInvestmentInput {
