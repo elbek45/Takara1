@@ -73,6 +73,9 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
       totalCapacity: vault.totalCapacity ? Number(vault.totalCapacity) : undefined,
+      miningThreshold: Number(vault.miningThreshold),
+      isMining: vault.isMining,
+      acceptedPayments: vault.acceptedPayments,
       activeInvestments: vault._count.investments
     }));
 
@@ -171,6 +174,9 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
       takaraRatio: vault.takaraRatio ? Number(vault.takaraRatio) : undefined,
       currentFilled: Number(vault.currentFilled),
       totalCapacity: vault.totalCapacity ? Number(vault.totalCapacity) : undefined,
+      miningThreshold: Number(vault.miningThreshold),
+      isMining: vault.isMining,
+      acceptedPayments: vault.acceptedPayments,
       activeInvestments: vault._count.investments
     };
 

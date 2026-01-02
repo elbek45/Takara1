@@ -45,7 +45,8 @@ async function main() {
         takaraRatio: vault.takaraRatio,
         baseAPY: vault.baseAPY,
         maxAPY: vault.maxAPY,
-        takaraAPY: vault.takaraAPY,
+        baseTakaraAPY: vault.takaraAPY,  // Map takaraAPY to baseTakaraAPY
+        maxTakaraAPY: vault.takaraAPY,   // Same for maxTakaraAPY
         isActive: true
       }
     });

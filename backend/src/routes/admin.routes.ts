@@ -11,6 +11,7 @@ import * as adminBoostController from '../controllers/admin-boost.controller';
 import * as adminTreasuryController from '../controllers/admin-treasury.controller';
 import * as adminTakaraStatsController from '../controllers/admin/takara-stats.controller';
 import * as treasuryInitController from '../controllers/admin/treasury-init.controller';
+import adminClaimsController from '../controllers/admin-claims.controller';
 import { authenticateAdmin, requireSuperAdmin } from '../middleware/auth.middleware';
 import { adminLoginLimiter } from '../middleware/rateLimiter.middleware';
 
@@ -84,6 +85,13 @@ router.get('/treasury/tax-records', requireSuperAdmin, adminTreasuryController.g
 router.post('/treasury/withdraw', requireSuperAdmin, adminTreasuryController.withdrawFromTreasury);
 router.post('/treasury/init-takara', requireSuperAdmin, treasuryInitController.initTakara);
 
+// Claim Requests Management (Super Admin Only) - v2.2
+router.get('/claims', requireSuperAdmin, adminClaimsController.getClaimRequests);
+router.get('/claims/stats', requireSuperAdmin, adminClaimsController.getClaimStats);
+router.post('/claims/:id/approve', requireSuperAdmin, adminClaimsController.approveClaim);
+router.post('/claims/:id/reject', requireSuperAdmin, adminClaimsController.rejectClaim);
+router.post('/claims/:id/process', requireSuperAdmin, adminClaimsController.processClaim);
+
 // TAKARA Pricing Calculator (Super Admin Only) - NEW
 router.get('/pricing/takara', requireSuperAdmin, adminAdvancedController.getTakaraPricingCalculations);
 
@@ -94,5 +102,13 @@ router.get('/pricing/laika', requireSuperAdmin, adminAdvancedController.getLaika
 router.get('/takara/stats', requireSuperAdmin, adminTakaraStatsController.getTakaraStats);
 router.get('/takara/history', requireSuperAdmin, adminTakaraStatsController.getTakaraHistory);
 router.get('/takara/breakdown', requireSuperAdmin, adminTakaraStatsController.getTakaraBreakdown);
+
+// Job Management (Super Admin Only) - TEST_MODE
+router.get('/jobs/status', requireSuperAdmin, adminController.getJobStatus);
+router.post('/jobs/run', requireSuperAdmin, adminController.runJob);
+
+// Instant Sale Management (Super Admin Only) - v2.2
+router.get('/instant-sales', requireSuperAdmin, adminController.getInstantSaleListings);
+router.post('/instant-sales/:id/purchase', requireSuperAdmin, adminController.purchaseInstantSale);
 
 export default router;

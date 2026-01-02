@@ -1,15 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../services/api'
 import { VaultTier, MarketplaceListing } from '../types'
 import { TrendingUp, Clock, DollarSign, ExternalLink } from 'lucide-react'
 import BuyNFTModal from '../components/marketplace/BuyNFTModal'
-import { useAuth } from '../hooks/useAuth'
 
 export default function MarketplacePage() {
-  const { connected } = useWallet()
-  const { isAuthenticated } = useAuth()
+  const isAuthenticated = api.isAuthenticated()
   const [sortBy, setSortBy] = useState<string>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [tierFilter, setTierFilter] = useState<VaultTier | 'ALL'>('ALL')
@@ -256,13 +253,9 @@ export default function MarketplacePage() {
                 </div>
 
                 {/* Buy Button */}
-                {!connected ? (
+                {!isAuthenticated ? (
                   <div className="text-center py-3 text-sm text-gray-400">
                     Connect wallet to buy
-                  </div>
-                ) : !isAuthenticated ? (
-                  <div className="text-center py-3 text-sm text-gray-400">
-                    Authenticating...
                   </div>
                 ) : (
                   <button

@@ -14,6 +14,9 @@ import { getLogger } from '../config/logger';
 
 const logger = getLogger('job-scheduler');
 
+// TEST_MODE: Run mining every minute for testing
+const TEST_MODE = process.env.TEST_MODE === 'true';
+
 // Simple in-memory scheduler (use BullMQ or node-cron in production)
 const jobIntervals: NodeJS.Timeout[] = [];
 
@@ -30,6 +33,8 @@ function cronToInterval(cronSchedule: string): number {
   // "0 */6 * * *" = every 6 hours
   // "0 */1 * * *" = every hour
   // "*/30 * * * *" = every 30 minutes
+  // "*/5 * * * *" = every 5 minutes
+  // "*/1 * * * *" = every minute
 
   if (cronSchedule === '0 0 * * *') {
     return 24 * 60 * 60 * 1000; // Daily
@@ -45,6 +50,14 @@ function cronToInterval(cronSchedule: string): number {
 
   if (cronSchedule === '*/30 * * * *') {
     return 30 * 60 * 1000; // Every 30 minutes
+  }
+
+  if (cronSchedule === '*/5 * * * *') {
+    return 5 * 60 * 1000; // Every 5 minutes
+  }
+
+  if (cronSchedule === '*/1 * * * *') {
+    return 60 * 1000; // Every minute
   }
 
   // Default: hourly
@@ -91,12 +104,22 @@ export function startJobScheduler(): void {
   logger.info('🚀 Starting job scheduler');
 
   try {
-    // Schedule all jobs
-    scheduleJob('Daily TAKARA Mining', runDailyMiningJob, CRON_SCHEDULES.DAILY_MINING);
-    scheduleJob('Investment Activation', runActivationJob, CRON_SCHEDULES.VAULT_ACTIVATION);
-    scheduleJob('Payout Distribution', runPayoutJob, CRON_SCHEDULES.PAYOUT_CHECK);
-    scheduleJob('LAIKA Return', runLaikaReturnJob, CRON_SCHEDULES.LAIKA_RETURN);
-    scheduleJob('Price Update', runPriceUpdateJob, '*/30 * * * *'); // Every 30 minutes
+    // TEST_MODE: Use frequent schedules for testing
+    if (TEST_MODE) {
+      logger.info('🧪 TEST_MODE: Using frequent job schedules');
+      scheduleJob('Daily TAKARA Mining', runDailyMiningJob, '*/1 * * * *'); // Every minute
+      scheduleJob('Investment Activation', runActivationJob, '*/1 * * * *'); // Every minute
+      scheduleJob('Payout Distribution', runPayoutJob, '*/5 * * * *'); // Every 5 minutes
+      scheduleJob('LAIKA Return', runLaikaReturnJob, '*/5 * * * *'); // Every 5 minutes
+      scheduleJob('Price Update', runPriceUpdateJob, '*/5 * * * *'); // Every 5 minutes
+    } else {
+      // Production schedules
+      scheduleJob('Daily TAKARA Mining', runDailyMiningJob, CRON_SCHEDULES.DAILY_MINING);
+      scheduleJob('Investment Activation', runActivationJob, CRON_SCHEDULES.VAULT_ACTIVATION);
+      scheduleJob('Payout Distribution', runPayoutJob, CRON_SCHEDULES.PAYOUT_CHECK);
+      scheduleJob('LAIKA Return', runLaikaReturnJob, CRON_SCHEDULES.LAIKA_RETURN);
+      scheduleJob('Price Update', runPriceUpdateJob, '*/30 * * * *'); // Every 30 minutes
+    }
 
     logger.info('✅ All background jobs scheduled');
   } catch (error) {

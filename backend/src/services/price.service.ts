@@ -53,6 +53,14 @@ const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour (as requested)
  * Cache duration: 1 hour
  */
 export async function getLaikaPrice(): Promise<number> {
+  // TEST_MODE: Use mock price for testing ($0.01 per LAIKA)
+  // This allows LAIKA boost calculations to work with reasonable values
+  if (process.env.TEST_MODE === 'true') {
+    const mockPrice = 0.01; // $0.01 per LAIKA for testing
+    logger.debug({ price: mockPrice, source: 'TEST_MODE_MOCK' }, 'Using mock LAIKA price for testing');
+    return mockPrice;
+  }
+
   const cacheKey = 'LAIKA_USDT';
 
   // Check cache (1 hour TTL)

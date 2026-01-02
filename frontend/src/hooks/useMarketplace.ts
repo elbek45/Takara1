@@ -25,11 +25,11 @@ export function useListNFT() {
 
 export function useBuyNFT() {
   const queryClient = useQueryClient()
-  const { publicKey, signTransaction } = useWallet()
+  const { publicKey, sendTransaction } = useWallet()
 
   return useMutation({
     mutationFn: async ({ listingId, price }: { listingId: string; price: number }) => {
-      if (!publicKey || !signTransaction) {
+      if (!publicKey || !sendTransaction) {
         throw new Error('Wallet not connected')
       }
 
@@ -41,7 +41,7 @@ export function useBuyNFT() {
         publicKey,
         platformWallet,
         price,
-        signTransaction
+        sendTransaction
       )
 
       toast.success('USDT transferred successfully!')

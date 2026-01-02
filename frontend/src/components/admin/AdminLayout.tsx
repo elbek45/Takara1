@@ -1,13 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket, Network, Coins, Wallet, BarChart3, Handshake } from 'lucide-react'
+import { LayoutDashboard, Users, DollarSign, Package, TrendingUp, LogOut, Rocket, Network, Coins, Wallet, BarChart3, Handshake, FileCheck, Pickaxe } from 'lucide-react'
 import { adminApiService } from '../../services/admin.api'
 import { toast } from 'sonner'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Claims', href: '/admin/claims', icon: FileCheck },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Withdrawals', href: '/admin/withdrawals', icon: DollarSign },
   { name: 'Vaults', href: '/admin/vaults', icon: Package },
+  { name: 'Mining Vaults', href: '/admin/mining-vaults', icon: Pickaxe },
   { name: 'Mining Stats', href: '/admin/mining', icon: TrendingUp },
   { name: 'Boost Tokens', href: '/admin/boost-tokens', icon: Coins },
   { name: 'Treasury', href: '/admin/treasury', icon: Wallet },

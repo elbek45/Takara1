@@ -1,200 +1,305 @@
 /**
- * Phantom Wallet Button Component
- * Direct button for connecting/disconnecting Phantom wallet without popup
+ * Phantom Wallet Button
+ * Direct connection to window.phantom.solana
+ * Shows TAKARA and LAIKA (Cosmodog) balances
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Wallet } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useWalletModal } from '@solana/wallet-adapter-react-ui'
+import { PublicKey } from '@solana/web3.js'
 import { solanaService } from '../../services/solana.service'
 import { api } from '../../services/api'
+import { toast } from 'sonner'
 
-// Global ref to track if address was already saved in this session
-let savedSolanaAddress: string | null = null
+interface PhantomProvider {
+  isPhantom: boolean
+  publicKey: PublicKey | null
+  isConnected: boolean
+  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: PublicKey }>
+  disconnect: () => Promise<void>
+  on: (event: string, callback: (...args: unknown[]) => void) => void
+  off: (event: string, callback: (...args: unknown[]) => void) => void
+}
+
+declare global {
+  interface Window {
+    phantom?: {
+      solana?: PhantomProvider
+    }
+  }
+}
+
+function getPhantomProvider(): PhantomProvider | null {
+  if (typeof window === 'undefined') return null
+
+  if (window.phantom?.solana?.isPhantom) {
+    return window.phantom.solana
+  }
+
+  return null
+}
 
 interface PhantomButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline'
+  variant?: 'primary' | 'outline'
   size?: 'sm' | 'md' | 'lg'
-  fullWidth?: boolean
-  showBalance?: boolean
   className?: string
 }
 
 export function PhantomButton({
   variant = 'primary',
   size = 'md',
-  fullWidth = false,
-  showBalance = true,
   className = '',
 }: PhantomButtonProps) {
-  const { publicKey, connected, connecting, disconnect, select, wallets } = useWallet()
-  const { setVisible } = useWalletModal()
+  const [publicKey, setPublicKey] = useState<PublicKey | null>(null)
+  const [connecting, setConnecting] = useState(false)
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
-  // Save wallet address to backend when connected (using global variable)
-  useEffect(() => {
-    const saveWalletToBackend = async () => {
-      if (connected && publicKey && api.isAuthenticated()) {
-        const address = publicKey.toBase58()
-        // Only save if not already saved in this session
-        if (savedSolanaAddress !== address) {
-          try {
-            await api.connectSolana(address)
-            savedSolanaAddress = address
-            console.log('Solana wallet saved to backend:', address)
-          } catch (error) {
-            console.error('Failed to save Solana wallet to backend:', error)
-          }
-        }
-      }
-    }
-    saveWalletToBackend()
-  }, [connected, publicKey])
+  const connected = !!publicKey
 
-  // Fetch balances when connected
+  // Check existing connection on mount
   useEffect(() => {
-    const fetchBalances = async () => {
-      if (publicKey) {
-        try {
-          const [takara, laika] = await Promise.all([
-            solanaService.getTAKARABalance(publicKey),
-            solanaService.getLAIKABalance(publicKey),
-          ])
-          setTakaraBalance(takara.toFixed(2))
-          setLaikaBalance(laika.toFixed(2))
-        } catch (error) {
-          console.error('Failed to fetch balances:', error)
-        }
+    const checkExisting = async () => {
+      // Wait a bit for extensions to inject
+      await new Promise(r => setTimeout(r, 500))
+
+      const provider = getPhantomProvider()
+      if (!provider) return
+
+      // If already connected, get the public key
+      if (provider.isConnected && provider.publicKey) {
+        setPublicKey(provider.publicKey)
+        return
+      }
+
+      // Try eager connect (only if previously authorized)
+      try {
+        const resp = await provider.connect({ onlyIfTrusted: true })
+        setPublicKey(resp.publicKey)
+      } catch {
+        // User needs to click to connect
       }
     }
+    checkExisting()
+  }, [])
+
+  // Listen for wallet events
+  useEffect(() => {
+    const provider = getPhantomProvider()
+    if (!provider) return
+
+    const handleAccountChange = (newKey: PublicKey | null) => {
+      setPublicKey(newKey)
+    }
+
+    const handleDisconnect = () => {
+      setPublicKey(null)
+      setTakaraBalance('0')
+      setLaikaBalance('0')
+    }
+
+    provider.on('accountChanged', handleAccountChange)
+    provider.on('disconnect', handleDisconnect)
+
+    return () => {
+      provider.off('accountChanged', handleAccountChange)
+      provider.off('disconnect', handleDisconnect)
+    }
+  }, [])
+
+  // Fetch balances
+  useEffect(() => {
+    if (!publicKey) {
+      setTakaraBalance('0')
+      setLaikaBalance('0')
+      return
+    }
+
+    const fetchBalances = async () => {
+      try {
+        const [takara, laika] = await Promise.all([
+          solanaService.getTAKARABalance(publicKey),
+          solanaService.getLAIKABalance(publicKey),
+        ])
+        setTakaraBalance(takara.toFixed(2))
+        setLaikaBalance(laika.toFixed(2))
+      } catch (err) {
+        console.error('Balance fetch error:', err)
+      }
+    }
+
     fetchBalances()
-    // Refresh every 30 seconds
     const interval = setInterval(fetchBalances, 30000)
     return () => clearInterval(interval)
   }, [publicKey])
+
+  // Save wallet to backend
+  useEffect(() => {
+    if (!publicKey || !api.isAuthenticated()) return
+
+    api.connectSolana(publicKey.toBase58()).catch(err => {
+      console.error('Failed to save wallet:', err)
+    })
+  }, [publicKey])
+
+  const connect = useCallback(async () => {
+    const provider = getPhantomProvider()
+
+    if (!provider) {
+      toast.error('Phantom wallet not found')
+      window.open('https://phantom.app/', '_blank')
+      return
+    }
+
+    setConnecting(true)
+    try {
+      const resp = await provider.connect()
+      setPublicKey(resp.publicKey)
+      toast.success('Phantom connected')
+    } catch (err: unknown) {
+      console.error('Phantom connect error:', err)
+      const error = err as { code?: number; message?: string }
+
+      if (error.code === 4001 || error.message?.includes('User rejected')) {
+        toast.error('Connection rejected')
+      } else {
+        toast.error('Connection failed - try refreshing the page')
+      }
+    } finally {
+      setConnecting(false)
+    }
+  }, [])
+
+  const disconnect = useCallback(async () => {
+    const provider = getPhantomProvider()
+    if (provider) {
+      try {
+        await provider.disconnect()
+      } catch {
+        // Already disconnected
+      }
+    }
+    setPublicKey(null)
+    setTakaraBalance('0')
+    setLaikaBalance('0')
+    toast.info('Phantom disconnected')
+  }, [])
 
   const handleClick = () => {
     if (connected) {
       disconnect()
     } else {
-      // Find Phantom wallet
-      const phantomWallet = wallets.find(
-        (w) => w.adapter.name.toLowerCase().includes('phantom')
-      )
-      if (phantomWallet) {
-        select(phantomWallet.adapter.name)
-      } else {
-        // Fallback to modal if Phantom not found
-        setVisible(true)
-      }
+      connect()
     }
   }
 
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 4)}...${addr.slice(-4)}`
-  }
+  const formatAddress = (addr: string) => `${addr.slice(0, 4)}...${addr.slice(-4)}`
 
-  // Variant styles - Phantom brand purple
-  const variantStyles = {
-    primary: connected
-      ? 'bg-purple-700 text-white hover:opacity-90'
-      : 'bg-purple-600 text-white hover:opacity-90',
-    secondary: connected
-      ? 'bg-purple-700 text-white hover:opacity-90'
-      : 'bg-purple-600 text-white hover:opacity-90',
-    outline: 'border-2 border-purple-500 text-purple-500 hover:bg-purple-500/10',
-  }
-
-  // Size styles
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2.5 text-base',
     lg: 'px-6 py-3 text-lg',
   }
 
-  const widthClass = fullWidth ? 'w-full' : ''
+  const variantStyles = {
+    primary: connected ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white',
+    outline: 'border-2 border-purple-500 text-purple-400 hover:bg-purple-500/10',
+  }
 
   return (
     <button
       onClick={handleClick}
       disabled={connecting}
       className={`
-        flex items-center justify-center gap-2 rounded-lg font-semibold transition-opacity
+        flex items-center justify-center gap-2 rounded-lg font-semibold transition-all
+        hover:opacity-90
         ${variantStyles[variant]}
         ${sizeStyles[size]}
-        ${widthClass}
         ${connecting ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
-      title={
-        connected && publicKey
-          ? `Phantom: ${publicKey.toBase58()} | TAKARA: ${takaraBalance} | LAIKA: ${laikaBalance}`
-          : connecting
-          ? 'Connecting...'
-          : 'Connect Phantom'
-      }
+      title={connected && publicKey ? `${publicKey.toBase58()}\nTAKARA: ${takaraBalance}\nLAIKA: ${laikaBalance}` : 'Connect Phantom'}
     >
-      <Wallet className={size === 'sm' ? 'h-3.5 w-3.5' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'} />
-
+      <Wallet className="h-4 w-4" />
       {connecting ? (
         <span>Connecting...</span>
       ) : connected && publicKey ? (
-        <>
-          <span className="hidden lg:inline">
-            {formatAddress(publicKey.toBase58())}
+        <span>
+          {formatAddress(publicKey.toBase58())}
+          <span className="ml-1 text-xs opacity-80">
+            ({takaraBalance} TAKARA / {laikaBalance} LAIKA)
           </span>
-          {showBalance && (
-            <span className="hidden xl:inline text-xs opacity-80 ml-1">
-              ({takaraBalance} TAKARA)
-            </span>
-          )}
-        </>
+        </span>
       ) : (
-        <span className="hidden lg:inline">Phantom</span>
+        <span>Phantom</span>
       )}
     </button>
   )
 }
 
 // Compact version for mobile
-interface PhantomButtonCompactProps {
-  className?: string
-}
-
-export function PhantomButtonCompact({ className = '' }: PhantomButtonCompactProps) {
-  const { publicKey, connected, connecting, disconnect, select, wallets } = useWallet()
-  const { setVisible } = useWalletModal()
+export function PhantomButtonCompact({ className = '' }: { className?: string }) {
+  const [publicKey, setPublicKey] = useState<PublicKey | null>(null)
+  const [connecting, setConnecting] = useState(false)
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
+  const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
-  // Save wallet address to backend when connected (using global variable)
+  const connected = !!publicKey
+
   useEffect(() => {
-    const saveWalletToBackend = async () => {
-      if (connected && publicKey && api.isAuthenticated()) {
-        const address = publicKey.toBase58()
-        if (savedSolanaAddress !== address) {
-          try {
-            await api.connectSolana(address)
-            savedSolanaAddress = address
-          } catch (error) {
-            console.error('Failed to save Solana wallet to backend:', error)
-          }
-        }
+    const checkExisting = async () => {
+      await new Promise(r => setTimeout(r, 500))
+      const provider = getPhantomProvider()
+      if (!provider) return
+
+      if (provider.isConnected && provider.publicKey) {
+        setPublicKey(provider.publicKey)
+        return
+      }
+
+      try {
+        const resp = await provider.connect({ onlyIfTrusted: true })
+        setPublicKey(resp.publicKey)
+      } catch {
+        // User needs to click
       }
     }
-    saveWalletToBackend()
-  }, [connected, publicKey])
+    checkExisting()
+  }, [])
 
   useEffect(() => {
+    const provider = getPhantomProvider()
+    if (!provider) return
+
+    const handleAccountChange = (newKey: PublicKey | null) => setPublicKey(newKey)
+    const handleDisconnect = () => {
+      setPublicKey(null)
+      setTakaraBalance('0')
+      setLaikaBalance('0')
+    }
+
+    provider.on('accountChanged', handleAccountChange)
+    provider.on('disconnect', handleDisconnect)
+
+    return () => {
+      provider.off('accountChanged', handleAccountChange)
+      provider.off('disconnect', handleDisconnect)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!publicKey) return
+
     const fetchBalances = async () => {
-      if (publicKey) {
-        try {
-          const takara = await solanaService.getTAKARABalance(publicKey)
-          setTakaraBalance(takara.toFixed(2))
-        } catch (error) {
-          console.error('Failed to fetch balance:', error)
-        }
+      try {
+        const [takara, laika] = await Promise.all([
+          solanaService.getTAKARABalance(publicKey),
+          solanaService.getLAIKABalance(publicKey),
+        ])
+        setTakaraBalance(takara.toFixed(2))
+        setLaikaBalance(laika.toFixed(2))
+      } catch {
+        // ignore
       }
     }
     fetchBalances()
@@ -202,18 +307,43 @@ export function PhantomButtonCompact({ className = '' }: PhantomButtonCompactPro
     return () => clearInterval(interval)
   }, [publicKey])
 
-  const handleClick = () => {
+  useEffect(() => {
+    if (!publicKey || !api.isAuthenticated()) return
+    api.connectSolana(publicKey.toBase58()).catch(() => {})
+  }, [publicKey])
+
+  const handleClick = async () => {
+    const provider = getPhantomProvider()
+
     if (connected) {
-      disconnect()
-    } else {
-      const phantomWallet = wallets.find(
-        (w) => w.adapter.name.toLowerCase().includes('phantom')
-      )
-      if (phantomWallet) {
-        select(phantomWallet.adapter.name)
-      } else {
-        setVisible(true)
+      if (provider) {
+        try { await provider.disconnect() } catch {}
       }
+      setPublicKey(null)
+      toast.info('Disconnected')
+      return
+    }
+
+    if (!provider) {
+      toast.error('Phantom not found')
+      window.open('https://phantom.app/', '_blank')
+      return
+    }
+
+    setConnecting(true)
+    try {
+      const resp = await provider.connect()
+      setPublicKey(resp.publicKey)
+      toast.success('Connected')
+    } catch (err: unknown) {
+      const error = err as { code?: number; message?: string }
+      if (error.code === 4001 || error.message?.includes('User rejected')) {
+        toast.error('Rejected')
+      } else {
+        toast.error('Failed - try refreshing')
+      }
+    } finally {
+      setConnecting(false)
     }
   }
 
@@ -222,22 +352,20 @@ export function PhantomButtonCompact({ className = '' }: PhantomButtonCompactPro
       onClick={handleClick}
       disabled={connecting}
       className={`
-        flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-opacity
-        ${connected ? 'bg-purple-700 text-white' : 'bg-purple-600 text-white'}
-        hover:opacity-90
+        flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold
+        ${connected ? 'bg-purple-700' : 'bg-purple-600'} text-white
+        hover:opacity-90 transition-opacity
         ${connecting ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
     >
       <Wallet className="h-4 w-4" />
       {connecting ? (
-        <span>Connecting...</span>
+        'Connecting...'
       ) : connected && publicKey ? (
-        <span>
-          {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)} ({takaraBalance} TAKARA)
-        </span>
+        `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)} (${takaraBalance}/${laikaBalance})`
       ) : (
-        <span>Connect Phantom</span>
+        'Connect Phantom'
       )}
     </button>
   )

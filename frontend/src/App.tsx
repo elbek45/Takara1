@@ -28,6 +28,8 @@ import AdminTreasuryPage from './pages/admin/AdminTreasuryPage'
 import AdminTakaraStatsPage from './pages/admin/AdminTakaraStatsPage'
 import AdminPricingPage from './pages/admin/AdminPricingPage'
 import AdminPartnersPage from './pages/admin/AdminPartnersPage'
+import AdminClaimsPage from './pages/admin/AdminClaimsPage'
+import AdminMiningVaultsPage from './pages/admin/AdminMiningVaultsPage'
 
 function App() {
   return (
@@ -60,6 +62,8 @@ function App() {
         <Route path="/admin/takara-stats" element={<AdminTakaraStatsPage />} />
         <Route path="/admin/pricing" element={<AdminPricingPage />} />
         <Route path="/admin/partners" element={<AdminPartnersPage />} />
+        <Route path="/admin/claims" element={<AdminClaimsPage />} />
+        <Route path="/admin/mining-vaults" element={<AdminMiningVaultsPage />} />
       </Routes>
 
       <Toaster

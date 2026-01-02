@@ -14,7 +14,18 @@ export default function ListNFTModal({ isOpen, onClose, investment }: ListNFTMod
   const [priceUSDT, setPriceUSDT] = useState<string>('')
   const [isSuccess, setIsSuccess] = useState(false)
 
-  const suggestedPrice = investment.usdtAmount * 1.05 // 5% markup as suggestion
+  // Calculate suggested price based on remaining value (no markup - should be <= invested)
+  const now = new Date()
+  const endDate = new Date(investment.endDate)
+  const startDate = new Date(investment.startDate)
+  const totalDuration = endDate.getTime() - startDate.getTime()
+  const remainingDuration = Math.max(0, endDate.getTime() - now.getTime())
+  const percentRemaining = totalDuration > 0 ? remainingDuration / totalDuration : 0
+
+  // Suggested price = original amount * remaining percentage (pro-rated value)
+  // Minimum 50% of original if investment is still active
+  const suggestedPrice = investment.usdtAmount * Math.max(0.5, percentRemaining)
+
   const platformFee = parseFloat(priceUSDT || '0') * 0.03 // 3% platform fee
   const youReceive = parseFloat(priceUSDT || '0') - platformFee
 
@@ -149,7 +160,7 @@ export default function ListNFTModal({ isOpen, onClose, investment }: ListNFTMod
                   className="w-full px-4 py-3 bg-background-elevated border border-green-900/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
                 />
                 <div className="mt-2 text-sm text-gray-400">
-                  Suggested: ${suggestedPrice.toFixed(2)} (5% markup)
+                  Suggested: ${suggestedPrice.toFixed(2)} ({Math.round(percentRemaining * 100)}% of term remaining)
                   <button
                     onClick={() => setPriceUSDT(suggestedPrice.toFixed(2))}
                     className="ml-2 text-gold-500 hover:text-gold-400"

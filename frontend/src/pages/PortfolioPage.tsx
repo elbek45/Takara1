@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../services/api'
 import { InvestmentStatus, Investment } from '../types'
 import { Wallet, ExternalLink, Tag, X, Zap, DollarSign, ToggleLeft, ToggleRight } from 'lucide-react'
@@ -11,7 +10,7 @@ import TaxPreviewModal from '../components/TaxPreviewModal'
 import { toast } from 'react-hot-toast'
 
 export default function PortfolioPage() {
-  const { connected } = useWallet()
+  const isAuthenticated = api.isAuthenticated()
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<InvestmentStatus | 'ALL'>('ALL')
   const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null)
@@ -39,7 +38,7 @@ export default function PortfolioPage() {
     queryKey: ['myInvestments', statusFilter],
     queryFn: () =>
       api.getMyInvestments(statusFilter === 'ALL' ? undefined : statusFilter),
-    enabled: connected && api.isAuthenticated(),
+    enabled: isAuthenticated,
   })
 
   const investments = investmentsResponse?.data || []
@@ -48,20 +47,35 @@ export default function PortfolioPage() {
   const { data: listingsResponse } = useQuery({
     queryKey: ['myListings'],
     queryFn: () => api.getMyListings(),
-    enabled: connected && api.isAuthenticated(),
+    enabled: isAuthenticated,
   })
 
   const myListings = listingsResponse?.data || []
 
-  // Check if investment is listed
+  // Check if investment is listed (only ACTIVE listings)
   const isListed = (investmentId: string) => {
-    return myListings.some((listing: any) => listing.investmentId === investmentId)
+    return myListings.some((listing: any) =>
+      listing.investmentId === investmentId && listing.status === 'ACTIVE'
+    )
+  }
+
+  // Get listing data for investment
+  const getListing = (investmentId: string) => {
+    return myListings.find((l: any) =>
+      l.investmentId === investmentId && l.status === 'ACTIVE'
+    )
   }
 
   // Get listing ID for investment
   const getListingId = (investmentId: string) => {
-    const listing = myListings.find((l: any) => l.investmentId === investmentId)
+    const listing = getListing(investmentId)
     return listing?.id
+  }
+
+  // Get listing price for investment
+  const getListingPrice = (investmentId: string) => {
+    const listing = getListing(investmentId)
+    return listing?.priceUSDT
   }
 
   const handleListClick = (investment: Investment) => {
@@ -89,13 +103,13 @@ export default function PortfolioPage() {
     }
   }
 
-  if (!connected) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <Wallet className="h-16 w-16 text-gray-500 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-          <p className="text-gray-400">Please connect your wallet to view your portfolio</p>
+          <h2 className="text-2xl font-bold text-white">Login Required</h2>
+          <p className="text-gray-400">Please login to view your portfolio</p>
         </div>
       </div>
     )
@@ -103,6 +117,8 @@ export default function PortfolioPage() {
 
   const statusColors: Record<InvestmentStatus, string> = {
     PENDING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    PENDING_USDT: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    PENDING_TOKENS: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     ACTIVE: 'bg-green-500/20 text-green-400 border-green-500/30',
     COMPLETED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     WITHDRAWN: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
@@ -175,6 +191,11 @@ export default function PortfolioPage() {
                       >
                         {investment.status}
                       </div>
+                      {isListed(investment.id) && (
+                        <div className="px-3 py-1 rounded-lg text-xs font-medium bg-purple-500/30 text-purple-400 border border-purple-500/30 animate-pulse">
+                          FOR SALE - ${getListingPrice(investment.id)?.toLocaleString()}
+                        </div>
+                      )}
                     </div>
                     <h3 className="text-xl font-bold text-white mb-1">
                       {investment.vaultName}
@@ -408,6 +429,20 @@ export default function PortfolioPage() {
                   </div>
                 )}
 
+                {/* Listed on Marketplace Warning */}
+                {isListed(investment.id) && (
+                  <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 text-purple-400">
+                      <Tag className="h-5 w-5" />
+                      <span className="font-medium">Listed on Marketplace</span>
+                    </div>
+                    <p className="text-sm text-gray-400 mt-2">
+                      This investment is currently listed for sale at ${getListingPrice(investment.id)?.toLocaleString()}.
+                      While listed, payouts and claims are paused. Cancel the listing to resume earning.
+                    </p>
+                  </div>
+                )}
+
                 {/* Pending Claims */}
                 {(investment.pendingUSDT > 0 || investment.pendingTAKARA > 0) && (
                   <div className="grid md:grid-cols-2 gap-4">
@@ -419,10 +454,11 @@ export default function PortfolioPage() {
                         </div>
                         <button
                           onClick={() => claimUSDT.mutate(investment.id)}
-                          disabled={claimUSDT.isPending}
+                          disabled={claimUSDT.isPending || isListed(investment.id)}
                           className="btn-gold w-full py-2 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={isListed(investment.id) ? 'Cannot claim while listed on marketplace' : ''}
                         >
-                          {claimUSDT.isPending ? 'Claiming...' : 'Claim USDT'}
+                          {claimUSDT.isPending ? 'Claiming...' : isListed(investment.id) ? 'Listed - Cannot Claim' : 'Claim USDT'}
                         </button>
                       </div>
                     )}
@@ -438,10 +474,11 @@ export default function PortfolioPage() {
                         </div>
                         <button
                           onClick={() => handleTakaraClaimClick(investment)}
-                          disabled={claimTAKARA.isPending}
+                          disabled={claimTAKARA.isPending || isListed(investment.id)}
                           className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white w-full py-2 rounded-lg font-medium text-sm transition-colors"
+                          title={isListed(investment.id) ? 'Cannot claim while listed on marketplace' : ''}
                         >
-                          {claimTAKARA.isPending ? 'Claiming...' : 'Claim TAKARA'}
+                          {claimTAKARA.isPending ? 'Claiming...' : isListed(investment.id) ? 'Listed - Cannot Claim' : 'Claim TAKARA'}
                         </button>
                       </div>
                     )}

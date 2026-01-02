@@ -5,7 +5,7 @@
  */
 
 export type BlockchainType = 'ethereum' | 'solana';
-export type WalletType = 'phantom';
+export type WalletType = 'phantom' | 'evm' | 'trustwallet';
 
 export interface WalletConnection {
   type: WalletType;

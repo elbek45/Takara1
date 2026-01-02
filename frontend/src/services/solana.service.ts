@@ -8,6 +8,7 @@ import {
   PublicKey,
   Transaction,
   LAMPORTS_PER_SOL,
+  SendTransactionError,
 } from '@solana/web3.js'
 import {
   TOKEN_PROGRAM_ID,
@@ -20,10 +21,20 @@ import {
 const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || 'devnet'
 const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || `https://api.${SOLANA_NETWORK}.solana.com`
 
+// Simulation mode - skips real blockchain transactions for testing
+const SIMULATION_MODE = import.meta.env.VITE_SIMULATION_MODE === 'true'
+
 // Token mint addresses (Devnet)
 const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') // Not used - USDT via TRON
 const TAKARA_MINT = new PublicKey('6biyv9NcaHmf8rKfLFGmj6eTwR9LBQtmi8dGUp2vRsgA') // TAKARA Token (Devnet - 21M supply)
 const LAIKA_MINT = new PublicKey('8o5XXBWEGmKJ7hn6hPaEzYNfuMxCWhwBQu5NSZSReKPd') // LAIKA Token (Devnet - 1B supply)
+
+// Type for sendTransaction function from wallet adapter
+type SendTransactionFn = (
+  transaction: Transaction,
+  connection: Connection,
+  options?: { skipPreflight?: boolean }
+) => Promise<string>
 
 class SolanaService {
   private connection: Connection
@@ -62,15 +73,34 @@ class SolanaService {
   }
 
   /**
-   * Transfer SPL tokens
+   * Transfer SPL tokens using wallet adapter's sendTransaction
+   * This method handles blockhash management internally and avoids "Blockhash not found" errors
+   * In SIMULATION_MODE, returns a fake signature without doing real transactions
    */
   async transferToken(
     fromPublicKey: PublicKey,
     toPublicKey: PublicKey,
     mintPublicKey: PublicKey,
     amount: number,
-    signTransaction: (tx: Transaction) => Promise<Transaction>
+    sendTransaction: SendTransactionFn
   ): Promise<string> {
+    // SIMULATION MODE - Return fake signature for testing
+    if (SIMULATION_MODE) {
+      console.log('🧪 SIMULATION MODE: Skipping real blockchain transaction')
+      console.log(`   From: ${fromPublicKey.toBase58()}`)
+      console.log(`   To: ${toPublicKey.toBase58()}`)
+      console.log(`   Amount: ${amount}`)
+      console.log(`   Mint: ${mintPublicKey.toBase58()}`)
+
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Return fake signature
+      const fakeSignature = `SIM_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      console.log(`   Fake Signature: ${fakeSignature}`)
+      return fakeSignature
+    }
+
     try {
       // Get associated token accounts
       const fromTokenAccount = await getAssociatedTokenAddress(
@@ -78,7 +108,7 @@ class SolanaService {
         fromPublicKey
       )
 
-      let toTokenAccount = await getAssociatedTokenAddress(
+      const toTokenAccount = await getAssociatedTokenAddress(
         mintPublicKey,
         toPublicKey
       )
@@ -113,27 +143,49 @@ class SolanaService {
         )
       )
 
-      // Get recent blockhash
-      const { blockhash } = await this.connection.getLatestBlockhash()
-      transaction.recentBlockhash = blockhash
+      // Set fee payer
       transaction.feePayer = fromPublicKey
 
-      // Sign transaction
-      const signedTransaction = await signTransaction(transaction)
+      // Use wallet adapter's sendTransaction which handles blockhash internally
+      // This prevents "Blockhash not found" errors by getting a fresh blockhash right before sending
+      const signature = await sendTransaction(transaction, this.connection, {
+        skipPreflight: false,
+      })
 
-      // Send transaction
-      const signature = await this.connection.sendRawTransaction(
-        signedTransaction.serialize()
+      // Wait for confirmation
+      const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash('confirmed')
+      const confirmation = await this.connection.confirmTransaction(
+        {
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        },
+        'confirmed'
       )
 
-      // Confirm transaction
-      await this.connection.confirmTransaction(signature, 'confirmed')
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`)
+      }
 
       return signature
-    } catch (error) {
+    } catch (error: any) {
       console.error('Token transfer error:', error)
+
+      // Extract more detailed error info if available
+      if (error instanceof SendTransactionError) {
+        const logs = await error.getLogs(this.connection)
+        console.error('Transaction logs:', logs)
+      }
+
       throw error
     }
+  }
+
+  /**
+   * Check if simulation mode is enabled
+   */
+  isSimulationMode(): boolean {
+    return SIMULATION_MODE
   }
 
   /**
@@ -143,14 +195,14 @@ class SolanaService {
     fromPublicKey: PublicKey,
     toPublicKey: PublicKey,
     amount: number,
-    signTransaction: (tx: Transaction) => Promise<Transaction>
+    sendTransaction: SendTransactionFn
   ): Promise<string> {
     return this.transferToken(
       fromPublicKey,
       toPublicKey,
       USDT_MINT,
       amount,
-      signTransaction
+      sendTransaction
     )
   }
 
@@ -161,14 +213,14 @@ class SolanaService {
     fromPublicKey: PublicKey,
     toPublicKey: PublicKey,
     amount: number,
-    signTransaction: (tx: Transaction) => Promise<Transaction>
+    sendTransaction: SendTransactionFn
   ): Promise<string> {
     return this.transferToken(
       fromPublicKey,
       toPublicKey,
       TAKARA_MINT,
       amount,
-      signTransaction
+      sendTransaction
     )
   }
 
@@ -179,15 +231,22 @@ class SolanaService {
     fromPublicKey: PublicKey,
     toPublicKey: PublicKey,
     amount: number,
-    signTransaction: (tx: Transaction) => Promise<Transaction>
+    sendTransaction: SendTransactionFn
   ): Promise<string> {
     return this.transferToken(
       fromPublicKey,
       toPublicKey,
       LAIKA_MINT,
       amount,
-      signTransaction
+      sendTransaction
     )
+  }
+
+  /**
+   * Get the connection instance (for wallet adapter's sendTransaction)
+   */
+  getConnection(): Connection {
+    return this.connection
   }
 
   /**

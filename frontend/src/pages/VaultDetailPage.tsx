@@ -518,6 +518,7 @@ export default function VaultDetailPage() {
           calculation={calculation}
           usdtAmount={parseFloat(usdtAmount)}
           laikaAmount={laikaAmount}
+          acceptedPayments={vault?.acceptedPayments || 'USDT,TRX'}
         />
       )}
     </div>

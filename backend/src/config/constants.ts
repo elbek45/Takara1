@@ -41,7 +41,7 @@ export const INVESTMENT_CONFIG = {
 
 export const MARKETPLACE_CONFIG = {
   PLATFORM_FEE_PERCENT: 2.5, // 2.5% fee on sales
-  MIN_LISTING_PRICE: 10,
+  MIN_LISTING_PRICE: 1, // Lowered for testing
   MAX_LISTING_DAYS: 90
 } as const;
 

@@ -86,7 +86,7 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 
 // ==================== INVESTMENT TYPES ====================
 
-export type PaymentMethod = 'USDT' | 'TRX';
+export type PaymentMethod = 'USDT' | 'TRX' | 'TAKARA';
 
 export interface CreateInvestmentInput {
   vaultId: string;
@@ -97,7 +97,7 @@ export interface CreateInvestmentInput {
     laikaValueUSD: number;
   };
   txSignature: string;
-  paymentMethod?: PaymentMethod;  // 'USDT' or 'TRX' (default: 'USDT')
+  paymentMethod?: PaymentMethod;  // 'USDT', 'TRX', or 'TAKARA' (default: 'USDT')
   trxAmount?: number;  // If paying with TRX, this is the TRX amount
 }
 
@@ -162,6 +162,9 @@ export interface VaultWithStats {
   takaraRatio?: number;
   currentFilled: number;
   totalCapacity?: number;
+  miningThreshold: number;
+  isMining: boolean;
+  acceptedPayments: string;
   activeInvestments: number;
 }
 

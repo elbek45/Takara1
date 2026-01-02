@@ -63,6 +63,16 @@ interface TaxRecord {
   createdAt: string
 }
 
+interface RecentInvestment {
+  id: string
+  user: string
+  vault: string
+  amount: number
+  takaraLocked: number
+  status: string
+  createdAt: string
+}
+
 interface WithdrawFormData {
   tokenSymbol: string
   amount: string
@@ -125,6 +135,12 @@ export default function AdminTreasuryPage() {
     }),
   })
 
+  // Recent investments query
+  const { data: investmentsData } = useQuery({
+    queryKey: ['adminRecentInvestments'],
+    queryFn: () => adminApiService.getInvestments({ limit: 10 }),
+  })
+
   // Mutations
   const withdrawMutation = useMutation({
     mutationFn: (data: WithdrawFormData) =>
@@ -147,11 +163,27 @@ export default function AdminTreasuryPage() {
     },
   })
 
+  const initTakaraMutation = useMutation({
+    mutationFn: () => adminApiService.initTakara(),
+    onSuccess: () => {
+      toast.success('TAKARA treasury initialized successfully')
+      queryClient.invalidateQueries({ queryKey: ['adminTreasurySummary'] })
+      queryClient.invalidateQueries({ queryKey: ['adminTreasuryBalances'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to initialize TAKARA')
+    },
+  })
+
   const summary = summaryData?.data as TreasurySummary | undefined
   const balances = balancesData?.data as TreasuryBalance[] | undefined
   const stats = statsData?.data as TaxStatistics | undefined
   const records = recordsData?.data?.records as TaxRecord[] | undefined
   const totalPages = recordsData?.data?.totalPages || 1
+  const recentInvestments = investmentsData?.data as RecentInvestment[] | undefined
+
+  // Check if TAKARA is in balances
+  const hasTakara = balances?.some(b => b.tokenSymbol === 'TAKARA')
 
   const handleWithdraw = () => {
     if (!withdrawForm.tokenSymbol || !withdrawForm.amount || !withdrawForm.destinationWallet || !withdrawForm.reason) {
@@ -267,6 +299,25 @@ export default function AdminTreasuryPage() {
           </div>
         ) : null}
 
+        {/* Init TAKARA Button (show if TAKARA not in treasury) */}
+        {!loadingBalances && !hasTakara && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-400 mb-1">TAKARA Not Initialized</h3>
+                <p className="text-sm text-gray-400">Initialize TAKARA token in treasury to track TAKARA balances and tax collection.</p>
+              </div>
+              <button
+                onClick={() => initTakaraMutation.mutate()}
+                disabled={initTakaraMutation.isPending}
+                className="btn-gold px-6 py-3 rounded-lg font-semibold disabled:opacity-50"
+              >
+                {initTakaraMutation.isPending ? 'Initializing...' : 'Initialize TAKARA'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Token Balances */}
         {loadingBalances ? (
           <div className="text-center py-8 text-gray-400">Loading balances...</div>
@@ -361,6 +412,55 @@ export default function AdminTreasuryPage() {
             </div>
           </div>
         ) : null}
+
+        {/* Recent Investments */}
+        {recentInvestments && recentInvestments.length > 0 && (
+          <div className="bg-background-card rounded-xl p-6 border border-green-900/20 mb-8">
+            <h2 className="text-xl font-bold text-white mb-6">Recent Investments</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">User</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Vault</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">USDT Amount</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">TAKARA Locked</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-400">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentInvestments.map((inv) => (
+                    <tr key={inv.id} className="border-b border-gray-800 hover:bg-background-elevated transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-300">
+                        {formatDate(inv.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-white">{inv.user}</td>
+                      <td className="px-4 py-3 text-sm text-white">{inv.vault}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-green-400">
+                        ${formatNumber(inv.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gold-500">
+                        {formatNumber(inv.takaraLocked, 4)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          inv.status === 'ACTIVE'
+                            ? 'bg-green-500/20 text-green-400'
+                            : inv.status === 'PENDING'
+                            ? 'bg-yellow-500/20 text-yellow-400'
+                            : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {inv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Tax Records */}
         <div className="bg-background-card rounded-xl p-6 border border-green-900/20">

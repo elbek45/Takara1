@@ -1,12 +1,12 @@
 /**
  * Trust Wallet Button Component
- * Button for connecting to Trust Wallet for USDT on TRON
+ * For USDT payments via BSC/Ethereum
  */
 
 import { Wallet } from 'lucide-react'
-import { useTronLink } from '../../hooks/useTronLink'
+import { useEVMWallet } from '../../hooks/useEVMWallet'
 
-interface TronLinkButtonProps {
+interface TrustWalletButtonProps {
   variant?: 'primary' | 'secondary' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
@@ -14,23 +14,22 @@ interface TronLinkButtonProps {
   className?: string
 }
 
-export function TronLinkButton({
-  variant = 'secondary',
+export function TrustWalletButton({
+  variant = 'outline',
   size = 'md',
   fullWidth = false,
   showBalance = true,
   className = '',
-}: TronLinkButtonProps) {
+}: TrustWalletButtonProps) {
   const {
     isConnected,
     address,
     usdtBalance,
-    trxBalance,
     isConnecting,
     connect,
     disconnect,
-    isTronLinkInstalled,
-  } = useTronLink()
+    formatAddress,
+  } = useEVMWallet()
 
   const handleClick = () => {
     if (isConnected) {
@@ -40,17 +39,15 @@ export function TronLinkButton({
     }
   }
 
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
-  }
-
-  // Variant styles
+  // Variant styles (Trust Wallet blue branding)
   const variantStyles = {
-    primary: 'bg-gradient-gold text-background-primary hover:opacity-90',
+    primary: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:opacity-90',
     secondary: isConnected
-      ? 'bg-red-600 text-white hover:opacity-90'
+      ? 'bg-blue-600 text-white hover:opacity-90'
       : 'bg-gray-700 text-gray-300 hover:opacity-90',
-    outline: 'border-2 border-red-500 text-red-500 hover:bg-red-500/10',
+    outline: isConnected
+      ? 'border-2 border-blue-500 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+      : 'border-2 border-blue-500 text-blue-400 hover:bg-blue-500/10',
   }
 
   // Size styles
@@ -67,7 +64,7 @@ export function TronLinkButton({
       onClick={handleClick}
       disabled={isConnecting}
       className={`
-        flex items-center justify-center gap-2 rounded-lg font-semibold transition-opacity
+        flex items-center justify-center gap-2 rounded-lg font-semibold transition-all
         ${variantStyles[variant]}
         ${sizeStyles[size]}
         ${widthClass}
@@ -79,7 +76,7 @@ export function TronLinkButton({
           ? `Trust Wallet: ${address} | USDT: ${usdtBalance}`
           : isConnecting
           ? 'Connecting...'
-          : 'Connect Trust Wallet'
+          : 'Connect Trust Wallet for USDT'
       }
     >
       <Wallet className={size === 'sm' ? 'h-3.5 w-3.5' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'} />
@@ -92,8 +89,8 @@ export function TronLinkButton({
             {formatAddress(address)}
           </span>
           {showBalance && (
-            <span className="hidden xl:inline text-xs opacity-80 ml-1">
-              ({usdtBalance} USDT)
+            <span className="text-xs opacity-80">
+              ({usdtBalance.toFixed(2)} USDT)
             </span>
           )}
         </>
@@ -105,11 +102,11 @@ export function TronLinkButton({
 }
 
 // Compact version for mobile
-interface TronLinkButtonCompactProps {
+interface TrustWalletButtonCompactProps {
   className?: string
 }
 
-export function TronLinkButtonCompact({ className = '' }: TronLinkButtonCompactProps) {
+export function TrustWalletButtonCompact({ className = '' }: TrustWalletButtonCompactProps) {
   const {
     isConnected,
     address,
@@ -117,7 +114,7 @@ export function TronLinkButtonCompact({ className = '' }: TronLinkButtonCompactP
     isConnecting,
     connect,
     disconnect,
-  } = useTronLink()
+  } = useEVMWallet()
 
   const handleClick = () => {
     if (isConnected) {
@@ -132,8 +129,8 @@ export function TronLinkButtonCompact({ className = '' }: TronLinkButtonCompactP
       onClick={handleClick}
       disabled={isConnecting}
       className={`
-        flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-opacity
-        ${isConnected ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'}
+        flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all
+        ${isConnected ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}
         hover:opacity-90
         ${isConnecting ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
@@ -144,7 +141,7 @@ export function TronLinkButtonCompact({ className = '' }: TronLinkButtonCompactP
         <span>Connecting...</span>
       ) : isConnected && address ? (
         <span>
-          {address.slice(0, 6)}...{address.slice(-4)} ({usdtBalance} USDT)
+          Trust: {address.slice(0, 6)}...{address.slice(-4)} ({usdtBalance.toFixed(2)} USDT)
         </span>
       ) : (
         <span>Connect Trust Wallet</span>
@@ -153,4 +150,4 @@ export function TronLinkButtonCompact({ className = '' }: TronLinkButtonCompactP
   )
 }
 
-export default TronLinkButton
+export default TrustWalletButton

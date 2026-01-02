@@ -33,27 +33,40 @@ export async function processDailyMining(): Promise<void> {
       totalClaimTax: supplyBreakdown.totalClaimTax
     }, 'Current TAKARA supply breakdown');
 
-    // Get all active investments
+    // Get all active investments (excluding those listed on marketplace)
     const activeInvestments = await prisma.investment.findMany({
       where: {
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        marketplaceListing: {
+          is: null // No listing exists
+        }
       },
       include: {
-        vault: true
+        vault: true,
+        marketplaceListing: true
       }
     });
 
-    logger.info({ count: activeInvestments.length }, 'Active investments found');
+    // Filter out any investments with active marketplace listings
+    const eligibleInvestments = activeInvestments.filter(
+      inv => !inv.marketplaceListing || inv.marketplaceListing.status !== 'ACTIVE'
+    );
 
-    if (activeInvestments.length === 0) {
-      logger.info('No active investments, skipping mining');
+    logger.info({
+      total: activeInvestments.length,
+      eligible: eligibleInvestments.length,
+      skippedDueToListing: activeInvestments.length - eligibleInvestments.length
+    }, 'Active investments found');
+
+    if (eligibleInvestments.length === 0) {
+      logger.info('No active investments eligible for mining');
       return;
     }
 
     // Calculate current difficulty based on circulating supply (v2.3)
     const currentDifficulty = calculateDifficulty({
       circulatingSupply: supplyBreakdown.circulatingSupply,
-      activeMiners: activeInvestments.length
+      activeMiners: eligibleInvestments.length
     });
 
     logger.info({
@@ -65,7 +78,7 @@ export async function processDailyMining(): Promise<void> {
     const miningRecords = [];
 
     // Process each investment
-    for (const investment of activeInvestments) {
+    for (const investment of eligibleInvestments) {
       try {
         // Calculate mining for this investment
         const miningResult = calculateMining({
@@ -87,7 +100,7 @@ export async function processDailyMining(): Promise<void> {
           takaraMinedRaw: miningResult.dailyTakaraRaw,
           takaraMinedFinal: dailyTakara,
           totalMinedSoFar: supplyBreakdown.totalMined + totalMinedToday,
-          activeMiners: activeInvestments.length
+          activeMiners: eligibleInvestments.length
         });
 
         // Update investment pending TAKARA
@@ -131,7 +144,7 @@ export async function processDailyMining(): Promise<void> {
         totalBoostLocked: updatedSupply.totalBoostLocked,
         totalClaimTax: updatedSupply.totalClaimTax,
         circulatingSupply: updatedSupply.circulatingSupply,
-        activeMiners: activeInvestments.length,
+        activeMiners: eligibleInvestments.length,
         currentDifficulty
       }
     });
@@ -141,7 +154,7 @@ export async function processDailyMining(): Promise<void> {
       totalMined: updatedSupply.totalMined,
       circulatingSupply: updatedSupply.circulatingSupply,
       difficulty: currentDifficulty,
-      activeMiners: activeInvestments.length,
+      activeMiners: eligibleInvestments.length,
       percentCirculating: (updatedSupply.circulatingSupply / TAKARA_CONFIG.TOTAL_SUPPLY * 100).toFixed(4) + '%'
     }, 'Daily mining completed successfully');
   } catch (error) {

@@ -25,6 +25,16 @@ import { getLogger } from '../config/logger';
 
 const logger = getLogger('investment-controller');
 
+// TEST_MODE: Instant activation with mock NFT (for testing on devnet)
+const TEST_MODE = process.env.TEST_MODE === 'true';
+
+/**
+ * Generate mock NFT address for testing
+ */
+function generateMockNFTAddress(investmentId: string): string {
+  return `MOCK_NFT_${Date.now()}_${investmentId.slice(0, 8)}`;
+}
+
 /**
  * POST /api/investments
  * Create new investment
@@ -53,6 +63,9 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
       });
       return;
     }
+
+    // Log payment method for debugging
+    logger.info({ paymentMethod, txSignature, usdtAmount }, 'Processing investment with payment method');
 
     // Get vault
     const vault = await prisma.vault.findUnique({
@@ -89,8 +102,13 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Verify payment transaction on TRON network
-    if (!process.env.SKIP_TX_VERIFICATION) {
+    // Verify payment transaction
+    // Skip verification if:
+    // 1. SKIP_TX_VERIFICATION env is set (testing mode)
+    // 2. Payment method is TAKARA (Solana - we trust the frontend signature)
+    const skipVerification = process.env.SKIP_TX_VERIFICATION === 'true' || paymentMethod === 'TAKARA';
+
+    if (!skipVerification) {
       // Get user's TRON address
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -169,6 +187,14 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
           amount: usdtAmount
         }, 'USDT transaction verified on TRON');
       }
+    } else {
+      // Log that we're skipping verification
+      logger.info({
+        userId,
+        txSignature,
+        paymentMethod,
+        skipReason: process.env.SKIP_TX_VERIFICATION === 'true' ? 'SKIP_TX_VERIFICATION=true' : 'TAKARA payment (Solana)'
+      }, 'Skipping transaction verification');
     }
 
     // Calculate final APY (with LAIKA boost if provided)
@@ -198,11 +224,23 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + vault.duration);
 
-    // Calculate activation date (72 hours from now)
+    // Calculate activation date (72 hours from now, or now if TEST_MODE)
     const activationDate = new Date(startDate);
-    activationDate.setHours(activationDate.getHours() + INVESTMENT_CONFIG.ACTIVATION_DELAY_HOURS);
+    if (!TEST_MODE) {
+      activationDate.setHours(activationDate.getHours() + INVESTMENT_CONFIG.ACTIVATION_DELAY_HOURS);
+    }
+
+    // TEST_MODE: Calculate immediate next payout date for testing
+    let nextPayoutDate: Date | null = null;
+    if (TEST_MODE) {
+      nextPayoutDate = new Date(startDate);
+      // Set next payout to 1 minute from now for immediate testing
+      nextPayoutDate.setMinutes(nextPayoutDate.getMinutes() + 1);
+    }
 
     // Create investment
+    // TEST_MODE: Activate immediately with mock NFT
+    const investmentStatus = TEST_MODE ? 'ACTIVE' : 'PENDING';
     const investment = await prisma.investment.create({
       data: {
         userId,
@@ -213,8 +251,9 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
         finalAPY,
         startDate,
         endDate,
-        status: 'PENDING', // Will be activated after 72h
+        status: investmentStatus,
         depositTxSignature: txSignature,
+        nextPayoutDate,
         ...(laikaBoostData && {
           laikaBoost: {
             create: {
@@ -234,8 +273,38 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
       }
     });
 
+    // TEST_MODE: Generate mock NFT and update investment
+    let mockNftAddress: string | null = null;
+    if (TEST_MODE) {
+      mockNftAddress = generateMockNFTAddress(investment.id);
+      await prisma.investment.update({
+        where: { id: investment.id },
+        data: {
+          nftMintAddress: mockNftAddress,
+          nftMetadataUri: `https://mock-metadata.takara.gold/${mockNftAddress}`,
+          isNFTMinted: true
+        }
+      });
+
+      // Update user stats immediately in TEST_MODE
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          totalInvested: {
+            increment: usdtAmount
+          }
+        }
+      });
+
+      logger.info({
+        investmentId: investment.id,
+        mockNftAddress,
+        testMode: true
+      }, 'TEST_MODE: Investment activated immediately with mock NFT');
+    }
+
     // Update vault filled amount
-    await prisma.vault.update({
+    const updatedVault = await prisma.vault.update({
       where: { id: vaultId },
       data: {
         currentFilled: {
@@ -243,6 +312,59 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
         }
       }
     });
+
+    // Check if vault is now full or reached threshold - deactivate and create new vault
+    const totalCapacity = updatedVault.totalCapacity ? Number(updatedVault.totalCapacity) : Number(updatedVault.miningThreshold);
+    const currentFilled = Number(updatedVault.currentFilled);
+
+    if (currentFilled >= totalCapacity && updatedVault.isActive) {
+      // Deactivate current vault and start mining TAKARA
+      await prisma.vault.update({
+        where: { id: vaultId },
+        data: {
+          isActive: false,
+          isMining: true
+        }
+      });
+
+      logger.info({
+        vaultId,
+        vaultName: vault.name,
+        currentFilled,
+        totalCapacity
+      }, 'Vault reached capacity and has been deactivated - starting mining');
+
+      // Create a new vault with the same parameters (mining pool pattern)
+      // Keep the same display name but use different ID for uniqueness
+      const newVault = await prisma.vault.create({
+        data: {
+          name: updatedVault.name.replace(/_\d+$/, ''), // Use original name without timestamp
+          tier: updatedVault.tier,
+          duration: updatedVault.duration,
+          baseAPY: updatedVault.baseAPY,
+          maxAPY: updatedVault.maxAPY,
+          baseTakaraAPY: updatedVault.baseTakaraAPY,
+          maxTakaraAPY: updatedVault.maxTakaraAPY,
+          minInvestment: updatedVault.minInvestment,
+          maxInvestment: updatedVault.maxInvestment,
+          totalCapacity: updatedVault.totalCapacity,
+          miningThreshold: updatedVault.miningThreshold,
+          payoutSchedule: updatedVault.payoutSchedule,
+          requireTAKARA: updatedVault.requireTAKARA,
+          takaraRatio: updatedVault.takaraRatio,
+          acceptedPayments: updatedVault.acceptedPayments,
+          isActive: true,
+          currentFilled: 0,
+          isMining: false
+        }
+      });
+
+      logger.info({
+        oldVaultId: vaultId,
+        newVaultId: newVault.id,
+        vaultName: newVault.name
+      }, 'New vault created to replace filled vault (mining pool pattern)');
+    }
 
     logger.info({
       investmentId: investment.id,
@@ -254,7 +376,9 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
 
     res.status(201).json({
       success: true,
-      message: SUCCESS_MESSAGES.INVESTMENT_CREATED,
+      message: TEST_MODE
+        ? 'Investment created and activated immediately (TEST_MODE)'
+        : SUCCESS_MESSAGES.INVESTMENT_CREATED,
       data: {
         investment: {
           id: investment.id,
@@ -264,7 +388,10 @@ export async function createInvestment(req: Request, res: Response): Promise<voi
           startDate: investment.startDate,
           endDate: investment.endDate,
           activationDate,
-          status: investment.status,
+          status: TEST_MODE ? 'ACTIVE' : investment.status,
+          nftMintAddress: mockNftAddress,
+          nextPayoutDate: nextPayoutDate,
+          testMode: TEST_MODE,
           laikaBoost: laikaBoostData ? {
             laikaAmount: laikaBoostData.laikaAmount,
             additionalAPY: laikaBoostData.additionalAPY
@@ -455,6 +582,9 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
         id,
         userId,
         status: 'ACTIVE'
+      },
+      include: {
+        marketplaceListing: true
       }
     });
 
@@ -462,6 +592,15 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
       res.status(404).json({
         success: false,
         message: ERROR_MESSAGES.INVESTMENT_NOT_FOUND
+      });
+      return;
+    }
+
+    // Check if investment is listed on marketplace
+    if (investment.marketplaceListing && investment.marketplaceListing.status === 'ACTIVE') {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot claim while investment is listed on marketplace. Cancel listing first.'
       });
       return;
     }
@@ -476,73 +615,82 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Get user's Ethereum wallet address
+    // Get user's wallet address (TRON preferred for USDT)
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { ethereumAddress: true }
+      select: { tronAddress: true, ethereumAddress: true, walletAddress: true }
     });
 
-    if (!user?.ethereumAddress) {
+    // Determine destination wallet (prefer TRON for USDT)
+    const destinationWallet = user?.tronAddress || user?.ethereumAddress || user?.walletAddress;
+
+    if (!destinationWallet) {
       res.status(400).json({
         success: false,
-        message: 'Please connect your MetaMask wallet first to claim rewards'
+        message: 'Please connect a wallet first to claim rewards'
       });
       return;
     }
 
-    // Transfer USDT to user's Ethereum wallet
-    let txSignature: string;
-    try {
-      txSignature = await transferUSDTFromPlatform(user.ethereumAddress, pendingAmount);
-    } catch (error: any) {
-      logger.error({ error, userId, amount: pendingAmount }, 'Failed to transfer USDT');
-      res.status(500).json({
+    // Check for existing pending claim request
+    const existingRequest = await prisma.claimRequest.findFirst({
+      where: {
+        investmentId: id,
+        claimType: 'USDT',
+        status: 'PENDING'
+      }
+    });
+
+    if (existingRequest) {
+      res.status(400).json({
         success: false,
-        message: 'Failed to transfer USDT. Please try again later.'
+        message: 'You already have a pending USDT claim request for this investment'
       });
       return;
     }
 
-    // Update investment
+    // Create claim request (pending admin approval)
+    const claimRequest = await prisma.claimRequest.create({
+      data: {
+        userId,
+        investmentId: id,
+        claimType: 'USDT',
+        amount: pendingAmount,
+        taxAmount: 0, // No tax on USDT claims
+        amountAfterTax: pendingAmount,
+        destinationWallet,
+        status: 'PENDING'
+      }
+    });
+
+    // Mark pending amount as claimed (so user can't double-claim)
     await prisma.investment.update({
       where: { id },
       data: {
-        totalEarnedUSDT: {
-          increment: pendingAmount
-        },
         pendingUSDT: 0,
         lastClaimDate: new Date()
       }
     });
 
-    // Update user stats
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalEarnedUSDT: {
-          increment: pendingAmount
-        }
-      }
-    });
-
     logger.info({
+      claimRequestId: claimRequest.id,
       investmentId: id,
       userId,
-      amount: pendingAmount,
-      txSignature
-    }, 'USDT yield claimed and transferred');
+      amount: pendingAmount
+    }, 'USDT claim request created - awaiting admin approval');
 
     res.json({
       success: true,
-      message: SUCCESS_MESSAGES.YIELD_CLAIMED,
+      message: 'Claim request submitted. Awaiting admin approval.',
       data: {
-        amountClaimed: pendingAmount,
-        totalEarned: Number(investment.totalEarnedUSDT) + pendingAmount,
-        txSignature
+        claimRequestId: claimRequest.id,
+        amountRequested: pendingAmount,
+        destinationWallet,
+        status: 'PENDING'
       }
     });
   } catch (error) {
-    logger.error({ error, investmentId: req.params.id }, 'Failed to claim yield');
+    logger.error({ error, investmentId: req.params.id }, 'Failed to create claim request');
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.INTERNAL_ERROR
@@ -552,7 +700,7 @@ export async function claimYield(req: Request, res: Response): Promise<void> {
 
 /**
  * POST /api/investments/:id/claim-takara
- * Claim mined TAKARA tokens
+ * Claim mined TAKARA tokens - creates a claim request for admin approval
  */
 export async function claimTakara(req: Request, res: Response): Promise<void> {
   try {
@@ -564,6 +712,9 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
         id,
         userId,
         status: 'ACTIVE'
+      },
+      include: {
+        marketplaceListing: true
       }
     });
 
@@ -571,6 +722,15 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       res.status(404).json({
         success: false,
         message: ERROR_MESSAGES.INVESTMENT_NOT_FOUND
+      });
+      return;
+    }
+
+    // Check if investment is listed on marketplace
+    if (investment.marketplaceListing && investment.marketplaceListing.status === 'ACTIVE') {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot claim while investment is listed on marketplace. Cancel listing first.'
       });
       return;
     }
@@ -599,69 +759,73 @@ export async function claimTakara(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Apply 5% tax on TAKARA claim
-    const taxResult = await applyTakaraClaimTax({
-      userId,
-      transactionId: id,
-      takaraAmount: pendingAmount
+    // Check for existing pending claim request
+    const existingRequest = await prisma.claimRequest.findFirst({
+      where: {
+        investmentId: id,
+        claimType: 'TAKARA',
+        status: 'PENDING'
+      }
     });
 
-    // Transfer TAKARA to user's Solana wallet (after tax deduction)
-    let txSignature: string;
-    try {
-      txSignature = await transferTAKARAReward(user.walletAddress, taxResult.amountAfterTax);
-    } catch (error: any) {
-      logger.error({ error, userId, amount: taxResult.amountAfterTax }, 'Failed to transfer TAKARA');
-      res.status(500).json({
+    if (existingRequest) {
+      res.status(400).json({
         success: false,
-        message: 'Failed to transfer TAKARA. Please try again later.'
+        message: 'You already have a pending TAKARA claim request for this investment'
       });
       return;
     }
 
-    // Update investment
+    // Calculate 5% tax
+    const taxPercent = 5;
+    const taxAmount = pendingAmount * (taxPercent / 100);
+    const amountAfterTax = pendingAmount - taxAmount;
+
+    // Create claim request (pending admin approval)
+    const claimRequest = await prisma.claimRequest.create({
+      data: {
+        userId,
+        investmentId: id,
+        claimType: 'TAKARA',
+        amount: pendingAmount,
+        taxAmount,
+        amountAfterTax,
+        destinationWallet: user.walletAddress,
+        status: 'PENDING'
+      }
+    });
+
+    // Mark pending amount as claimed (so user can't double-claim)
     await prisma.investment.update({
       where: { id },
       data: {
-        totalMinedTAKARA: {
-          increment: pendingAmount
-        },
         pendingTAKARA: 0
       }
     });
 
-    // Update user stats
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalMinedTAKARA: {
-          increment: pendingAmount
-        }
-      }
-    });
-
     logger.info({
+      claimRequestId: claimRequest.id,
       investmentId: id,
       userId,
       amountBeforeTax: pendingAmount,
-      taxAmount: taxResult.taxAmount,
-      amountAfterTax: taxResult.amountAfterTax,
-      txSignature
-    }, 'TAKARA claimed and transferred (with 5% tax)');
+      taxAmount,
+      amountAfterTax
+    }, 'TAKARA claim request created - awaiting admin approval');
 
     res.json({
       success: true,
-      message: SUCCESS_MESSAGES.TAKARA_CLAIMED,
+      message: 'Claim request submitted. Awaiting admin approval.',
       data: {
-        amountClaimed: taxResult.amountAfterTax,
-        amountBeforeTax: pendingAmount,
-        taxAmount: taxResult.taxAmount,
-        totalMined: Number(investment.totalMinedTAKARA) + pendingAmount,
-        txSignature
+        claimRequestId: claimRequest.id,
+        amountRequested: pendingAmount,
+        taxAmount,
+        amountAfterTax,
+        destinationWallet: user.walletAddress,
+        status: 'PENDING'
       }
     });
   } catch (error) {
-    logger.error({ error, investmentId: req.params.id }, 'Failed to claim TAKARA');
+    logger.error({ error, investmentId: req.params.id }, 'Failed to create TAKARA claim request');
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.INTERNAL_ERROR

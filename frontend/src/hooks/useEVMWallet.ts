@@ -1,7 +1,6 @@
 /**
  * useEVMWallet Hook
- * Manages Phantom EVM connection and Ethereum state
- * NOTE: This hook is deprecated - we now use Phantom for Solana and Trust Wallet for TRON
+ * Manages EVM wallet connection (Trust Wallet, MetaMask, etc.) for USDT payments
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -29,12 +28,12 @@ export function useEVMWallet() {
   })
 
   /**
-   * Connect to Phantom EVM
+   * Connect to EVM wallet (Trust Wallet, MetaMask, etc.)
    */
   const connect = useCallback(async () => {
     if (!ethereumService.isWalletInstalled()) {
-      toast.error('Please install Phantom wallet')
-      window.open('https://phantom.app/download', '_blank')
+      toast.error('Please install an EVM wallet (Trust Wallet, MetaMask, etc.)')
+      window.open('https://trustwallet.com/download', '_blank')
       return
     }
 
@@ -61,16 +60,16 @@ export function useEVMWallet() {
         ethBalance: wallet.balance,
       })
 
-      toast.success('Phantom connected successfully')
+      toast.success('Trust Wallet connected successfully')
     } catch (error: any) {
-      console.error('Phantom connection error:', error)
-      toast.error(error.message || 'Failed to connect Phantom')
+      console.error('EVM wallet connection error:', error)
+      toast.error(error.message || 'Failed to connect Trust Wallet')
       setState((prev) => ({ ...prev, isConnecting: false }))
     }
   }, [])
 
   /**
-   * Disconnect Phantom
+   * Disconnect EVM wallet
    */
   const disconnect = useCallback(() => {
     ethereumService.disconnect()
@@ -82,7 +81,7 @@ export function useEVMWallet() {
       usdtBalance: 0,
       ethBalance: '0',
     })
-    toast.info('Phantom disconnected')
+    toast.info('Trust Wallet disconnected')
   }, [])
 
   /**
@@ -153,39 +152,8 @@ export function useEVMWallet() {
 
   /**
    * Listen for account/chain changes
+   * Note: Event listeners are managed in ethereumService when connected
    */
-  useEffect(() => {
-    if (!window.ethereum) return
-
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
-        // User disconnected wallet
-        disconnect()
-      } else if (accounts[0] !== state.address && state.address !== null) {
-        // Account changed - just update state without reconnecting
-        setState((prev) => ({
-          ...prev,
-          address: accounts[0],
-        }))
-      }
-    }
-
-    const handleChainChanged = () => {
-      // Reload page on chain change
-      window.location.reload()
-    }
-
-    window.ethereum.on('accountsChanged', handleAccountsChanged)
-    window.ethereum.on('chainChanged', handleChainChanged)
-
-    // Cleanup
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-        window.ethereum.removeListener('chainChanged', handleChainChanged)
-      }
-    }
-  }, [state.address, disconnect])
 
   /**
    * Auto-connect if previously connected
@@ -195,7 +163,11 @@ export function useEVMWallet() {
       if (!ethereumService.isWalletInstalled()) return
 
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+        // Get the appropriate provider (prefer Trust Wallet)
+        const provider = (window as any).trustwallet || window.ethereum
+        if (!provider) return
+
+        const accounts = await provider.request({ method: 'eth_accounts' })
         if (accounts && accounts.length > 0) {
           await connect()
         }

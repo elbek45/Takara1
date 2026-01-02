@@ -4,12 +4,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Wallet, User, Mail, Bell, Save, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '../hooks/useAuth'
-import { useTronLink } from '../hooks/useTronLink'
 
 export default function ProfilePage() {
   const { connected, publicKey } = useWallet()
   const { user, isAuthenticated } = useAuth()
-  const { isConnected: isTronConnected, address: tronAddress } = useTronLink()
   const queryClient = useQueryClient()
 
   const [username, setUsername] = useState(user?.username || '')
@@ -86,31 +84,6 @@ export default function ProfilePage() {
                         className="p-3 bg-background-elevated hover:bg-purple-900/20 rounded-lg transition-colors"
                       >
                         {copiedField === 'solana' ? (
-                          <Check className="h-5 w-5 text-green-400" />
-                        ) : (
-                          <Copy className="h-5 w-5 text-gray-400" />
-                        )}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* TRON (Trust Wallet) - for USDT */}
-                <div>
-                  <div className="text-sm text-gray-400 mb-2 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    Trust Wallet (TRON) - USDT
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-background-elevated rounded-lg p-3 font-mono text-sm text-white break-all">
-                      {isTronConnected && tronAddress ? tronAddress : user?.tronAddress || 'Not connected'}
-                    </div>
-                    {(isTronConnected && tronAddress) || user?.tronAddress ? (
-                      <button
-                        onClick={() => copyAddress(isTronConnected && tronAddress ? tronAddress : user?.tronAddress || '', 'tron')}
-                        className="p-3 bg-background-elevated hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        {copiedField === 'tron' ? (
                           <Check className="h-5 w-5 text-green-400" />
                         ) : (
                           <Copy className="h-5 w-5 text-gray-400" />

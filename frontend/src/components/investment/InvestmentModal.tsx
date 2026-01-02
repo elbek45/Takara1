@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, ArrowRight, Loader2, CheckCircle, Wallet } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
-import { useTronLink } from '../../hooks/useTronLink'
+import { useEVMWallet } from '../../hooks/useEVMWallet'
 import { toast } from 'sonner'
 import type { InvestmentCalculation, PaymentMethod } from '../../types'
 
@@ -15,6 +15,7 @@ interface InvestmentModalProps {
   calculation: InvestmentCalculation
   usdtAmount: number
   laikaAmount: number
+  acceptedPayments?: string // "USDT", "TAKARA", "USDT,TAKARA" etc.
 }
 
 type Step = 'review' | 'transfer' | 'confirm' | 'success'
@@ -26,30 +27,36 @@ export default function InvestmentModal({
   calculation,
   usdtAmount,
   laikaAmount,
+  acceptedPayments = 'USDT,TAKARA',
 }: InvestmentModalProps) {
-  const { publicKey, signTransaction, wallet } = useWallet()
-  const { transferUSDT, transferTRX, isConnected: tronConnected, address: tronAddress, usdtBalance, trxBalance } = useTronLink()
+  const { publicKey, sendTransaction } = useWallet()
+  const {
+    isConnected: evmConnected,
+    address: evmAddress,
+    usdtBalance: evmUsdtBalance,
+    transferUSDT: transferUSDTEVM
+  } = useEVMWallet()
 
-  // Detect if Trust Wallet is being used (supports both Solana and TRON)
-  const isTrustWallet = useMemo(() => {
-    return wallet?.adapter.name.toLowerCase().includes('trust')
-  }, [wallet])
-
-  // Unified wallet mode - both chains handled by Trust Wallet
-  const isUnifiedWallet = isTrustWallet && publicKey && tronConnected
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
   const [takaraBalance, setTakaraBalance] = useState<number>(0)
   const [laikaBalance, setLaikaBalance] = useState<number>(0)
   const [solBalance, setSolBalance] = useState<number>(0)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDT')
 
-  // TRX price for conversion (will be fetched from API or set manually)
-  const [trxPrice, setTrxPrice] = useState<number>(0.25) // Default TRX price in USD
+  // Parse accepted payment methods
+  const availablePayments = useMemo(() => {
+    const methods = acceptedPayments.split(',').map(m => m.trim().toUpperCase())
+    return {
+      usdt: methods.includes('USDT'),
+      takara: methods.includes('TAKARA'),
+    }
+  }, [acceptedPayments])
 
-  // Calculate TRX amount needed based on USD amount
-  const trxAmountNeeded = paymentMethod === 'TRX' ? usdtAmount / trxPrice : 0
+  // Payment method state with explicit union type
+  const [paymentMethod, setPaymentMethod] = useState<'USDT' | 'TAKARA'>(
+    availablePayments.usdt ? 'USDT' : 'TAKARA'
+  )
 
   // Fetch Solana balances when wallet is connected
   useEffect(() => {
@@ -74,74 +81,88 @@ export default function InvestmentModal({
 
   const investMutation = useMutation({
     mutationFn: async () => {
-      // Critical validation: Check all required wallets are connected
-      if (!tronConnected) {
-        throw new Error('TronLink/Trust Wallet must be connected for payment (TRON network)')
-      }
-
-      if (calculation.investment.requiredTAKARA > 0 && (!publicKey || !signTransaction)) {
-        throw new Error('Phantom wallet must be connected for TAKARA payment. Your investment will be REJECTED without it!')
-      }
-
-      if (laikaAmount > 0 && (!publicKey || !signTransaction)) {
-        throw new Error('Phantom wallet must be connected for LAIKA boost')
-      }
-
-      // Step 1: Transfer payment via TronLink/Trust Wallet (TRON Network)
-      if (!tronAddress) {
-        throw new Error('TRON wallet address not available')
-      }
-
       let paymentSignature: string
 
-      if (paymentMethod === 'TRX') {
-        toast.info(`Step 1/3: Transferring ${trxAmountNeeded.toFixed(2)} TRX via Trust Wallet (TRON Network)...`)
-        const result = await transferTRX(trxAmountNeeded.toString())
-        paymentSignature = result.hash
-        toast.success('✓ TRX transferred successfully!')
+      if (paymentMethod === 'USDT') {
+        // USDT payment via Trust Wallet (EVM)
+        if (!evmConnected || !evmAddress) {
+          throw new Error('Trust Wallet must be connected for USDT payment')
+        }
+
+        toast.info('Step 1/2: Transferring USDT via Trust Wallet...')
+        const platformWallet = import.meta.env.VITE_PLATFORM_WALLET_ETH || '0x...'
+        const result = await transferUSDTEVM(platformWallet, usdtAmount)
+        paymentSignature = result.txHash
+        toast.success('USDT transferred successfully!')
+
+        // If TAKARA is also required for this vault
+        if (calculation.investment.requiredTAKARA > 0) {
+          if (!publicKey || !sendTransaction) {
+            throw new Error('Phantom wallet must also be connected for TAKARA requirement')
+          }
+          toast.info('Step 2/2: Transferring TAKARA via Phantom...')
+          const solPlatformWallet = solanaService.getPlatformWalletAddress()
+          await solanaService.transferTAKARA(
+            publicKey,
+            solPlatformWallet,
+            calculation.investment.requiredTAKARA,
+            sendTransaction
+          )
+          toast.success('TAKARA transferred successfully!')
+        }
       } else {
-        toast.info('Step 1/3: Transferring USDT via Trust Wallet (TRON Network)...')
-        const result = await transferUSDT(usdtAmount.toString())
-        paymentSignature = result.hash
-        toast.success('✓ USDT transferred successfully!')
+        // TAKARA payment via Phantom (Solana)
+        if (!publicKey || !sendTransaction) {
+          throw new Error('Phantom wallet must be connected for TAKARA payment')
+        }
+
+        const takaraPaymentAmount = calculation.investment.requiredTAKARA || usdtAmount
+        if (takaraPaymentAmount > 0) {
+          toast.info('Step 1/2: Transferring TAKARA via Phantom (Solana)...')
+          const platformWallet = solanaService.getPlatformWalletAddress()
+          const result = await solanaService.transferTAKARA(
+            publicKey,
+            platformWallet,
+            takaraPaymentAmount,
+            sendTransaction
+          )
+          paymentSignature = result || `takara-${Date.now()}`
+          toast.success('TAKARA transferred successfully!')
+        } else {
+          paymentSignature = `investment-${Date.now()}`
+        }
       }
 
-      // Step 2: Transfer TAKARA if required (via Phantom/Solana)
-      let stepNumber = 2
-      if (calculation.investment.requiredTAKARA > 0) {
-        const totalSteps = laikaAmount > 0 ? 4 : 3
-        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring TAKARA via Phantom (Solana)...`)
-        const platformWallet = solanaService.getPlatformWalletAddress()
-        await solanaService.transferTAKARA(
-          publicKey!,
-          platformWallet,
-          calculation.investment.requiredTAKARA,
-          signTransaction!
-        )
-        toast.success('✓ TAKARA transferred successfully!')
-        stepNumber++
-      }
-
-      // Step 3: Transfer LAIKA if boosting (via Phantom/Solana)
+      // Transfer LAIKA if boosting (always via Phantom)
+      console.log('🔍 LAIKA boost check:', { laikaAmount, hasPublicKey: !!publicKey, hasSendTransaction: !!sendTransaction })
       if (laikaAmount > 0) {
-        const totalSteps = calculation.investment.requiredTAKARA > 0 ? 4 : 3
-        toast.info(`Step ${stepNumber}/${totalSteps}: Transferring LAIKA via Phantom (Solana) for APY boost...`)
+        if (!publicKey || !sendTransaction) {
+          throw new Error('Phantom wallet must be connected for LAIKA boost')
+        }
+        console.log('📤 Starting LAIKA transfer:', { laikaAmount, platformWallet: solanaService.getPlatformWalletAddress().toBase58() })
+        toast.info('Transferring LAIKA for APY boost...')
         const platformWallet = solanaService.getPlatformWalletAddress()
-        await solanaService.transferLAIKA(
-          publicKey!,
-          platformWallet,
-          laikaAmount,
-          signTransaction!
-        )
-        toast.success('✓ LAIKA boost transferred successfully!')
-        stepNumber++
+        try {
+          const laikaTxSignature = await solanaService.transferLAIKA(
+            publicKey,
+            platformWallet,
+            laikaAmount,
+            sendTransaction
+          )
+          console.log('✅ LAIKA transfer successful:', laikaTxSignature)
+          toast.success('LAIKA boost transferred successfully!')
+        } catch (laikaError) {
+          console.error('❌ LAIKA transfer failed:', laikaError)
+          throw laikaError // Re-throw to fail the whole mutation
+        }
+      } else {
+        console.log('⏭️ Skipping LAIKA transfer: laikaAmount is 0')
       }
 
       setTxSignature(paymentSignature)
 
-      // Final Step: Create investment record and Wexel on Solana
-      const totalSteps = (calculation.investment.requiredTAKARA > 0 ? 1 : 0) + (laikaAmount > 0 ? 1 : 0) + 2
-      toast.info(`Step ${stepNumber}/${totalSteps}: Creating investment and minting Wexel on Solana...`)
+      // Create investment record
+      toast.info('Creating investment and minting Wexel...')
       const response = await api.createInvestment({
         vaultId,
         usdtAmount,
@@ -149,13 +170,11 @@ export default function InvestmentModal({
         laikaBoost: laikaAmount > 0
           ? {
               laikaAmount: laikaAmount,
-              // @ts-ignore - Type definitions need updating
               laikaValueUSD: calculation.investment.laikaValueUSD || 0,
             }
           : undefined,
         txSignature: paymentSignature,
         paymentMethod,
-        trxAmount: paymentMethod === 'TRX' ? trxAmountNeeded : undefined,
       })
 
       return response
@@ -167,7 +186,7 @@ export default function InvestmentModal({
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Investment failed')
+      toast.error(error.response?.data?.message || error.message || 'Investment failed')
       console.error('Investment error:', error)
     },
   })
@@ -190,6 +209,30 @@ export default function InvestmentModal({
   }
 
   if (!isOpen) return null
+
+  // Calculate requirements
+  const takaraRequired = paymentMethod === 'TAKARA'
+    ? (calculation.investment.requiredTAKARA || usdtAmount)
+    : calculation.investment.requiredTAKARA || 0
+
+  const hasInsufficientUSDT = paymentMethod === 'USDT' && evmUsdtBalance < usdtAmount
+  const hasInsufficientTAKARA = takaraRequired > 0 && takaraBalance < takaraRequired
+  const hasInsufficientLAIKA = laikaAmount > 0 && laikaBalance < laikaAmount
+
+  // Wallet requirements
+  const needsPhantom = paymentMethod === 'TAKARA' || takaraRequired > 0 || laikaAmount > 0
+  const needsTrustWallet = paymentMethod === 'USDT'
+  const missingPhantom = needsPhantom && !publicKey
+  const missingTrustWallet = needsTrustWallet && !evmConnected
+
+  const isDisabled = investMutation.isPending || missingPhantom || missingTrustWallet || hasInsufficientUSDT || hasInsufficientTAKARA || hasInsufficientLAIKA
+
+  let buttonText = `Proceed to Transfer (${paymentMethod})`
+  if (missingPhantom) buttonText = 'Connect Phantom Wallet First'
+  else if (missingTrustWallet) buttonText = 'Connect Trust Wallet First'
+  else if (hasInsufficientUSDT) buttonText = 'Insufficient USDT Balance'
+  else if (hasInsufficientTAKARA) buttonText = 'Insufficient TAKARA Balance'
+  else if (hasInsufficientLAIKA) buttonText = 'Insufficient LAIKA Balance'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -215,7 +258,7 @@ export default function InvestmentModal({
           {step === 'review' && (
             <div className="space-y-6">
               {/* Payment Method Selector */}
-              <div className="bg-gradient-to-br from-gold-500/10 to-red-500/10 border-2 border-gold-500/40 rounded-lg p-5">
+              <div className="bg-gradient-to-br from-gold-500/10 to-blue-500/10 border-2 border-gold-500/40 rounded-lg p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-2xl">💰</span>
                   <div className="text-lg font-bold text-gold-400">
@@ -223,326 +266,196 @@ export default function InvestmentModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className={`grid gap-3 mb-4 ${
+                  availablePayments.usdt && availablePayments.takara ? 'grid-cols-2' : 'grid-cols-1'
+                }`}>
                   {/* USDT Option */}
-                  <button
-                    onClick={() => setPaymentMethod('USDT')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'USDT'
-                        ? 'border-gold-500 bg-gold-500/20'
-                        : 'border-gray-600 bg-black/20 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">💵</div>
-                      <div className={`font-bold ${paymentMethod === 'USDT' ? 'text-gold-400' : 'text-gray-300'}`}>
-                        USDT
+                  {availablePayments.usdt && (
+                    <button
+                      onClick={() => setPaymentMethod('USDT')}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        paymentMethod === 'USDT'
+                          ? 'border-blue-500 bg-blue-500/20'
+                          : 'border-gray-600 bg-black/20 hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">💵</div>
+                        <div className={`font-bold ${paymentMethod === 'USDT' ? 'text-blue-400' : 'text-gray-300'}`}>
+                          USDT
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          ${usdtAmount.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          via Trust Wallet
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-400">
-                        ${usdtAmount.toLocaleString()}
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
 
-                  {/* TRX Option */}
-                  <button
-                    onClick={() => setPaymentMethod('TRX')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'TRX'
-                        ? 'border-red-500 bg-red-500/20'
-                        : 'border-gray-600 bg-black/20 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">🔴</div>
-                      <div className={`font-bold ${paymentMethod === 'TRX' ? 'text-red-400' : 'text-gray-300'}`}>
-                        TRX
+                  {/* TAKARA Option */}
+                  {availablePayments.takara && (
+                    <button
+                      onClick={() => setPaymentMethod('TAKARA')}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        paymentMethod === 'TAKARA'
+                          ? 'border-green-500 bg-green-500/20'
+                          : 'border-gray-600 bg-black/20 hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">🟢</div>
+                        <div className={`font-bold ${paymentMethod === 'TAKARA' ? 'text-green-400' : 'text-gray-300'}`}>
+                          TAKARA
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {(calculation.investment.requiredTAKARA || usdtAmount).toLocaleString()} TAKARA
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          via Phantom
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-400">
-                        ~{trxAmountNeeded.toFixed(2)} TRX
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ≈ ${usdtAmount.toLocaleString()}
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
                 </div>
 
-                {paymentMethod === 'TRX' && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded p-3 text-sm text-red-300">
-                    <strong>Note:</strong> TRX amount is calculated at ~${trxPrice.toFixed(2)}/TRX.
-                    Actual rate may vary slightly.
+                {paymentMethod === 'USDT' && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 text-sm text-blue-300">
+                    <strong>Note:</strong> USDT payment via Trust Wallet (BSC/Ethereum network).
+                  </div>
+                )}
+
+                {paymentMethod === 'TAKARA' && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded p-3 text-sm text-green-300">
+                    <strong>Note:</strong> Payment via Phantom wallet on Solana network.
                   </div>
                 )}
               </div>
 
-              {/* Payment Flow Information */}
-              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-2 border-blue-500/40 rounded-lg p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">💳</span>
-                  <div className="text-lg font-bold text-blue-400">
-                    2-Step Payment Process
+              {/* LAIKA Boost Info */}
+              {laikaAmount > 0 && (
+                <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
+                  <div className="text-sm text-laika-purple font-medium mb-2">
+                    LAIKA Boost (via Phantom)
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Step 1: Payment */}
-                  <div className={`bg-black/20 rounded-lg p-4 border ${paymentMethod === 'USDT' ? 'border-gold-500/30' : 'border-red-500/30'}`}>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`flex-shrink-0 w-8 h-8 ${paymentMethod === 'USDT' ? 'bg-gold-500' : 'bg-red-500'} text-black rounded-full flex items-center justify-center font-bold text-lg`}>1</div>
-                      <div className="font-bold text-white text-base">
-                        {paymentMethod === 'USDT' ? 'USDT Payment' : 'TRX Payment'} (Trust Wallet)
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-gray-400">LAIKA Amount</div>
+                      <div className="text-white font-semibold">
+                        {laikaAmount.toLocaleString()} LAIKA
                       </div>
                     </div>
-                    <div className="pl-11 space-y-1 text-sm">
-                      <div className="text-gray-300">Network: <span className="text-red-400 font-medium">TRON Network</span></div>
-                      {paymentMethod === 'USDT' ? (
-                        <div className="text-gray-300">Amount: <span className="text-gold-500 font-bold">${usdtAmount.toLocaleString()} USDT</span></div>
-                      ) : (
-                        <div className="text-gray-300">Amount: <span className="text-red-400 font-bold">{trxAmountNeeded.toFixed(2)} TRX</span> <span className="text-gray-500">(≈${usdtAmount.toLocaleString()})</span></div>
-                      )}
-                      <div className="text-gray-400 text-xs italic">Main investment deposit</div>
-                    </div>
-                  </div>
-
-                  {/* Step 2: TAKARA + LAIKA */}
-                  <div className="bg-black/20 rounded-lg p-4 border border-green-500/30">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex-shrink-0 w-8 h-8 bg-green-500 text-black rounded-full flex items-center justify-center font-bold text-lg">2</div>
-                      <div className="font-bold text-white text-base">TAKARA + LAIKA (Phantom)</div>
-                    </div>
-                    <div className="pl-11 space-y-2 text-sm">
-                      <div className="text-gray-300">Network: <span className="text-purple-400 font-medium">Solana</span></div>
-                      {calculation.investment.requiredTAKARA > 0 && (
-                        <div className="bg-green-500/10 border border-green-500/20 rounded p-2">
-                          <div className="text-green-400 font-medium">✓ TAKARA Required: <span className="font-bold">{calculation.investment.requiredTAKARA.toLocaleString()} TAKARA</span></div>
-                        </div>
-                      )}
-                      {laikaAmount > 0 && (
-                        <div className="bg-laika-purple/10 border border-laika-purple/20 rounded p-2">
-                          <div className="text-laika-purple font-medium">🚀 LAIKA Boost: <span className="font-bold">{laikaAmount.toLocaleString()} LAIKA</span></div>
-                          <div className="text-laika-green text-xs">Extra APY: +{calculation.earnings.laikaBoostAPY}%</div>
-                        </div>
-                      )}
-                      {!calculation.investment.requiredTAKARA && !laikaAmount && (
-                        <div className="text-gray-400 text-xs italic">No TAKARA or LAIKA required for this investment</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Auto Wexel */}
-                  <div className="bg-purple-500/10 rounded p-3 text-center">
-                    <div className="text-sm text-purple-400">
-                      ✨ <strong>Investment Wexel</strong> will be minted automatically after payment
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wallet Connection Status - CRITICAL WARNING */}
-              {(!tronConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)) && (
-                <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
-                  <div className="text-sm text-red-400 font-bold mb-3">
-                    ⚠️ CRITICAL: Required Wallets Not Connected!
-                  </div>
-                  <div className="text-sm text-gray-300 space-y-2 mb-3">
-                    <div className="text-red-300 font-medium">
-                      You MUST connect these wallets BEFORE proceeding with payment:
-                    </div>
-                    {!tronConnected && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-400">✗</span>
-                        <span><strong>TronLink/Trust Wallet</strong> - Required for {paymentMethod} payment ({paymentMethod === 'USDT' ? `$${usdtAmount.toLocaleString()}` : `${trxAmountNeeded.toFixed(2)} TRX`})</span>
+                    <div>
+                      <div className="text-xs text-gray-400">Boost APY</div>
+                      <div className="text-laika-green font-semibold">
+                        +{calculation.earnings.laikaBoostAPY}%
                       </div>
-                    )}
-                    {calculation.investment.requiredTAKARA > 0 && !publicKey && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-400">✗</span>
-                        <span><strong>Phantom</strong> - Required for TAKARA payment ({calculation.investment.requiredTAKARA.toLocaleString()} TAKARA)</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="bg-red-500/20 border border-red-500/40 rounded p-3 text-xs text-red-300">
-                    <strong>WARNING:</strong> Connect all required wallets before proceeding. Your investment may fail without proper wallet connections!
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Wallet Connection Status - Success with Balances */}
-              {tronConnected && (calculation.investment.requiredTAKARA === 0 || publicKey) && (
+              {/* Wallet Connection Status */}
+              {(missingPhantom || missingTrustWallet) && (
+                <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
+                  <div className="text-sm text-red-400 font-bold mb-2">
+                    Required Wallets Not Connected
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-2">
+                    {missingTrustWallet && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">✗</span>
+                        <span><strong>Trust Wallet</strong> - Required for USDT payment</span>
+                      </div>
+                    )}
+                    {missingPhantom && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">✗</span>
+                        <span><strong>Phantom</strong> - Required for {paymentMethod === 'TAKARA' ? 'TAKARA payment' : 'TAKARA/LAIKA'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Connected Wallets & Balances */}
+              {!missingPhantom && !missingTrustWallet && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-sm text-green-400 font-medium mb-3">
                     <Wallet className="h-4 w-4" />
-                    <span>
-                      {isUnifiedWallet
-                        ? 'Trust Wallet Connected (All Chains)'
-                        : 'Connected Wallets & Balances'}
-                    </span>
+                    <span>Connected Wallets</span>
                   </div>
-
-                  {/* Unified Trust Wallet View */}
-                  {isUnifiedWallet ? (
-                    <div className="bg-black/20 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-green-400">✓</span>
-                          <span className="text-blue-400 font-medium">Trust Wallet</span>
-                          <span className="text-xs text-gray-500">(Solana + TRON)</span>
-                        </span>
-                      </div>
-
-                      {/* All Balances in One View */}
-                      <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                        <div className={`rounded px-2 py-1 ${paymentMethod === 'USDT' ? 'bg-gold-500/20 border border-gold-500/30' : 'bg-gold-500/10'}`}>
-                          <span className="text-gray-400">USDT: </span>
-                          <span className={`font-bold ${paymentMethod === 'USDT' ? (parseFloat(usdtBalance) >= usdtAmount ? 'text-green-400' : 'text-red-400') : 'text-white'}`}>
-                            {usdtBalance}
-                          </span>
-                        </div>
-                        <div className={`rounded px-2 py-1 ${paymentMethod === 'TRX' ? 'bg-red-500/20 border border-red-500/30' : 'bg-gray-500/10'}`}>
-                          <span className="text-gray-400">TRX: </span>
-                          <span className={`font-bold ${paymentMethod === 'TRX' ? (parseFloat(trxBalance) >= trxAmountNeeded ? 'text-green-400' : 'text-red-400') : 'text-white'}`}>
-                            {trxBalance}
-                          </span>
-                        </div>
-                        <div className="bg-green-500/10 rounded px-2 py-1">
-                          <span className="text-gray-400">TAKARA: </span>
-                          <span className={`font-bold ${takaraBalance >= (calculation.investment.requiredTAKARA || 0) ? 'text-green-400' : 'text-red-400'}`}>
-                            {takaraBalance.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="bg-purple-500/10 rounded px-2 py-1">
-                          <span className="text-gray-400">LAIKA: </span>
-                          <span className={`font-bold ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
-                            {laikaBalance.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Addresses */}
-                      <div className="text-xs text-gray-500 space-y-1 pt-2 border-t border-gray-700">
-                        <div className="flex justify-between">
-                          <span>Solana:</span>
-                          <span className="font-mono">{publicKey?.toBase58().slice(0, 6)}...{publicKey?.toBase58().slice(-4)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>TRON:</span>
-                          <span className="font-mono">{tronAddress?.slice(0, 6)}...{tronAddress?.slice(-4)}</span>
-                        </div>
-                      </div>
-
-                      {/* Balance Warnings */}
-                      {paymentMethod === 'USDT' && parseFloat(usdtBalance) < usdtAmount && (
-                        <div className="text-xs text-red-400 mt-2">
-                          ⚠️ Insufficient USDT! Need {usdtAmount}, have {usdtBalance}
-                        </div>
-                      )}
-                      {paymentMethod === 'TRX' && parseFloat(trxBalance) < trxAmountNeeded && (
-                        <div className="text-xs text-red-400 mt-2">
-                          ⚠️ Insufficient TRX! Need {trxAmountNeeded.toFixed(2)}, have {trxBalance}
-                        </div>
-                      )}
-                      {calculation.investment.requiredTAKARA > 0 && takaraBalance < calculation.investment.requiredTAKARA && (
-                        <div className="text-xs text-red-400 mt-2">
-                          ⚠️ Insufficient TAKARA! Need {calculation.investment.requiredTAKARA}, have {takaraBalance}
-                        </div>
-                      )}
-                      {laikaAmount > 0 && laikaBalance < laikaAmount && (
-                        <div className="text-xs text-red-400 mt-2">
-                          ⚠️ Insufficient LAIKA! Need {laikaAmount}, have {laikaBalance}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Separate Wallets View */
-                    <div className="space-y-3">
-                      {/* TRON Wallet */}
+                  <div className="space-y-3">
+                    {/* Trust Wallet (for USDT) */}
+                    {paymentMethod === 'USDT' && evmConnected && (
                       <div className="bg-black/20 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-green-400">✓</span>
-                            TronLink (TRON)
-                          </span>
-                          <span className="text-xs text-gray-500 font-mono">
-                            {tronAddress?.slice(0, 6)}...{tronAddress?.slice(-4)}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          <span className="text-sm text-gray-300">Trust Wallet</span>
+                          <span className="text-xs text-gray-500">{evmAddress?.slice(0, 6)}...{evmAddress?.slice(-4)}</span>
+                        </div>
+                        <div className="bg-blue-500/10 rounded px-2 py-1 inline-block">
+                          <span className="text-gray-400 text-sm">USDT: </span>
+                          <span className={`font-bold text-sm ${evmUsdtBalance >= usdtAmount ? 'text-green-400' : 'text-red-400'}`}>
+                            {evmUsdtBalance.toFixed(2)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className={`rounded px-2 py-1 ${paymentMethod === 'USDT' ? 'bg-gold-500/20 border border-gold-500/30' : 'bg-gold-500/10'}`}>
-                            <span className="text-gray-400">USDT: </span>
-                            <span className={`font-bold ${paymentMethod === 'USDT' ? (parseFloat(usdtBalance) >= usdtAmount ? 'text-green-400' : 'text-red-400') : 'text-white'}`}>
-                              {usdtBalance}
-                            </span>
-                          </div>
-                          <div className={`rounded px-2 py-1 ${paymentMethod === 'TRX' ? 'bg-red-500/20 border border-red-500/30' : 'bg-gray-500/10'}`}>
-                            <span className="text-gray-400">TRX: </span>
-                            <span className={`font-bold ${paymentMethod === 'TRX' ? (parseFloat(trxBalance) >= trxAmountNeeded ? 'text-green-400' : 'text-red-400') : 'text-white'}`}>
-                              {trxBalance}
-                            </span>
-                          </div>
-                        </div>
-                        {paymentMethod === 'USDT' && parseFloat(usdtBalance) < usdtAmount && (
+                        {hasInsufficientUSDT && (
                           <div className="text-xs text-red-400 mt-2">
-                            ⚠️ Insufficient USDT! Need {usdtAmount}, have {usdtBalance}
-                          </div>
-                        )}
-                        {paymentMethod === 'TRX' && parseFloat(trxBalance) < trxAmountNeeded && (
-                          <div className="text-xs text-red-400 mt-2">
-                            ⚠️ Insufficient TRX! Need {trxAmountNeeded.toFixed(2)}, have {trxBalance}
+                            Insufficient USDT! Need ${usdtAmount.toLocaleString()}, have ${evmUsdtBalance.toFixed(2)}
                           </div>
                         )}
                       </div>
+                    )}
 
-                      {/* Solana Wallet */}
-                      {publicKey && (
-                        <div className="bg-black/20 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-300 flex items-center gap-2">
-                              <span className="text-green-400">✓</span>
-                              Phantom (Solana)
-                            </span>
-                            <span className="text-xs text-gray-500 font-mono">
-                              {publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}
+                    {/* Phantom (for TAKARA/LAIKA) */}
+                    {publicKey && needsPhantom && (
+                      <div className="bg-black/20 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                          <span className="text-sm text-gray-300">Phantom</span>
+                          <span className="text-xs text-gray-500">{publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}</span>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <div className="bg-green-500/10 rounded px-2 py-1">
+                            <span className="text-gray-400 text-sm">TAKARA: </span>
+                            <span className={`font-bold text-sm ${takaraBalance >= takaraRequired ? 'text-green-400' : 'text-red-400'}`}>
+                              {takaraBalance.toLocaleString()}
                             </span>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 text-sm">
-                            <div className="bg-green-500/10 rounded px-2 py-1">
-                              <span className="text-gray-400">TAKARA: </span>
-                              <span className={`font-bold ${takaraBalance >= (calculation.investment.requiredTAKARA || 0) ? 'text-green-400' : 'text-red-400'}`}>
-                                {takaraBalance.toLocaleString()}
-                              </span>
-                            </div>
+                          {laikaAmount > 0 && (
                             <div className="bg-purple-500/10 rounded px-2 py-1">
-                              <span className="text-gray-400">LAIKA: </span>
-                              <span className={`font-bold ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
+                              <span className="text-gray-400 text-sm">LAIKA: </span>
+                              <span className={`font-bold text-sm ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
                                 {laikaBalance.toLocaleString()}
                               </span>
                             </div>
-                            <div className="bg-gray-500/10 rounded px-2 py-1">
-                              <span className="text-gray-400">SOL: </span>
-                              <span className="text-white font-bold">{solBalance.toFixed(4)}</span>
-                            </div>
+                          )}
+                          <div className="bg-gray-500/10 rounded px-2 py-1">
+                            <span className="text-gray-400 text-sm">SOL: </span>
+                            <span className="text-white text-sm font-bold">{solBalance.toFixed(4)}</span>
                           </div>
-                          {calculation.investment.requiredTAKARA > 0 && takaraBalance < calculation.investment.requiredTAKARA && (
-                            <div className="text-xs text-red-400 mt-2">
-                              ⚠️ Insufficient TAKARA! Need {calculation.investment.requiredTAKARA}, have {takaraBalance}
-                            </div>
-                          )}
-                          {laikaAmount > 0 && laikaBalance < laikaAmount && (
-                            <div className="text-xs text-red-400 mt-2">
-                              ⚠️ Insufficient LAIKA! Need {laikaAmount}, have {laikaBalance}
-                            </div>
-                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        {hasInsufficientTAKARA && (
+                          <div className="text-xs text-red-400 mt-2">
+                            Insufficient TAKARA! Need {takaraRequired.toLocaleString()}, have {takaraBalance.toLocaleString()}
+                          </div>
+                        )}
+                        {hasInsufficientLAIKA && (
+                          <div className="text-xs text-red-400 mt-2">
+                            Insufficient LAIKA! Need {laikaAmount.toLocaleString()}, have {laikaBalance.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
+              {/* Investment Summary */}
               <div className="bg-background-elevated rounded-lg p-4 space-y-3">
                 <h3 className="text-lg font-semibold text-white">Investment Summary</h3>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm text-gray-400">Vault</div>
@@ -555,9 +468,12 @@ export default function InvestmentModal({
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">USDT Amount</div>
+                    <div className="text-sm text-gray-400">Investment</div>
                     <div className="text-white font-medium">
-                      ${usdtAmount.toLocaleString()}
+                      {paymentMethod === 'USDT'
+                        ? `$${usdtAmount.toLocaleString()} USDT`
+                        : `${takaraRequired.toLocaleString()} TAKARA`
+                      }
                     </div>
                   </div>
                   <div>
@@ -569,45 +485,7 @@ export default function InvestmentModal({
                 </div>
               </div>
 
-              {calculation.investment.requiredTAKARA > 0 && (
-                <div className="bg-green-900/10 border border-green-900/30 rounded-lg p-4">
-                  <div className="text-sm text-green-400 font-medium mb-2">
-                    TAKARA Required
-                  </div>
-                  <div className="text-white font-semibold">
-                    {calculation.investment.requiredTAKARA.toLocaleString()} TAKARA
-                  </div>
-                </div>
-              )}
-
-              {laikaAmount > 0 && (
-                <div className="bg-gradient-laika/10 border border-laika-purple/30 rounded-lg p-4">
-                  <div className="text-sm text-laika-purple font-medium mb-2">
-                    🚀 LAIKA Boost
-                  </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs text-gray-400">LAIKA Amount</div>
-                        <div className="text-white font-semibold">
-                          {laikaAmount.toLocaleString()} LAIKA
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400">Boost APY</div>
-                        <div className="text-laika-green font-semibold">
-                          +{calculation.earnings.laikaBoostAPY}%
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-gray-400 italic">
-                      💡 LAIKA tokens will be returned at the end of your vault term
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              {/* Expected Returns */}
               <div className="bg-gold-500/10 border border-gold-500/30 rounded-lg p-4">
                 <h4 className="text-sm text-gray-400 mb-3">Expected Returns</h4>
                 <div className="space-y-2">
@@ -632,47 +510,17 @@ export default function InvestmentModal({
                 </div>
               </div>
 
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <div className="text-sm text-blue-400 space-y-2">
-                  <div>
-                    <strong>📊 Vault Activation Process:</strong>
-                  </div>
-                  <div className="pl-4 space-y-1">
-                    <div>• Vault must reach its target capacity to activate</div>
-                    <div>• Earnings start accruing after activation</div>
-                    <div>• Payouts according to vault schedule</div>
-                  </div>
-                </div>
-              </div>
-
-              {(() => {
-                const hasInsufficientUSDT = paymentMethod === 'USDT' && parseFloat(usdtBalance) < usdtAmount
-                const hasInsufficientTRX = paymentMethod === 'TRX' && parseFloat(trxBalance) < trxAmountNeeded
-                const hasInsufficientTAKARA = calculation.investment.requiredTAKARA > 0 && takaraBalance < calculation.investment.requiredTAKARA
-                const hasInsufficientLAIKA = laikaAmount > 0 && laikaBalance < laikaAmount
-                const walletsNotConnected = !tronConnected || (calculation.investment.requiredTAKARA > 0 && !publicKey)
-                const isDisabled = investMutation.isPending || walletsNotConnected || hasInsufficientUSDT || hasInsufficientTRX || hasInsufficientTAKARA || hasInsufficientLAIKA
-
-                let buttonText = `Proceed to Transfer (${paymentMethod})`
-                if (walletsNotConnected) buttonText = 'Connect Required Wallets First'
-                else if (hasInsufficientUSDT) buttonText = 'Insufficient USDT Balance'
-                else if (hasInsufficientTRX) buttonText = 'Insufficient TRX Balance'
-                else if (hasInsufficientTAKARA) buttonText = 'Insufficient TAKARA Balance'
-                else if (hasInsufficientLAIKA) buttonText = 'Insufficient LAIKA Balance'
-
-                return (
-                  <button
-                    onClick={handleInvest}
-                    disabled={isDisabled}
-                    className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
-                      isDisabled ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'btn-gold'
-                    }`}
-                  >
-                    {buttonText}
-                    {!isDisabled && <ArrowRight className="h-5 w-5" />}
-                  </button>
-                )
-              })()}
+              {/* Submit Button */}
+              <button
+                onClick={handleInvest}
+                disabled={isDisabled}
+                className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
+                  isDisabled ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'btn-gold'
+                }`}
+              >
+                {buttonText}
+                {!isDisabled && <ArrowRight className="h-5 w-5" />}
+              </button>
             </div>
           )}
 
@@ -701,16 +549,11 @@ export default function InvestmentModal({
                 {txSignature && (
                   <div className="bg-background-elevated rounded-lg p-4 mb-4">
                     <div className="text-sm text-gray-400 mb-2">
-                      {paymentMethod === 'TRX' ? 'TRX' : 'USDT'} Transaction Hash (TRON)
+                      Transaction Signature
                     </div>
-                    <a
-                      href={`https://tronscan.org/#/transaction/${txSignature}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${paymentMethod === 'TRX' ? 'text-red-400 hover:text-red-300' : 'text-gold-500 hover:text-gold-400'} text-sm break-all`}
-                    >
+                    <span className="text-green-400 text-sm break-all">
                       {txSignature}
-                    </a>
+                    </span>
                   </div>
                 )}
               </div>

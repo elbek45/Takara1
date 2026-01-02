@@ -24,21 +24,35 @@ export async function processPayoutDistribution(): Promise<void> {
     const now = new Date();
 
     // Get active investments that are due for payout
+    // Skip investments listed on marketplace (they shouldn't receive payouts while listed)
     const dueInvestments = await prisma.investment.findMany({
       where: {
         status: 'ACTIVE',
         nextPayoutDate: {
           lte: now
+        },
+        marketplaceListing: {
+          is: null // No active listing
         }
       },
       include: {
-        vault: true
+        vault: true,
+        marketplaceListing: true // Include to double-check
       }
     });
 
-    logger.info({ count: dueInvestments.length }, 'Investments due for payout');
+    // Filter out any investments with active marketplace listings
+    const eligibleInvestments = dueInvestments.filter(
+      inv => !inv.marketplaceListing || inv.marketplaceListing.status !== 'ACTIVE'
+    );
 
-    if (dueInvestments.length === 0) {
+    logger.info({
+      total: dueInvestments.length,
+      eligible: eligibleInvestments.length,
+      skippedDueToListing: dueInvestments.length - eligibleInvestments.length
+    }, 'Investments due for payout');
+
+    if (eligibleInvestments.length === 0) {
       logger.info('No payouts due');
       return;
     }
@@ -47,7 +61,7 @@ export async function processPayoutDistribution(): Promise<void> {
     let totalDistributed = 0;
 
     // Process each investment
-    for (const investment of dueInvestments) {
+    for (const investment of eligibleInvestments) {
       try {
         // Calculate pending earnings since last claim
         const pendingEarnings = calculatePendingEarnings(
@@ -109,9 +123,10 @@ export async function processPayoutDistribution(): Promise<void> {
     }
 
     logger.info({
-      total: dueInvestments.length,
+      total: eligibleInvestments.length,
       processed: processedCount,
-      totalDistributed: Number(totalDistributed.toFixed(2))
+      totalDistributed: Number(totalDistributed.toFixed(2)),
+      skippedDueToListing: dueInvestments.length - eligibleInvestments.length
     }, 'Payout distribution completed');
   } catch (error) {
     logger.error({ error }, 'Payout distribution job failed');

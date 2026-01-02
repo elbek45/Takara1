@@ -302,22 +302,42 @@ export default function VaultsPage() {
                   </div>
                 </div>
 
-                {/* Active Investments */}
-                <div className="mb-6">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-400">Active Investments</span>
-                    <span className="text-white font-medium">{vault.activeInvestments}</span>
+                {/* Mining Status */}
+                <div className="mb-6 p-4 bg-background-elevated rounded-lg border border-gold-500/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-400">Mining Status</span>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                      vault.isMining
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {vault.isMining ? '⛏️ Mining Active' : '📊 Collecting'}
+                    </span>
                   </div>
-                  <div className="h-2 bg-background-elevated rounded-full overflow-hidden">
+                  <div className="relative h-3 bg-navy-900 rounded-full overflow-hidden mb-2">
                     <div
-                      className="h-full bg-gradient-gold"
+                      className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
                       style={{
-                        width: vault.totalCapacity
-                          ? `${(vault.currentFilled / vault.totalCapacity) * 100}%`
-                          : '0%',
+                        width: `${Math.min((Number(vault.currentFilled || 0) / Number(vault.miningThreshold || 100000)) * 100, 100)}%`,
+                        background: vault.isMining
+                          ? 'linear-gradient(90deg, #FFD700, #22c55e)'
+                          : 'linear-gradient(90deg, #FFD700, #FFC000)'
                       }}
-                    ></div>
+                    />
                   </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">
+                      ${Number(vault.currentFilled || 0).toLocaleString()} collected
+                    </span>
+                    <span className="text-gold-400 font-medium">
+                      ${Number(vault.miningThreshold || 100000).toLocaleString()} threshold
+                    </span>
+                  </div>
+                  {!vault.isMining && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Mining starts when deposits reach the threshold
+                    </p>
+                  )}
                 </div>
 
                 {/* CTA */}

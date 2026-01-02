@@ -22,7 +22,7 @@ const prisma = new PrismaClient();
 const logger = getLogger('tax-service');
 
 const TAX_RATE = 5.0; // 5%
-const TREASURY_WALLET = process.env.TREASURY_WALLET_ADDRESS || process.env.PLATFORM_WALLET_ADDRESS;
+const TREASURY_WALLET = process.env.TREASURY_WALLET_ADDRESS || process.env.PLATFORM_WALLET_ADDRESS || process.env.PLATFORM_WALLET;
 
 export interface TaxCalculation {
   amountBeforeTax: number;
@@ -58,6 +58,12 @@ export async function recordTax(params: {
   txSignature?: string;
 }): Promise<void> {
   try {
+    // Validate treasury wallet is configured
+    if (!TREASURY_WALLET) {
+      logger.error('TREASURY_WALLET not configured - check env variables');
+      throw new Error('Treasury wallet not configured');
+    }
+
     await prisma.taxRecord.create({
       data: {
         sourceType: params.sourceType,
@@ -69,7 +75,7 @@ export async function recordTax(params: {
         taxAmount: params.calculation.taxAmount,
         amountAfterTax: params.calculation.amountAfterTax,
         txSignature: params.txSignature || null,
-        treasuryWallet: TREASURY_WALLET!
+        treasuryWallet: TREASURY_WALLET
       }
     });
 

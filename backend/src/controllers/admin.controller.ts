@@ -514,7 +514,7 @@ export async function processWithdrawal(req: Request, res: Response): Promise<vo
         message: 'Withdrawal approved and processed',
         data: {
           withdrawalId: id,
-          txSignature,
+          txSignature: actualTxSignature || txSignature,
           amount: Number(withdrawal.amount),
           tokenType: withdrawal.tokenType
         }
@@ -630,21 +630,56 @@ export async function getMiningStats(req: Request, res: Response): Promise<void>
       orderBy: { date: 'asc' }
     });
 
-    // Get top miners
+    // Get top miners with user details (order by pending + claimed TAKARA)
     const topMiners = await prisma.investment.findMany({
       where: { status: 'ACTIVE' },
-      orderBy: { totalMinedTAKARA: 'desc' },
+      orderBy: { pendingTAKARA: 'desc' }, // pendingTAKARA accumulates until claimed
       take: 10,
       include: {
         user: {
           select: {
+            id: true,
             walletAddress: true,
-            username: true
+            username: true,
+            _count: {
+              select: { investments: true }
+            }
           }
         },
         vault: {
           select: {
-            name: true
+            name: true,
+            baseTakaraAPY: true
+          }
+        }
+      }
+    });
+
+    // Get mining by vault (include both active vaults and mining vaults)
+    const vaultStats = await prisma.vault.findMany({
+      where: {
+        OR: [
+          { isActive: true },
+          { isMining: true }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        baseTakaraAPY: true,
+        investments: {
+          where: { status: 'ACTIVE' },
+          select: {
+            pendingTAKARA: true,
+            totalMinedTAKARA: true,
+            usdtAmount: true
+          }
+        },
+        _count: {
+          select: {
+            investments: {
+              where: { status: 'ACTIVE' }
+            }
           }
         }
       }
@@ -652,35 +687,388 @@ export async function getMiningStats(req: Request, res: Response): Promise<void>
 
     const TOTAL_SUPPLY = TAKARA_CONFIG.TOTAL_SUPPLY; // 21M TAKARA
     const totalMined = latestStats ? Number(latestStats.totalMined) : 0;
-    const percentMined = (totalMined / TOTAL_SUPPLY) * 100;
+    const activeMiners = latestStats ? latestStats.activeMiners : 0;
+
+    // Calculate total mining power (sum of all active investments USDT amounts)
+    const totalMiningPower = vaultStats.reduce((sum, vault) => {
+      return sum + vault.investments.reduce((vSum, inv) => vSum + Number(inv.usdtAmount), 0);
+    }, 0);
+
+    // Calculate average daily mining from historical data
+    const averageDailyMining = historicalStats.length > 1
+      ? historicalStats.reduce((sum, stat, index, arr) => {
+          if (index === 0) return 0;
+          const dailyMined = Number(stat.totalMined) - Number(arr[index - 1].totalMined);
+          return sum + dailyMined;
+        }, 0) / (historicalStats.length - 1)
+      : 0;
+
+    // Format by vault data (include pending + claimed TAKARA)
+    const byVault = vaultStats.map(vault => ({
+      vaultId: vault.id,
+      vaultName: vault.name,
+      activeInvestments: vault._count.investments,
+      totalMined: vault.investments.reduce((sum, inv) => sum + Number(inv.pendingTAKARA) + Number(inv.totalMinedTAKARA), 0),
+      totalMiningPower: vault.investments.reduce((sum, inv) => sum + Number(inv.usdtAmount), 0)
+    }));
 
     res.json({
       success: true,
       data: {
-        current: {
-          totalMined,
-          totalSupply: TOTAL_SUPPLY,
-          percentMined: Number(percentMined.toFixed(4)),
-          remaining: TOTAL_SUPPLY - totalMined,
-          currentDifficulty: latestStats ? Number(latestStats.currentDifficulty) : 1.0,
-          activeMiners: latestStats ? latestStats.activeMiners : 0
-        },
+        // Flat structure for frontend
+        totalMined,
+        totalMiningPower,
+        activeMiners,
+        averageDailyMining: Number(averageDailyMining.toFixed(2)),
+        totalSupply: TOTAL_SUPPLY,
+        percentMined: Number(((totalMined / TOTAL_SUPPLY) * 100).toFixed(4)),
+        remaining: TOTAL_SUPPLY - totalMined,
+        currentDifficulty: latestStats ? Number(latestStats.currentDifficulty) : 1.0,
+        // By vault breakdown
+        byVault,
+        // Top miners with expected fields (use pendingTAKARA + totalMinedTAKARA)
+        topMiners: topMiners.map(miner => ({
+          userId: miner.user.id,
+          username: miner.user.username || 'Anonymous',
+          wallet: miner.user.walletAddress || '',
+          totalMined: Number(miner.pendingTAKARA) + Number(miner.totalMinedTAKARA),
+          takaraAPY: Number(miner.vault.baseTakaraAPY),
+          investments: miner.user._count.investments
+        })),
+        // Historical data
         history: historicalStats.map(stat => ({
           date: stat.date,
           totalMined: Number(stat.totalMined),
           difficulty: Number(stat.currentDifficulty),
           activeMiners: stat.activeMiners
-        })),
-        topMiners: topMiners.map(miner => ({
-          user: miner.user.username || (miner.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
-          vault: miner.vault.name,
-          totalMined: Number(miner.totalMinedTAKARA),
-          investment: Number(miner.usdtAmount)
         }))
       }
     });
   } catch (error) {
     logger.error({ error }, 'Failed to get mining stats');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * POST /api/admin/jobs/run
+ * Manually run a background job (TEST_MODE only)
+ */
+export async function runJob(req: Request, res: Response): Promise<void> {
+  try {
+    const { jobName } = req.body;
+
+    if (!jobName) {
+      res.status(400).json({
+        success: false,
+        message: 'Job name is required'
+      });
+      return;
+    }
+
+    // Only allow in TEST_MODE
+    if (process.env.TEST_MODE !== 'true') {
+      res.status(403).json({
+        success: false,
+        message: 'Manual job execution is only available in TEST_MODE'
+      });
+      return;
+    }
+
+    const { runJobManually } = await import('../jobs/scheduler');
+    await runJobManually(jobName);
+
+    logger.info({ jobName }, 'Manual job execution completed');
+
+    res.json({
+      success: true,
+      message: `Job '${jobName}' executed successfully`,
+      data: {
+        jobName,
+        executedAt: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error, jobName: req.body.jobName }, 'Failed to run job manually');
+    res.status(500).json({
+      success: false,
+      message: error.message || ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * GET /api/admin/jobs/status
+ * Get job scheduler status
+ */
+export async function getJobStatus(req: Request, res: Response): Promise<void> {
+  try {
+    const { getJobStatus: getStatus } = await import('../jobs/scheduler');
+    const status = getStatus();
+
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get job status');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * GET /api/admin/instant-sales
+ * Get all investments with instant sale enabled
+ */
+export async function getInstantSaleListings(req: Request, res: Response): Promise<void> {
+  try {
+    const listings = await prisma.investment.findMany({
+      where: {
+        isInstantSaleEnabled: true,
+        status: 'ACTIVE',
+        instantSalePrice: {
+          not: null
+        }
+      },
+      include: {
+        vault: true,
+        user: {
+          select: {
+            id: true,
+            walletAddress: true,
+            tronAddress: true,
+            username: true
+          }
+        },
+        takaraBoost: true,
+        laikaBoost: true
+      },
+      orderBy: {
+        instantSalePrice: 'asc' // Cheapest first
+      }
+    });
+
+    const listingsData = listings.map(inv => ({
+      id: inv.id,
+      user: inv.user.username || (inv.user.walletAddress?.slice(0, 8) + '...' || 'N/A'),
+      userWallet: inv.user.walletAddress || 'N/A',
+      userTronAddress: inv.user.tronAddress || 'N/A',
+      vault: inv.vault.name,
+      vaultTier: inv.vault.tier,
+      usdtAmount: Number(inv.usdtAmount),
+      finalAPY: Number(inv.finalAPY),
+      instantSalePrice: Number(inv.instantSalePrice),
+      discount: 20, // 20% discount
+      totalEarnedUSDT: Number(inv.totalEarnedUSDT),
+      totalMinedTAKARA: Number(inv.totalMinedTAKARA),
+      hasLaikaBoost: !!inv.laikaBoost,
+      hasTakaraBoost: !!inv.takaraBoost,
+      createdAt: inv.createdAt
+    }));
+
+    res.json({
+      success: true,
+      data: listingsData
+    });
+  } catch (error) {
+    logger.error({ error }, 'Failed to get instant sale listings');
+    res.status(500).json({
+      success: false,
+      message: ERROR_MESSAGES.INTERNAL_ERROR
+    });
+  }
+}
+
+/**
+ * POST /api/admin/instant-sales/:id/purchase
+ * Admin purchases an investment via instant sale
+ */
+export async function purchaseInstantSale(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const adminId = (req as AdminRequest).adminId!;
+
+    // Get investment with instant sale enabled
+    const investment = await prisma.investment.findFirst({
+      where: {
+        id,
+        isInstantSaleEnabled: true,
+        status: 'ACTIVE',
+        instantSalePrice: { not: null }
+      },
+      include: {
+        user: true,
+        vault: true,
+        takaraBoost: true,
+        laikaBoost: true
+      }
+    });
+
+    if (!investment) {
+      res.status(404).json({
+        success: false,
+        message: 'Investment not found or instant sale not enabled'
+      });
+      return;
+    }
+
+    const salePrice = Number(investment.instantSalePrice);
+    const userId = investment.userId;
+
+    // Apply 5% tax on WEXEL sale
+    let taxAmount = 0;
+    let sellerReceives = salePrice;
+
+    try {
+      const { applyWexelSaleTax } = await import('../services/tax.service');
+      const taxResult = await applyWexelSaleTax({
+        userId,
+        investmentId: id,
+        salePrice
+      });
+
+      taxAmount = taxResult.taxAmount;
+      sellerReceives = taxResult.amountAfterTax;
+
+      logger.info({
+        investmentId: id,
+        salePrice,
+        taxAmount,
+        sellerReceives
+      }, 'WEXEL sale tax applied');
+    } catch (taxError: any) {
+      logger.error({
+        error: taxError,
+        investmentId: id
+      }, 'Failed to apply WEXEL sale tax');
+
+      res.status(500).json({
+        success: false,
+        message: `Tax application failed: ${taxError?.message || 'Unknown error'}`
+      });
+      return;
+    }
+
+    // Return TAKARA boost if exists
+    if (investment.takaraBoost && !investment.takaraBoost.isReturned) {
+      try {
+        const { returnTakaraBoost } = await import('../services/takaraBoost.service');
+        if (investment.user.walletAddress) {
+          await returnTakaraBoost({
+            investmentId: id,
+            userWallet: investment.user.walletAddress
+          });
+          logger.info({ investmentId: id }, 'TAKARA boost returned during instant sale');
+        }
+      } catch (error) {
+        logger.error({ error }, 'Failed to return TAKARA boost during instant sale');
+        // Continue with sale even if boost return fails
+      }
+    }
+
+    // Return LAIKA boost if exists
+    if (investment.laikaBoost && !investment.laikaBoost.isReturned) {
+      try {
+        const laikaAmount = Number(investment.laikaBoost.laikaAmount);
+        const ownerWallet = investment.user.walletAddress || '';
+
+        // Mark as returned (actual transfer handled by job or manual process)
+        const txSignature = `laika_instant_sale_${Date.now()}_${id}`;
+
+        await prisma.laikaBoost.update({
+          where: { id: investment.laikaBoost.id },
+          data: {
+            isReturned: true,
+            returnDate: new Date(),
+            returnTxSignature: txSignature
+          }
+        });
+
+        // Record transaction
+        await prisma.transaction.create({
+          data: {
+            investmentId: id,
+            type: 'LAIKA_RETURN',
+            amount: laikaAmount,
+            tokenType: 'LAIKA',
+            txSignature,
+            fromAddress: process.env.PLATFORM_WALLET_ADDRESS || '',
+            toAddress: ownerWallet,
+            status: 'CONFIRMED',
+            description: `LAIKA boost return on instant sale`,
+            metadata: {
+              investmentId: id,
+              reason: 'instant_sale'
+            }
+          }
+        });
+
+        logger.info({
+          investmentId: id,
+          laikaAmount,
+          ownerWallet
+        }, 'LAIKA boost returned during instant sale');
+      } catch (error) {
+        logger.error({ error }, 'Failed to return LAIKA boost during instant sale');
+        // Continue with sale even if boost return fails
+      }
+    }
+
+    // Note: Admin needs to manually transfer USDT to seller
+    // The system tracks the sale and seller wallet for manual processing
+    logger.info({
+      investmentId: id,
+      sellerWallet: investment.user.tronAddress || investment.user.walletAddress,
+      amountToTransfer: sellerReceives
+    }, 'Instant sale completed - manual USDT transfer required');
+
+    // Update investment status
+    await prisma.investment.update({
+      where: { id },
+      data: {
+        status: 'SOLD',
+        isInstantSaleEnabled: false
+      }
+    });
+
+    // Update user stats
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        totalEarnedUSDT: {
+          increment: sellerReceives
+        }
+      }
+    });
+
+    logger.info({
+      investmentId: id,
+      adminId,
+      salePrice,
+      taxAmount,
+      sellerReceives
+    }, 'Admin purchased investment via instant sale');
+
+    res.json({
+      success: true,
+      message: 'Investment purchased via instant sale. Please transfer USDT manually to seller.',
+      data: {
+        investmentId: id,
+        salePrice,
+        taxAmount,
+        sellerReceived: sellerReceives,
+        sellerWallet: investment.user.tronAddress || investment.user.walletAddress || 'N/A',
+        manualTransferRequired: true
+      }
+    });
+  } catch (error) {
+    logger.error({ error, investmentId: req.params.id }, 'Failed to purchase instant sale');
     res.status(500).json({
       success: false,
       message: ERROR_MESSAGES.INTERNAL_ERROR
@@ -695,5 +1083,9 @@ export default {
   getWithdrawals,
   processWithdrawal,
   toggleVaultStatus,
-  getMiningStats
+  getMiningStats,
+  runJob,
+  getJobStatus,
+  getInstantSaleListings,
+  purchaseInstantSale
 };

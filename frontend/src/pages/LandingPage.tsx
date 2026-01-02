@@ -7,10 +7,6 @@ import { api } from '../services/api'
 
 // Gold color constant for inline styles
 const GOLD = '#FFD700'
-const GOLD_DARK = '#FFC000'
-
-// Mining threshold - starts when vault reaches this amount
-const MINING_THRESHOLD = 100000
 
 export default function LandingPage() {
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null)
@@ -24,21 +20,23 @@ export default function LandingPage() {
 
   const vaults = vaultsData?.data || []
 
-  // Calculate total funded amount across all vaults
-  const totalFunded = vaults.reduce((sum: number, vault: any) => sum + (vault.currentFilled || 0), 0)
-  const fundingProgress = Math.min((totalFunded / MINING_THRESHOLD) * 100, 100)
-  const isMiningActive = totalFunded >= MINING_THRESHOLD
-
   // Group vaults by tier and get max APY for each tier
   const getTierStats = (tier: string) => {
     const tierVaults = vaults.filter((v: any) => v.tier === tier)
     if (tierVaults.length === 0) return null
 
     const maxBaseAPY = Math.max(...tierVaults.map((v: any) => v.maxAPY || v.baseAPY || 0))
-    const maxTakaraAPY = Math.max(...tierVaults.map((v: any) => v.takaraAPY || 0))
-    const minDeposit = Math.min(...tierVaults.map((v: any) => v.minDeposit || 0))
+    const maxTakaraAPY = Math.max(...tierVaults.map((v: any) => v.maxTakaraAPY || 0))
+    const minDeposit = Math.min(...tierVaults.map((v: any) => v.minInvestment || 0))
 
-    return { maxBaseAPY, maxTakaraAPY, minDeposit }
+    // Calculate max total returns (APY * duration / 12)
+    const maxTotalReturns = Math.max(...tierVaults.map((v: any) => {
+      const apy = v.maxAPY || v.baseAPY || 0
+      const duration = v.duration || 12
+      return Math.round(apy * duration / 12)
+    }))
+
+    return { maxBaseAPY, maxTakaraAPY, minDeposit, maxTotalReturns }
   }
 
   const starterStats = getTierStats('STARTER')
@@ -56,7 +54,7 @@ export default function LandingPage() {
         <p style={{ color: GOLD }} className="font-medium text-sm sm:text-base flex items-center justify-center gap-2">
           <span className="px-2 py-0.5 bg-gold-300/10 rounded text-xs uppercase tracking-wider">Solana Ecosystem</span>
           <span className="hidden sm:inline">|</span>
-          <span className="hidden sm:inline">Mining starts when vault reaches $100,000</span>
+          <span className="hidden sm:inline">Takara listing starts after 10,000,000 TAKARA will be mined</span>
         </p>
       </div>
 
@@ -151,64 +149,6 @@ export default function LandingPage() {
               <div className="text-3xl sm:text-4xl font-bold" style={{ color: GOLD }}>Monthly</div>
               <div className="text-sm text-gray-400 mt-1">Payouts</div>
             </div>
-          </div>
-
-          {/* Mining Progress Section */}
-          <div className="mt-12 bg-navy-800/50 rounded-2xl p-6 border border-gold-300/20 backdrop-blur-sm">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Pickaxe className="h-5 w-5" style={{ color: GOLD }} />
-                  Mining Status
-                </h3>
-                <p className="text-sm text-gray-400 mt-1">
-                  {isMiningActive
-                    ? 'Mining is active! Deposit to start earning $TKR'
-                    : `Mining starts when total deposits reach $${MINING_THRESHOLD.toLocaleString()}`
-                  }
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold" style={{ color: GOLD }}>
-                  ${totalFunded.toLocaleString()} <span className="text-sm text-gray-400">/ ${MINING_THRESHOLD.toLocaleString()}</span>
-                </div>
-                <div className="text-sm text-gray-400">
-                  {fundingProgress.toFixed(1)}% funded
-                </div>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="relative h-4 bg-navy-900 rounded-full overflow-hidden">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out"
-                style={{
-                  width: `${fundingProgress}%`,
-                  background: isMiningActive
-                    ? `linear-gradient(90deg, ${GOLD}, #22c55e)`
-                    : `linear-gradient(90deg, ${GOLD}, ${GOLD_DARK})`
-                }}
-              />
-              {/* Animated shimmer effect */}
-              <div
-                className="absolute inset-y-0 left-0 rounded-full opacity-30"
-                style={{
-                  width: `${fundingProgress}%`,
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                  animation: 'shimmer 2s infinite'
-                }}
-              />
-            </div>
-
-            {isMiningActive && (
-              <div className="mt-3 flex items-center gap-2 text-green-400 text-sm">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-                Mining Active - New $TKR mined daily
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -468,10 +408,6 @@ export default function LandingPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span style={{ color: GOLD }}>•</span>
-                      <span>Team reserves only 10% for development and operations</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span style={{ color: GOLD }}>•</span>
                       <span>No insider allocations or hidden distributions</span>
                     </div>
                   </div>
@@ -641,7 +577,7 @@ export default function LandingPage() {
                       <span style={{ color: GOLD }}>✓</span> Up to {starterStats?.maxBaseAPY || 16}% USDT APY
                     </p>
                     <p className="flex items-center gap-2">
-                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                      <span style={{ color: GOLD }}>✓</span> Up to {starterStats?.maxTotalReturns || 18}% Total Returns
                     </p>
                     <p className="flex items-center gap-2">
                       <span className="text-blue-400">⚡</span> Up to {starterStats?.maxTakaraAPY || 300}% Takara APY
@@ -663,7 +599,7 @@ export default function LandingPage() {
                       <span style={{ color: GOLD }}>✓</span> Up to {proStats?.maxBaseAPY || 18}% USDT APY
                     </p>
                     <p className="flex items-center gap-2">
-                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                      <span style={{ color: GOLD }}>✓</span> Up to {proStats?.maxTotalReturns || 24}% Total Returns
                     </p>
                     <p className="flex items-center gap-2">
                       <span className="text-purple-400">⚡</span> Up to {proStats?.maxTakaraAPY || 600}% Takara APY
@@ -688,7 +624,7 @@ export default function LandingPage() {
                       <span style={{ color: GOLD }}>✓</span> Up to {eliteStats?.maxBaseAPY || 20}% USDT APY
                     </p>
                     <p className="flex items-center gap-2">
-                      <span style={{ color: GOLD }}>✓</span> Up to 60% Total Returns
+                      <span style={{ color: GOLD }}>✓</span> Up to {eliteStats?.maxTotalReturns || 60}% Total Returns
                     </p>
                     <p className="flex items-center gap-2">
                       <span style={{ color: GOLD }}>⚡</span> Up to {eliteStats?.maxTakaraAPY || 1000}% Takara APY

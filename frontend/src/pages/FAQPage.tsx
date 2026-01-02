@@ -373,7 +373,7 @@ export default function FAQPage() {
             <p className="text-sm text-gray-300 mb-2">From your Portfolio, click "List for Sale" on any active investment</p>
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• Set your price in USDT</li>
-              <li>• Platform suggests 5% markup above original</li>
+              <li>• Platform suggests price based on remaining term value</li>
               <li>• 3% platform fee deducted from sale price</li>
               <li>• Cancel listing anytime before it sells</li>
             </ul>

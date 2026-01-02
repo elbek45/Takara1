@@ -381,7 +381,7 @@ export async function createVault(req: Request, res: Response) {
       name: z.string().min(3).max(100),
       tier: z.enum(['STARTER', 'PRO', 'ELITE']),
       duration: z.number().int().positive(),
-      payoutSchedule: z.enum(['MONTHLY', 'QUARTERLY', 'END_OF_TERM']),
+      payoutSchedule: z.enum(['DAILY', 'MONTHLY', 'QUARTERLY', 'END_OF_TERM']),
       minInvestment: z.number().positive(),
       maxInvestment: z.number().positive(),
       baseAPY: z.number().min(0).max(100),
@@ -487,9 +487,13 @@ export async function updateVault(req: Request, res: Response) {
       baseAPY: z.number().min(0).max(100).optional(),
       maxAPY: z.number().min(0).max(100).optional(),
       takaraAPY: z.number().min(0).optional(),
+      baseTakaraAPY: z.number().min(0).optional(),
+      maxTakaraAPY: z.number().min(0).optional(),
       requireTAKARA: z.boolean().optional(),
       takaraRatio: z.number().min(0).optional(),
       totalCapacity: z.number().positive().optional(),
+      miningThreshold: z.number().min(0).optional(),
+      acceptedPayments: z.string().optional(),
       isActive: z.boolean().optional()
     });
 

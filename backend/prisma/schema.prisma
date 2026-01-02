@@ -34,6 +34,7 @@ model User {
   referrals         Referral[]          @relation("Referrer")
   referredBy        Referral?           @relation("Referred")
   taxRecords        TaxRecord[]         // Tax history (v2.2)
+  claimRequests     ClaimRequest[]      // Claim requests (v2.2)
 
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -77,6 +78,13 @@ model Vault {
   isActive        Boolean       @default(true)
   totalCapacity   Decimal?      @db.Decimal(20, 2) // Max total USDT
   currentFilled   Decimal       @default(0) @db.Decimal(20, 2)
+
+  // Mining Threshold (v2.3)
+  miningThreshold Decimal       @default(100000) @db.Decimal(20, 2) // Mining starts when currentFilled >= this
+  isMining        Boolean       @default(false) // True when threshold reached
+
+  // Accepted Payment Methods (v2.3) - comma-separated: USDT,TAKARA,TRX
+  acceptedPayments String       @default("USDT") // Which tokens can be used to invest
 
   // Relationships
   investments     Investment[]
@@ -122,7 +130,7 @@ model Investment {
   // Boost System (v2.2)
   laikaBoost          LaikaBoost?
   takaraBoost         TakaraBoost?        // NEW: TAKARA boost support
-  finalAPY            Decimal             @db.Decimal(5, 2) // After boost
+  finalAPY            Decimal             @db.Decimal(10, 2) // After boost (supports up to 99999999.99%)
 
   // NFT
   nftMintAddress      String?             @unique // Solana NFT mint address
@@ -152,6 +160,7 @@ model Investment {
   takaraMining        TakaraMining[]
   marketplaceListing  MarketplaceListing?
   transactions        Transaction[]
+  claimRequests       ClaimRequest[]      // Claim requests (v2.2)
 
   // Solana Transaction
   depositTxSignature  String?             // Initial deposit transaction
@@ -259,7 +268,7 @@ model TakaraMining {
 
   // Mining Details
   miningDate        DateTime      @default(now())
-  takaraAPY         Decimal       @db.Decimal(6, 2) // Takara APY from vault config (v2.2)
+  takaraAPY         Decimal       @db.Decimal(10, 2) // Takara APY from vault config (v2.2) - increased for test vaults
   difficulty        Decimal       @db.Decimal(10, 6) // Network difficulty that day
 
   // Rewards
@@ -579,6 +588,61 @@ model TreasuryBalance {
   updatedAt         DateTime      @updatedAt
 
   @@map("treasury_balance")
+}
+
+// ==================== CLAIM REQUESTS (v2.2) ====================
+
+model ClaimRequest {
+  id                String            @id @default(uuid())
+
+  // User & Investment
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  investmentId      String
+  investment        Investment        @relation(fields: [investmentId], references: [id])
+
+  // Claim Details
+  claimType         ClaimType         // USDT or TAKARA
+  amount            Decimal           @db.Decimal(20, 6)
+
+  // Tax (for TAKARA claims)
+  taxAmount         Decimal           @default(0) @db.Decimal(20, 6)
+  amountAfterTax    Decimal           @db.Decimal(20, 6)
+
+  // Status
+  status            ClaimRequestStatus @default(PENDING)
+
+  // Processing
+  processedBy       String?           // Admin ID who processed
+  processedAt       DateTime?
+  txSignature       String?           // Transaction signature after processing
+  rejectionReason   String?
+
+  // Wallet info
+  destinationWallet String            // Where to send funds
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([investmentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("claim_requests")
+}
+
+enum ClaimType {
+  USDT
+  TAKARA
+}
+
+enum ClaimRequestStatus {
+  PENDING     // Waiting for admin approval
+  APPROVED    // Approved, waiting for transfer
+  PROCESSING  // Transfer in progress
+  COMPLETED   // Successfully transferred
+  REJECTED    // Rejected by admin
+  FAILED      // Transfer failed
 }
 
 // ==================== PARTNERS (Powered By Slider) ====================

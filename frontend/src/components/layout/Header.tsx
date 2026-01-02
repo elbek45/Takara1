@@ -1,12 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, User, LogIn } from 'lucide-react'
 import { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
-import { UnifiedWalletButton, UnifiedWalletButtonCompact } from '../wallet'
-import { useTronLink } from '../../hooks/useTronLink'
+import { TrustWalletButton, TrustWalletButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -18,8 +16,6 @@ const navigation = [
 
 export default function Header() {
   const location = useLocation()
-  const { connected, disconnect: disconnectPhantom } = useWallet()
-  const { disconnect: disconnectTronLink } = useTronLink()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -37,17 +33,13 @@ export default function Header() {
     // Logout from backend (clear JWT token)
     api.logout()
 
-    // Disconnect wallets
+    // Disconnect Phantom wallet directly
     try {
-      disconnectPhantom()
+      if (window.phantom?.solana) {
+        window.phantom.solana.disconnect()
+      }
     } catch (error) {
       console.log('Phantom already disconnected')
-    }
-
-    try {
-      disconnectTronLink()
-    } catch (error) {
-      console.log('TronLink wallet already disconnected')
     }
 
     // Clear all cached data
@@ -124,9 +116,12 @@ export default function Header() {
               </button>
             )}
 
-            {/* Unified Wallet Button - Only show if authenticated */}
+            {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
-              <UnifiedWalletButton variant="primary" size="md" />
+              <div className="flex items-center gap-2">
+                <PhantomButton />
+                <TrustWalletButton variant="outline" size="md" />
+              </div>
             )}
           </div>
 
@@ -167,7 +162,7 @@ export default function Header() {
                 </Link>
               )
             })}
-            {connected && (
+            {isAuthenticated && (
               <Link
                 to="/profile"
                 className={`block px-4 py-2 rounded-lg text-base font-medium transition-colors ${
@@ -195,10 +190,11 @@ export default function Header() {
               </button>
             )}
 
-            {/* Unified Wallet Button - Only show if authenticated */}
+            {/* Wallet Buttons - Only show if authenticated */}
             {isAuthenticated && (
               <div className="pt-2 space-y-2">
-                <UnifiedWalletButtonCompact className="w-full" />
+                <PhantomButtonCompact className="w-full" />
+                <TrustWalletButtonCompact className="w-full" />
 
                 {/* Logout Button for mobile */}
                 {currentUser?.data && (

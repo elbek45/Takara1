@@ -375,6 +375,14 @@ export const adminApiService = {
   },
 
   /**
+   * Initialize TAKARA in treasury
+   */
+  initTakara: async () => {
+    const response = await adminApi.post('/admin/treasury/init-takara')
+    return response.data
+  },
+
+  /**
    * Get TAKARA pricing calculations
    */
   getTakaraPricingCalculations: async () => {
@@ -415,6 +423,72 @@ export const adminApiService = {
    */
   getLaikaPricing: async () => {
     const response = await adminApi.get('/admin/pricing/laika')
+    return response.data
+  },
+
+  // ========== Instant Sales Management (v2.2) ==========
+
+  /**
+   * Get instant sale listings
+   */
+  getInstantSales: async () => {
+    const response = await adminApi.get('/admin/instant-sales')
+    return response.data
+  },
+
+  /**
+   * Purchase instant sale (admin buys WEXEL)
+   */
+  purchaseInstantSale: async (id: string) => {
+    const response = await adminApi.post(`/admin/instant-sales/${id}/purchase`)
+    return response.data
+  },
+
+  // ========== Claim Requests Management (v2.2) ==========
+
+  /**
+   * Get claim requests
+   */
+  getClaimRequests: async (params?: {
+    page?: number
+    limit?: number
+    status?: 'PENDING' | 'APPROVED' | 'PROCESSING' | 'COMPLETED' | 'REJECTED' | 'FAILED'
+    claimType?: 'USDT' | 'TAKARA'
+    userId?: string
+  }) => {
+    const response = await adminApi.get('/admin/claims', { params })
+    return response.data
+  },
+
+  /**
+   * Get claim statistics
+   */
+  getClaimStats: async () => {
+    const response = await adminApi.get('/admin/claims/stats')
+    return response.data
+  },
+
+  /**
+   * Approve a claim request
+   */
+  approveClaim: async (id: string) => {
+    const response = await adminApi.post(`/admin/claims/${id}/approve`)
+    return response.data
+  },
+
+  /**
+   * Reject a claim request
+   */
+  rejectClaim: async (id: string, reason: string) => {
+    const response = await adminApi.post(`/admin/claims/${id}/reject`, { reason })
+    return response.data
+  },
+
+  /**
+   * Process a claim (mark as completed with tx signature)
+   */
+  processClaim: async (id: string, txSignature: string) => {
+    const response = await adminApi.post(`/admin/claims/${id}/process`, { txSignature })
     return response.data
   },
 }

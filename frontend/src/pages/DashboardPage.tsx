@@ -1,24 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
-import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../services/api'
 import { TrendingUp, DollarSign, Coins, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useClaimAll } from '../hooks/useInvestmentActions'
 
 export default function DashboardPage() {
-  const { connected } = useWallet()
+  const isAuthenticated = api.isAuthenticated()
   const { claimAllUSDT, claimAllTAKARA, isLoading: isClaimingAll } = useClaimAll()
 
   const { data: userResponse } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.getCurrentUser(),
-    enabled: connected && api.isAuthenticated(),
+    enabled: isAuthenticated,
   })
 
   const { data: investmentsResponse } = useQuery({
     queryKey: ['myInvestments'],
     queryFn: () => api.getMyInvestments(),
-    enabled: connected && api.isAuthenticated(),
+    enabled: isAuthenticated,
   })
 
   const user = userResponse?.data
@@ -44,13 +43,13 @@ export default function DashboardPage() {
     await claimAllTAKARA(investmentsWithPendingTAKARA)
   }
 
-  if (!connected) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <Wallet className="h-16 w-16 text-gray-500 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-          <p className="text-gray-400">Please connect your wallet to view your dashboard</p>
+          <h2 className="text-2xl font-bold text-white">Login Required</h2>
+          <p className="text-gray-400">Please login to view your dashboard</p>
         </div>
       </div>
     )
@@ -141,8 +140,14 @@ export default function DashboardPage() {
               {totalPendingTAKARA > 0 && (
                 <div className="bg-background-card rounded-lg p-4">
                   <div className="text-sm text-gray-400 mb-2">Claimable TAKARA</div>
-                  <div className="text-2xl font-bold text-green-400 mb-3">
+                  <div className="text-2xl font-bold text-green-400 mb-1">
                     {totalPendingTAKARA.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-yellow-500 mb-3">
+                    5% tax applied on claim ({(totalPendingTAKARA * 0.05).toFixed(2)} TAKARA)
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    You will receive: {(totalPendingTAKARA * 0.95).toFixed(2)} TAKARA
                   </div>
                   <button
                     onClick={handleClaimAllTAKARA}
@@ -185,8 +190,15 @@ export default function DashboardPage() {
                 >
                   <div className="flex flex-wrap justify-between items-start gap-4">
                     <div className="flex-1 min-w-[200px]">
-                      <div className={`tier-${investment.vaultTier.toLowerCase()} inline-block mb-2`}>
-                        {investment.vaultTier}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`tier-${investment.vaultTier.toLowerCase()} inline-block`}>
+                          {investment.vaultTier}
+                        </div>
+                        {investment.laikaBoost && (
+                          <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-full">
+                            LAIKA Boost +{investment.laikaBoost.additionalAPY}%
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-lg font-semibold text-white mb-1">
                         {investment.vaultName}

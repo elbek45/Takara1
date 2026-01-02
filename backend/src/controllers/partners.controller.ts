@@ -63,13 +63,13 @@ export async function getPartners(req: Request, res: Response) {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: partners,
     });
   } catch (error) {
     console.error('Failed to fetch partners:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch partners',
     });
@@ -87,13 +87,13 @@ export async function adminGetPartners(req: Request, res: Response) {
       orderBy: { displayOrder: 'asc' },
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: partners,
     });
   } catch (error) {
     console.error('Failed to fetch partners:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch partners',
     });
@@ -132,13 +132,13 @@ export async function adminCreatePartner(req: Request, res: Response) {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: partner,
     });
   } catch (error) {
     console.error('Failed to create partner:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create partner',
     });
@@ -172,13 +172,13 @@ export async function adminUpdatePartner(req: Request, res: Response) {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: partner,
     });
   } catch (error) {
     console.error('Failed to update partner:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update partner',
     });
@@ -210,13 +210,13 @@ export async function adminDeletePartner(req: Request, res: Response) {
 
     await prisma.partner.delete({ where: { id } });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Partner deleted successfully',
     });
   } catch (error) {
     console.error('Failed to delete partner:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete partner',
     });
@@ -237,13 +237,13 @@ export async function adminUploadPartnerLogo(req: Request, res: Response) {
 
     const url = `/uploads/partners/${req.file.filename}`;
 
-    res.json({
+    return res.json({
       success: true,
       data: { url },
     });
   } catch (error) {
     console.error('Failed to upload logo:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to upload logo',
     });
@@ -274,13 +274,13 @@ export async function adminReorderPartners(req: Request, res: Response) {
       )
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Partners reordered successfully',
     });
   } catch (error) {
     console.error('Failed to reorder partners:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to reorder partners',
     });

@@ -19,6 +19,8 @@ export enum PayoutSchedule {
 
 export enum InvestmentStatus {
   PENDING = 'PENDING',
+  PENDING_USDT = 'PENDING_USDT',     // Step 1: Waiting for USDT payment (MetaMask)
+  PENDING_TOKENS = 'PENDING_TOKENS', // Step 2: USDT paid, waiting for LAIKA/TAKARA (Phantom)
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
   WITHDRAWN = 'WITHDRAWN',
@@ -50,6 +52,9 @@ export interface Vault {
   takaraRatio?: number
   currentFilled: number
   totalCapacity?: number
+  miningThreshold?: number // Mining starts when currentFilled >= this (v2.3)
+  isMining?: boolean // True when threshold reached (v2.3)
+  acceptedPayments?: string // Comma-separated: USDT,TAKARA,TRX (v2.3)
   activeInvestments: number
 }
 
@@ -187,6 +192,7 @@ export interface User {
   id: string
   walletAddress?: string       // Solana (Phantom) - for TAKARA/LAIKA
   tronAddress?: string         // TRON (Trust Wallet) - for USDT
+  ethereumAddress?: string     // Ethereum (MetaMask) - for USDT on ETH
   username?: string
   email?: string
   totalInvested: number
@@ -194,6 +200,50 @@ export interface User {
   totalMinedTAKARA: number
   createdAt: string
   lastLoginAt?: string
+}
+
+// ==================== CLAIM REQUEST TYPES (v2.2) ====================
+
+export enum ClaimType {
+  USDT = 'USDT',
+  TAKARA = 'TAKARA',
+}
+
+export enum ClaimRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+  FAILED = 'FAILED',
+}
+
+export interface ClaimRequest {
+  id: string
+  claimType: ClaimType
+  amount: number
+  taxAmount: number
+  amountAfterTax: number
+  status: ClaimRequestStatus
+  destinationWallet: string
+  txSignature?: string
+  rejectionReason?: string
+  processedAt?: string
+  createdAt: string
+  user: {
+    id: string
+    username?: string
+    walletAddress?: string
+    tronAddress?: string
+    email?: string
+  }
+  investment: {
+    id: string
+    usdtAmount: number
+    status: InvestmentStatus
+    vaultName: string
+    vaultTier: VaultTier
+  }
 }
 
 // ==================== API RESPONSE TYPES ====================
@@ -245,7 +295,7 @@ export interface DashboardStats {
 
 // ==================== FORM TYPES ====================
 
-export type PaymentMethod = 'USDT' | 'TRX'
+export type PaymentMethod = 'TAKARA' | 'USDT'
 
 export interface CreateInvestmentInput {
   vaultId: string
@@ -256,8 +306,7 @@ export interface CreateInvestmentInput {
     laikaValueUSD: number
   }
   txSignature: string
-  paymentMethod?: PaymentMethod  // 'USDT' or 'TRX' (default: 'USDT')
-  trxAmount?: number  // If paying with TRX, this is the TRX amount
+  paymentMethod?: PaymentMethod  // 'TAKARA' or 'USDT'
 }
 
 export interface CalculateInvestmentInput {

@@ -36,18 +36,26 @@ export interface WithdrawFromTreasuryInput {
 export async function getTreasuryBalances(req: Request, res: Response): Promise<void> {
   try {
     const balances = await getAllTreasuryBalances();
+    const takaraPrice = 0.00134;
 
     logger.info({ count: balances.length }, 'Fetched treasury balances');
 
     res.json({
       success: true,
-      data: balances.map(balance => ({
-        tokenSymbol: balance.tokenSymbol,
-        balance: Number(balance.balance),
-        totalCollected: Number(balance.totalCollected),
-        totalWithdrawn: Number(balance.totalWithdrawn),
-        updatedAt: balance.updatedAt
-      }))
+      data: balances.map(balance => {
+        const balanceNum = Number(balance.balance);
+        const price = balance.tokenSymbol === 'USDT' ? 1 : takaraPrice;
+
+        return {
+          tokenSymbol: balance.tokenSymbol,
+          tokenName: balance.tokenSymbol === 'TAKARA' ? 'Takara Token' : 'Tether USD',
+          balance: balanceNum,
+          valueUSD: balanceNum * price,
+          totalCollected: Number(balance.totalCollected),
+          totalWithdrawn: Number(balance.totalWithdrawn),
+          lastUpdated: balance.updatedAt.toISOString()
+        };
+      })
     });
   } catch (error) {
     logger.error({ error }, 'Failed to get treasury balances');
@@ -115,13 +123,65 @@ export async function getStatistics(req: Request, res: Response): Promise<void> 
       filters.sourceType = sourceType as 'TAKARA_CLAIM' | 'WEXEL_SALE';
     }
 
-    const statistics = await getTaxStatistics(filters);
+    const rawStatistics = await getTaxStatistics(filters);
 
-    logger.info({ filters, resultCount: statistics.length }, 'Fetched tax statistics');
+    // TAKARA price for USD calculations
+    const takaraPrice = 0.00134;
+
+    // Transform to frontend expected format
+    let totalTaxAmount = 0;
+    let totalTaxValueUSD = 0;
+
+    // Aggregate by token
+    const byTokenMap: Record<string, { totalAmount: number; totalValueUSD: number; recordCount: number }> = {};
+    // Aggregate by source
+    const bySourceMap: Record<string, { totalAmount: number; totalValueUSD: number; recordCount: number }> = {};
+
+    for (const stat of rawStatistics) {
+      const amount = stat.totalTaxCollected || 0;
+      const price = stat.tokenSymbol === 'USDT' ? 1 : takaraPrice;
+      const valueUSD = amount * price;
+
+      totalTaxAmount += amount;
+      totalTaxValueUSD += valueUSD;
+
+      // By token
+      if (!byTokenMap[stat.tokenSymbol]) {
+        byTokenMap[stat.tokenSymbol] = { totalAmount: 0, totalValueUSD: 0, recordCount: 0 };
+      }
+      byTokenMap[stat.tokenSymbol].totalAmount += amount;
+      byTokenMap[stat.tokenSymbol].totalValueUSD += valueUSD;
+      byTokenMap[stat.tokenSymbol].recordCount += stat.count || 0;
+
+      // By source
+      if (!bySourceMap[stat.sourceType]) {
+        bySourceMap[stat.sourceType] = { totalAmount: 0, totalValueUSD: 0, recordCount: 0 };
+      }
+      bySourceMap[stat.sourceType].totalAmount += amount;
+      bySourceMap[stat.sourceType].totalValueUSD += valueUSD;
+      bySourceMap[stat.sourceType].recordCount += stat.count || 0;
+    }
+
+    const byToken = Object.entries(byTokenMap).map(([tokenSymbol, data]) => ({
+      tokenSymbol,
+      ...data
+    }));
+
+    const bySource = Object.entries(bySourceMap).map(([sourceType, data]) => ({
+      sourceType: sourceType as 'TAKARA_CLAIM' | 'WEXEL_SALE',
+      ...data
+    }));
+
+    logger.info({ filters, resultCount: rawStatistics.length }, 'Fetched tax statistics');
 
     res.json({
       success: true,
-      data: statistics
+      data: {
+        totalTaxAmount,
+        totalTaxValueUSD,
+        byToken,
+        bySource
+      }
     });
   } catch (error) {
     logger.error({ error, query: req.query }, 'Failed to get tax statistics');
@@ -195,26 +255,33 @@ export async function getTaxRecords(req: Request, res: Response): Promise<void> 
       filters: where
     }, 'Fetched tax records');
 
+    // Price for USD calculation
+    const takaraPrice = 0.00134;
+
     res.json({
       success: true,
-      data: records.map(record => ({
-        id: record.id,
-        sourceType: record.sourceType,
-        sourceId: record.sourceId,
-        user: {
-          id: record.user.id,
-          username: record.user.username,
-          walletAddress: record.user.walletAddress
-        },
-        tokenSymbol: record.tokenSymbol,
-        amountBeforeTax: Number(record.amountBeforeTax),
-        taxPercent: Number(record.taxPercent),
-        taxAmount: Number(record.taxAmount),
-        amountAfterTax: Number(record.amountAfterTax),
-        txSignature: record.txSignature,
-        treasuryWallet: record.treasuryWallet,
-        createdAt: record.createdAt
-      })),
+      data: records.map(record => {
+        const taxAmount = Number(record.taxAmount);
+        const price = record.tokenSymbol === 'USDT' ? 1 : takaraPrice;
+
+        return {
+          id: record.id,
+          tokenSymbol: record.tokenSymbol,
+          taxAmount,
+          taxValueUSD: taxAmount * price,
+          sourceType: record.sourceType,
+          sourceReferenceId: record.sourceId,
+          userId: record.user.id,
+          userWallet: record.user.walletAddress || '',
+          txSignature: record.txSignature,
+          createdAt: record.createdAt,
+          // Additional fields for backwards compatibility
+          amountBeforeTax: Number(record.amountBeforeTax),
+          taxPercent: Number(record.taxPercent),
+          amountAfterTax: Number(record.amountAfterTax),
+          username: record.user.username
+        };
+      }),
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -353,35 +420,47 @@ export async function getTreasurySummary(req: Request, res: Response): Promise<v
       getTaxStatistics()
     ]);
 
-    // Calculate totals
-    const totalCollected = {
-      TAKARA: 0,
-      USDT: 0
-    };
+    // Calculate totals with USD values
+    // TAKARA price (approximate)
+    const takaraPrice = 0.00134;
 
-    const totalWithdrawn = {
-      TAKARA: 0,
-      USDT: 0
-    };
+    let totalValueUSD = 0;
+    let totalTaxCollectedUSD = 0;
+    let totalWithdrawalsUSD = 0;
 
-    balances.forEach(balance => {
-      if (balance.tokenSymbol === 'TAKARA' || balance.tokenSymbol === 'USDT') {
-        totalCollected[balance.tokenSymbol] = Number(balance.totalCollected);
-        totalWithdrawn[balance.tokenSymbol] = Number(balance.totalWithdrawn);
-      }
+    const formattedBalances = balances.map(b => {
+      const balance = Number(b.balance);
+      const totalCollected = Number(b.totalCollected);
+      const totalWithdrawn = Number(b.totalWithdrawn);
+
+      // Calculate USD values
+      const price = b.tokenSymbol === 'USDT' ? 1 : takaraPrice;
+      const valueUSD = balance * price;
+
+      totalValueUSD += valueUSD;
+      totalTaxCollectedUSD += totalCollected * price;
+      totalWithdrawalsUSD += totalWithdrawn * price;
+
+      return {
+        tokenSymbol: b.tokenSymbol,
+        tokenName: b.tokenSymbol === 'TAKARA' ? 'Takara Token' : 'Tether USD',
+        balance,
+        valueUSD,
+        totalCollected,
+        totalWithdrawn,
+        lastUpdated: b.updatedAt.toISOString()
+      };
     });
 
     res.json({
       success: true,
       data: {
-        balances: balances.map(b => ({
-          tokenSymbol: b.tokenSymbol,
-          balance: Number(b.balance),
-          totalCollected: Number(b.totalCollected),
-          totalWithdrawn: Number(b.totalWithdrawn)
-        })),
-        totalCollected,
-        totalWithdrawn,
+        // Frontend expected format
+        totalValueUSD,
+        totalTaxCollectedUSD,
+        totalWithdrawalsUSD,
+        balances: formattedBalances,
+        // Additional data
         recentTaxes: recentTaxes.map(tax => ({
           id: tax.id,
           sourceType: tax.sourceType,

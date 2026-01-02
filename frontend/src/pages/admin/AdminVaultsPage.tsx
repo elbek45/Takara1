@@ -20,6 +20,8 @@ interface VaultFormData {
   requireTAKARA: boolean
   takaraRatio: number
   totalCapacity: number
+  miningThreshold: number
+  acceptedPayments: string
   isActive: boolean
 }
 
@@ -37,6 +39,8 @@ const initialFormData: VaultFormData = {
   requireTAKARA: false,
   takaraRatio: 0,
   totalCapacity: 10000000,
+  miningThreshold: 100000,
+  acceptedPayments: 'USDT',
   isActive: true
 }
 
@@ -119,6 +123,8 @@ export default function AdminVaultsPage() {
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: Number(vault.takaraRatio || 0),
       totalCapacity: Number(vault.totalCapacity || 10000000),
+      miningThreshold: Number(vault.miningThreshold || 100000),
+      acceptedPayments: vault.acceptedPayments || 'USDT',
       isActive: vault.isActive
     })
     setShowEditModal(true)
@@ -232,12 +238,39 @@ export default function AdminVaultsPage() {
                   <span className="text-gray-400">Min Investment:</span>
                   <span className="text-white">${Number(vault.minInvestment).toLocaleString()}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Payments:</span>
+                  <span className="text-green-400 font-medium">{vault.acceptedPayments || 'USDT'}</span>
+                </div>
                 {vault.requireTAKARA && (
                   <div className="flex justify-between text-purple-400">
                     <span className="text-gray-400">TAKARA Ratio:</span>
                     <span className="font-medium">{vault.takaraRatio}/100 USDT</span>
                   </div>
                 )}
+              </div>
+
+              {/* Mining Progress */}
+              <div className="mb-4 p-3 bg-background-elevated rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs text-gray-400">Mining Progress</span>
+                  <span className={`text-xs font-medium ${vault.isMining ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {vault.isMining ? 'Mining Active' : 'Collecting'}
+                  </span>
+                </div>
+                <div className="relative h-2 bg-navy-900 rounded-full overflow-hidden">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min((Number(vault.currentFilled) / Number(vault.miningThreshold || 100000)) * 100, 100)}%`,
+                      background: vault.isMining ? 'linear-gradient(90deg, #FFD700, #22c55e)' : 'linear-gradient(90deg, #FFD700, #FFC000)'
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-gray-500">${Number(vault.currentFilled).toLocaleString()}</span>
+                  <span className="text-xs text-gray-500">${Number(vault.miningThreshold || 100000).toLocaleString()}</span>
+                </div>
               </div>
 
               {/* Stats */}
@@ -518,6 +551,34 @@ function VaultForm({
             onChange={(e) => handleChange('totalCapacity', Number(e.target.value))}
             className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Mining Threshold (USDT)</label>
+          <input
+            type="number"
+            value={formData.miningThreshold}
+            onChange={(e) => handleChange('miningThreshold', Number(e.target.value))}
+            className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">Mining starts when deposits reach this amount</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Accepted Payments</label>
+          <select
+            value={formData.acceptedPayments}
+            onChange={(e) => handleChange('acceptedPayments', e.target.value)}
+            className="w-full px-4 py-2 bg-background-elevated border border-green-900/30 rounded-lg text-white focus:outline-none focus:border-gold-500"
+          >
+            <option value="USDT">USDT Only</option>
+            <option value="TAKARA">TAKARA Only</option>
+            <option value="TRX">TRX Only</option>
+            <option value="USDT,TAKARA">USDT + TAKARA</option>
+            <option value="USDT,TRX">USDT + TRX</option>
+            <option value="USDT,TAKARA,TRX">USDT + TAKARA + TRX</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">Which tokens can be used to invest</p>
         </div>
 
         <div className="col-span-2">

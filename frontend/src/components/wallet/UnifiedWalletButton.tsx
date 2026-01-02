@@ -1,16 +1,14 @@
 /**
  * Unified Wallet Button Component
  *
- * Supports both Phantom and Trust Wallet for Solana.
- * Trust Wallet can also handle TRON - one wallet for everything!
+ * Supports Phantom and other Solana wallets.
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Wallet, ChevronDown } from 'lucide-react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { solanaService } from '../../services/solana.service'
-import { useTronLink } from '../../hooks/useTronLink'
 import { api } from '../../services/api'
 
 // Track saved addresses
@@ -31,33 +29,10 @@ export function UnifiedWalletButton({
 }: UnifiedWalletButtonProps) {
   const { publicKey, connected: solanaConnected, connecting, disconnect, wallet } = useWallet()
   const { setVisible } = useWalletModal()
-  const {
-    isConnected: tronConnected,
-    address: tronAddress,
-    usdtBalance,
-    trxBalance,
-    connect: connectTron
-  } = useTronLink()
 
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
   const [showBalances, setShowBalances] = useState(false)
-
-  // Detect if Trust Wallet is connected for Solana
-  const isTrustWalletSolana = useMemo(() => {
-    return wallet?.adapter.name.toLowerCase().includes('trust')
-  }, [wallet])
-
-  // Auto-connect TRON when Trust Wallet is connected for Solana
-  useEffect(() => {
-    if (solanaConnected && isTrustWalletSolana && !tronConnected) {
-      // Trust Wallet is connected for Solana - auto-connect TRON
-      console.log('Trust Wallet detected for Solana, auto-connecting TRON...')
-      connectTron().catch(err => {
-        console.log('Auto TRON connect failed (user may need to approve):', err)
-      })
-    }
-  }, [solanaConnected, isTrustWalletSolana, tronConnected, connectTron])
 
   // Save wallet address to backend
   useEffect(() => {
@@ -172,7 +147,7 @@ export function UnifiedWalletButton({
             {/* Wallet Info */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-700">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isTrustWalletSolana ? 'bg-blue-500' : 'bg-purple-500'}`} />
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
                 <span className="font-medium text-white">{walletName}</span>
               </div>
               <button
@@ -198,51 +173,12 @@ export function UnifiedWalletButton({
               </div>
             </div>
 
-            {/* TRON Balances (if Trust Wallet or TRON connected) */}
-            {(isTrustWalletSolana || tronConnected) && (
-              <div>
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span>TRON Network</span>
-                  {!tronConnected && (
-                    <button
-                      onClick={() => connectTron()}
-                      className="text-gold-500 hover:text-gold-400"
-                    >
-                      Connect TRON
-                    </button>
-                  )}
-                </div>
-                {tronConnected ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gold-500/10 rounded px-3 py-2">
-                      <div className="text-xs text-gray-400">USDT</div>
-                      <div className="font-bold text-gold-400">{usdtBalance}</div>
-                    </div>
-                    <div className="bg-red-500/10 rounded px-3 py-2">
-                      <div className="text-xs text-gray-400">TRX</div>
-                      <div className="font-bold text-red-400">{trxBalance}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-2 text-gray-500 text-sm">
-                    Connect TRON to see USDT/TRX balances
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Addresses */}
+            {/* Address */}
             <div className="pt-2 border-t border-gray-700 text-xs">
               {publicKey && (
                 <div className="flex justify-between text-gray-400">
-                  <span>Solana:</span>
+                  <span>Address:</span>
                   <span className="font-mono">{formatAddress(publicKey.toBase58())}</span>
-                </div>
-              )}
-              {tronConnected && tronAddress && (
-                <div className="flex justify-between text-gray-400 mt-1">
-                  <span>TRON:</span>
-                  <span className="font-mono">{formatAddress(tronAddress)}</span>
                 </div>
               )}
             </div>
@@ -261,26 +197,9 @@ interface UnifiedWalletButtonCompactProps {
 export function UnifiedWalletButtonCompact({ className = '' }: UnifiedWalletButtonCompactProps) {
   const { publicKey, connected: solanaConnected, connecting, disconnect, wallet } = useWallet()
   const { setVisible } = useWalletModal()
-  const {
-    isConnected: tronConnected,
-    address: tronAddress,
-    usdtBalance,
-    connect: connectTron
-  } = useTronLink()
 
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [showBalances, setShowBalances] = useState(false)
-
-  const isTrustWalletSolana = useMemo(() => {
-    return wallet?.adapter.name.toLowerCase().includes('trust')
-  }, [wallet])
-
-  // Auto-connect TRON when Trust Wallet is connected
-  useEffect(() => {
-    if (solanaConnected && isTrustWalletSolana && !tronConnected) {
-      connectTron().catch(() => {})
-    }
-  }, [solanaConnected, isTrustWalletSolana, tronConnected, connectTron])
 
   // Fetch Solana balances
   useEffect(() => {
@@ -348,7 +267,7 @@ export function UnifiedWalletButtonCompact({ className = '' }: UnifiedWalletButt
             {/* Wallet Info */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-700">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isTrustWalletSolana ? 'bg-blue-500' : 'bg-purple-500'}`} />
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
                 <span className="font-medium text-white">{walletName}</span>
               </div>
               <button
@@ -368,42 +287,12 @@ export function UnifiedWalletButtonCompact({ className = '' }: UnifiedWalletButt
               </div>
             </div>
 
-            {/* TRON Balances */}
-            {(isTrustWalletSolana || tronConnected) && (
-              <div>
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span>TRON</span>
-                  {!tronConnected && (
-                    <button onClick={() => connectTron()} className="text-gold-500 hover:text-gold-400">
-                      Connect
-                    </button>
-                  )}
-                </div>
-                {tronConnected ? (
-                  <div className="bg-gold-500/10 rounded px-3 py-2">
-                    <div className="text-xs text-gray-400">USDT</div>
-                    <div className="font-bold text-gold-400">{usdtBalance}</div>
-                  </div>
-                ) : (
-                  <div className="text-center py-2 text-gray-500 text-sm">
-                    Connect for USDT balance
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Addresses */}
+            {/* Address */}
             <div className="pt-2 border-t border-gray-700 text-xs">
               {publicKey && (
                 <div className="flex justify-between text-gray-400">
-                  <span>Solana:</span>
+                  <span>Address:</span>
                   <span className="font-mono">{formatAddress(publicKey.toBase58())}</span>
-                </div>
-              )}
-              {tronConnected && tronAddress && (
-                <div className="flex justify-between text-gray-400 mt-1">
-                  <span>TRON:</span>
-                  <span className="font-mono">{formatAddress(tronAddress)}</span>
                 </div>
               )}
             </div>

@@ -332,12 +332,11 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
         }
       });
 
-      // Transfer investment ownership
+      // Transfer investment ownership (keep ACTIVE so new owner can use/resell)
       await tx.investment.update({
         where: { id: listing.investmentId },
         data: {
-          userId, // New owner
-          status: 'SOLD'
+          userId // New owner - status remains ACTIVE for resale
         }
       });
 
