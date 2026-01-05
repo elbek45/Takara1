@@ -1,7 +1,11 @@
 import { useState } from 'react'
-import { X, ShoppingCart, Loader2, CheckCircle } from 'lucide-react'
+import { X, ShoppingCart, Loader2, CheckCircle, Coins } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useBuyNFT } from '../../hooks/useMarketplace'
+import { api } from '../../services/api'
 import type { MarketplaceListing } from '../../types'
+
+type PaymentType = 'USDT' | 'TAKARA'
 
 interface BuyNFTModalProps {
   isOpen: boolean
@@ -12,15 +16,28 @@ interface BuyNFTModalProps {
 export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalProps) {
   const buyNFT = useBuyNFT()
   const [isSuccess, setIsSuccess] = useState(false)
+  const [paymentType, setPaymentType] = useState<PaymentType>('USDT')
 
+  // Fetch TAKARA price
+  const { data: takaraPriceData } = useQuery({
+    queryKey: ['takaraPrice'],
+    queryFn: () => api.getTakaraPrice(),
+    enabled: isOpen && paymentType === 'TAKARA',
+    refetchInterval: 30000, // Refresh every 30 seconds
+  })
+
+  const takaraPrice = takaraPriceData?.data?.price || 0
   const platformFee = listing.priceUSDT * (listing.platformFee / 100)
-  const totalCost = listing.priceUSDT + platformFee
+  const totalCostUSDT = listing.priceUSDT + platformFee
+  const takaraAmount = takaraPrice > 0 ? totalCostUSDT / takaraPrice : 0
 
   const handleBuy = async () => {
     try {
       await buyNFT.mutateAsync({
         listingId: listing.id,
-        price: totalCost,
+        price: totalCostUSDT,
+        paymentType,
+        takaraAmount: paymentType === 'TAKARA' ? takaraAmount : undefined,
       })
       setIsSuccess(true)
     } catch (error) {
@@ -125,6 +142,43 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
                 </div>
               </div>
 
+              {/* Payment Type Selector */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-300">
+                  Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentType('USDT')}
+                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                      paymentType === 'USDT'
+                        ? 'border-gold-500 bg-gold-500/10'
+                        : 'border-green-900/30 hover:border-green-900/50'
+                    }`}
+                  >
+                    <span className="text-2xl">💵</span>
+                    <span className={`font-semibold ${paymentType === 'USDT' ? 'text-gold-500' : 'text-white'}`}>
+                      USDT
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentType('TAKARA')}
+                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                      paymentType === 'TAKARA'
+                        ? 'border-green-500 bg-green-500/10'
+                        : 'border-green-900/30 hover:border-green-900/50'
+                    }`}
+                  >
+                    <Coins className={`h-8 w-8 ${paymentType === 'TAKARA' ? 'text-green-500' : 'text-gray-400'}`} />
+                    <span className={`font-semibold ${paymentType === 'TAKARA' ? 'text-green-500' : 'text-white'}`}>
+                      TAKARA
+                    </span>
+                  </button>
+                </div>
+              </div>
+
               {/* Price Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between text-lg">
@@ -139,9 +193,20 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
                 </div>
                 <div className="border-t border-green-900/30 pt-3 flex justify-between text-xl">
                   <span className="text-white font-semibold">Total Cost</span>
-                  <span className="text-gold-500 font-bold">
-                    ${totalCost.toLocaleString()}
-                  </span>
+                  {paymentType === 'USDT' ? (
+                    <span className="text-gold-500 font-bold">
+                      ${totalCostUSDT.toLocaleString()}
+                    </span>
+                  ) : (
+                    <div className="text-right">
+                      <div className="text-green-500 font-bold">
+                        {takaraAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} TAKARA
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        ≈ ${totalCostUSDT.toLocaleString()} @ ${takaraPrice.toFixed(6)}/TAKARA
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -179,11 +244,21 @@ export default function BuyNFTModal({ isOpen, onClose, listing }: BuyNFTModalPro
               {/* Buy Button */}
               <button
                 onClick={handleBuy}
-                disabled={buyNFT.isPending}
-                className="btn-gold w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2"
+                disabled={buyNFT.isPending || (paymentType === 'TAKARA' && takaraPrice === 0)}
+                className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 ${
+                  paymentType === 'TAKARA'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'btn-gold'
+                }`}
               >
-                <ShoppingCart className="h-5 w-5" />
-                Confirm Purchase
+                {paymentType === 'TAKARA' ? (
+                  <Coins className="h-5 w-5" />
+                ) : (
+                  <ShoppingCart className="h-5 w-5" />
+                )}
+                {paymentType === 'TAKARA'
+                  ? `Pay ${takaraAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })} TAKARA`
+                  : `Pay $${totalCostUSDT.toLocaleString()} USDT`}
               </button>
             </div>
           )}

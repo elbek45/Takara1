@@ -227,9 +227,10 @@ class ApiClient {
     return data
   }
 
-  async purchaseNFT(listingId: string, txSignature: string): Promise<ApiResponse> {
+  async purchaseNFT(listingId: string, txSignature: string, paymentType: 'USDT' | 'TAKARA' = 'USDT'): Promise<ApiResponse> {
     const { data } = await this.client.post<ApiResponse>(`/marketplace/${listingId}/buy`, {
       txSignature,
+      paymentType,
     })
     return data
   }

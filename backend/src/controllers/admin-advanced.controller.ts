@@ -414,15 +414,18 @@ export async function createVault(req: Request, res: Response) {
       });
     }
 
-    // Check for duplicate name
-    const existing = await prisma.vault.findUnique({
-      where: { name: data.name }
+    // Check for duplicate active vault name (allow duplicates for mining pool pattern)
+    const existingActive = await prisma.vault.findFirst({
+      where: {
+        name: data.name,
+        isActive: true  // Only check active vaults - mining vaults can have same name
+      }
     });
 
-    if (existing) {
+    if (existingActive) {
       return res.status(400).json({
         success: false,
-        message: 'Vault with this name already exists'
+        message: 'Active vault with this name already exists'
       });
     }
 

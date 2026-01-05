@@ -8,13 +8,14 @@ export default function VaultsPage() {
   const [selectedDuration, setSelectedDuration] = useState<number | 'ALL'>('ALL')
   const [takaraFilter, setTakaraFilter] = useState<'ALL' | 'WITH' | 'WITHOUT'>('ALL')
 
+  // Fetch only active vaults for public investment page
   const { data: vaultsResponse, isLoading, error } = useQuery({
     queryKey: ['vaults', selectedTier, selectedDuration],
     queryFn: () =>
       api.getVaults({
         tier: selectedTier === 'ALL' ? undefined : selectedTier,
         duration: selectedDuration === 'ALL' ? undefined : selectedDuration,
-        isActive: true,
+        isActive: true, // Only show active vaults for new investments
       }),
   })
 
@@ -351,6 +352,7 @@ export default function VaultsPage() {
             ))}
           </div>
         )}
+
       </div>
     </div>
   )

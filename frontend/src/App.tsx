@@ -19,18 +19,13 @@ import FAQPage from './pages/FAQPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
-import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
 import AdminVaultsPage from './pages/admin/AdminVaultsPage'
-import AdminMiningStatsPage from './pages/admin/AdminMiningStatsPage'
-import AdminDeploymentPage from './pages/admin/AdminDeploymentPage'
-import AdminNetworkPage from './pages/admin/AdminNetworkPage'
 import AdminBoostTokensPage from './pages/admin/AdminBoostTokensPage'
 import AdminTreasuryPage from './pages/admin/AdminTreasuryPage'
 import AdminTakaraStatsPage from './pages/admin/AdminTakaraStatsPage'
-import AdminPricingPage from './pages/admin/AdminPricingPage'
 import AdminPartnersPage from './pages/admin/AdminPartnersPage'
 import AdminClaimsPage from './pages/admin/AdminClaimsPage'
-import AdminMiningVaultsPage from './pages/admin/AdminMiningVaultsPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 
 // Protected route wrapper for /app
 function ProtectedApp({ children }: { children: React.ReactNode }) {
@@ -64,19 +59,14 @@ function App() {
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/admin/claims" element={<AdminClaimsPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
-        <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
         <Route path="/admin/vaults" element={<AdminVaultsPage />} />
-        <Route path="/admin/mining" element={<AdminMiningStatsPage />} />
-        <Route path="/admin/deployment" element={<AdminDeploymentPage />} />
-        <Route path="/admin/network" element={<AdminNetworkPage />} />
+        <Route path="/admin/takara-stats" element={<AdminTakaraStatsPage />} />
         <Route path="/admin/boost-tokens" element={<AdminBoostTokensPage />} />
         <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
-        <Route path="/admin/takara-stats" element={<AdminTakaraStatsPage />} />
-        <Route path="/admin/pricing" element={<AdminPricingPage />} />
         <Route path="/admin/partners" element={<AdminPartnersPage />} />
-        <Route path="/admin/claims" element={<AdminClaimsPage />} />
-        <Route path="/admin/mining-vaults" element={<AdminMiningVaultsPage />} />
+        <Route path="/admin/settings" element={<AdminSettingsPage />} />
       </Routes>
 
       <Toaster

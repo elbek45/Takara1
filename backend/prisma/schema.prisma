@@ -57,7 +57,7 @@ enum UserRole {
 
 model Vault {
   id              String        @id @default(uuid())
-  name            String        @unique // e.g., "Pro Vault 12M"
+  name            String        // e.g., "Pro Vault 12M" - not unique to support mining pool pattern
   tier            VaultTier     // STARTER, PRO, ELITE
   duration        Int           // months: 12, 30, 36
   payoutSchedule  PayoutSchedule @default(MONTHLY) // All payouts are now MONTHLY

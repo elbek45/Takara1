@@ -163,7 +163,8 @@ export interface VaultWithStats {
   currentFilled: number;
   totalCapacity?: number;
   miningThreshold: number;
-  isMining: boolean;
+  isActive: boolean;  // true = accepting investments, false = closed for new investments
+  isMining: boolean;  // true = vault is mining TAKARA
   acceptedPayments: string;
   activeInvestments: number;
 }

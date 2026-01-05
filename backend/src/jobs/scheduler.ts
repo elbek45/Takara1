@@ -122,6 +122,13 @@ export function startJobScheduler(): void {
     }
 
     logger.info('✅ All background jobs scheduled');
+
+    // Run price update immediately on startup to get fresh LAIKA/TAKARA prices
+    logger.info('🔄 Running initial price update...');
+    runPriceUpdateJob()
+      .then(() => logger.info('✅ Initial price update completed'))
+      .catch(err => logger.warn({ error: err }, 'Initial price update failed (will retry on schedule)'));
+
   } catch (error) {
     logger.error({ error }, 'Failed to start job scheduler');
   }

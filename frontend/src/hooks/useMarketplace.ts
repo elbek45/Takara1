@@ -28,26 +28,48 @@ export function useBuyNFT() {
   const { publicKey, sendTransaction } = useWallet()
 
   return useMutation({
-    mutationFn: async ({ listingId, price }: { listingId: string; price: number }) => {
+    mutationFn: async ({
+      listingId,
+      price,
+      paymentType = 'USDT',
+      takaraAmount
+    }: {
+      listingId: string
+      price: number
+      paymentType?: 'USDT' | 'TAKARA'
+      takaraAmount?: number
+    }) => {
       if (!publicKey || !sendTransaction) {
         throw new Error('Wallet not connected')
       }
 
-      // Transfer USDT to platform
-      toast.info('Transferring USDT...')
       const platformWallet = solanaService.getPlatformWalletAddress()
+      let txSignature: string
 
-      const txSignature = await solanaService.transferUSDT(
-        publicKey,
-        platformWallet,
-        price,
-        sendTransaction
-      )
-
-      toast.success('USDT transferred successfully!')
+      if (paymentType === 'TAKARA' && takaraAmount) {
+        // Transfer TAKARA to platform
+        toast.info('Transferring TAKARA...')
+        txSignature = await solanaService.transferTAKARA(
+          publicKey,
+          platformWallet,
+          takaraAmount,
+          sendTransaction
+        )
+        toast.success('TAKARA transferred successfully!')
+      } else {
+        // Transfer USDT to platform
+        toast.info('Transferring USDT...')
+        txSignature = await solanaService.transferUSDT(
+          publicKey,
+          platformWallet,
+          price,
+          sendTransaction
+        )
+        toast.success('USDT transferred successfully!')
+      }
 
       // Complete purchase on backend
-      return api.purchaseNFT(listingId, txSignature)
+      return api.purchaseNFT(listingId, txSignature, paymentType)
     },
     onSuccess: () => {
       toast.success('Wexel purchased successfully!')

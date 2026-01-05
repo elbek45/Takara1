@@ -27,12 +27,27 @@ const logger = getLogger('vault-controller');
  */
 export async function getAllVaults(req: Request, res: Response): Promise<void> {
   try {
-    const { tier, duration, isActive } = req.query;
+    const { tier, duration, isActive, isMining } = req.query;
 
-    // Build filter - default to active vaults only
-    const where: any = {
-      isActive: isActive !== undefined ? isActive === 'true' : true
-    };
+    // Build filter - default to show active vaults AND mining vaults
+    const where: any = {};
+
+    // If specific filters provided, use them
+    if (isActive !== undefined) {
+      where.isActive = isActive === 'true';
+    }
+    if (isMining !== undefined) {
+      where.isMining = isMining === 'true';
+    }
+
+    // Default behavior: show vaults that are either active OR mining (not completely inactive)
+    if (isActive === undefined && isMining === undefined) {
+      where.OR = [
+        { isActive: true },
+        { isMining: true }
+      ];
+    }
+
     if (tier) where.tier = tier as string;
     if (duration) where.duration = parseInt(duration as string);
 
@@ -74,6 +89,7 @@ export async function getAllVaults(req: Request, res: Response): Promise<void> {
       currentFilled: Number(vault.currentFilled),
       totalCapacity: vault.totalCapacity ? Number(vault.totalCapacity) : undefined,
       miningThreshold: Number(vault.miningThreshold),
+      isActive: vault.isActive,
       isMining: vault.isMining,
       acceptedPayments: vault.acceptedPayments,
       activeInvestments: vault._count.investments
@@ -175,6 +191,7 @@ export async function getVaultById(req: Request, res: Response): Promise<void> {
       currentFilled: Number(vault.currentFilled),
       totalCapacity: vault.totalCapacity ? Number(vault.totalCapacity) : undefined,
       miningThreshold: Number(vault.miningThreshold),
+      isActive: vault.isActive,
       isMining: vault.isMining,
       acceptedPayments: vault.acceptedPayments,
       activeInvestments: vault._count.investments

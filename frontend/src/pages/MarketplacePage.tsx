@@ -243,8 +243,9 @@ export default function MarketplacePage() {
 
                 {/* Seller Info */}
                 <div className="text-xs text-gray-500 mb-4">
-                  Seller: {listing.seller.walletAddress.slice(0, 6)}...
-                  {listing.seller.walletAddress.slice(-4)}
+                  Seller: {listing.seller.walletAddress
+                    ? `${listing.seller.walletAddress.slice(0, 6)}...${listing.seller.walletAddress.slice(-4)}`
+                    : listing.seller.username || 'Anonymous'}
                 </div>
 
                 {/* Platform Fee */}

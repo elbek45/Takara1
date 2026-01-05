@@ -1,5 +1,5 @@
 /**
- * Admin Network Configuration Page
+ * Admin Platform Settings Page
  * Manage testnet/mainnet settings and blockchain configuration
  */
 
@@ -32,7 +32,7 @@ interface NetworkConfig {
   appVersion: string
 }
 
-export default function AdminNetworkPage() {
+export default function AdminSettingsPage() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'solana' | 'ethereum'>('solana')
   const [formData, setFormData] = useState<NetworkConfig | null>(null)
@@ -129,7 +129,7 @@ export default function AdminNetworkPage() {
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <Network className="h-8 w-8 text-gold-500" />
-              Network Configuration
+              Platform Settings
             </h1>
             <p className="text-gray-400 mt-2">
               Manage blockchain network settings and switch between testnet/mainnet

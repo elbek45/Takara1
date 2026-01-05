@@ -16,6 +16,7 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES, MARKETPLACE_CONFIG } from '../config/
 import { applyWexelSaleTax } from '../services/tax.service';
 import { getLogger } from '../config/logger';
 import { invalidateCacheByPrefix } from '../middleware/cache.middleware';
+import { getTakaraPrice } from '../services/takara-pricing.service';
 
 const logger = getLogger('marketplace-controller');
 
@@ -233,12 +234,22 @@ export async function createListing(req: Request, res: Response): Promise<void> 
 /**
  * POST /api/marketplace/:id/buy
  * Purchase NFT from marketplace
+ * Supports payment in USDT or TAKARA
  */
 export async function purchaseNFT(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const userId = (req as AuthenticatedRequest).userId!;
-    const { txSignature } = req.body;
+    const { txSignature, paymentType = 'USDT' } = req.body;
+
+    // Validate payment type
+    if (!['USDT', 'TAKARA'].includes(paymentType)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid payment type. Must be USDT or TAKARA'
+      });
+      return;
+    }
 
     if (!txSignature) {
       res.status(400).json({
@@ -280,27 +291,52 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
     }
 
     // Calculate platform fee and seller proceeds
-    const price = Number(listing.priceUSDT);
-    const platformFeeAmount = price * (Number(listing.platformFee) / 100);
+    const priceUSDT = Number(listing.priceUSDT);
+    const platformFeeAmount = priceUSDT * (Number(listing.platformFee) / 100);
+
+    // Calculate TAKARA amount if paying with TAKARA
+    let takaraPrice = 0;
+    let takaraAmount = 0;
+    if (paymentType === 'TAKARA') {
+      takaraPrice = await getTakaraPrice();
+      if (takaraPrice <= 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Unable to get TAKARA price. Please try again.'
+        });
+        return;
+      }
+      takaraAmount = priceUSDT / takaraPrice;
+
+      logger.info({
+        listingId: id,
+        priceUSDT,
+        takaraPrice,
+        takaraAmount,
+        paymentType
+      }, 'TAKARA payment calculated');
+    }
 
     // Apply 5% tax on WEXEL sale (v2.2)
     let taxAmount = 0;
-    let sellerProceeds = price - platformFeeAmount;
+    let sellerProceeds = priceUSDT - platformFeeAmount;
 
     try {
       const taxResult = await applyWexelSaleTax({
         userId: listing.sellerId,
         investmentId: listing.investmentId,
-        salePrice: price
+        salePrice: priceUSDT
         // Note: platformWallet would be needed for actual tax transfer
       });
 
       taxAmount = taxResult.taxAmount;
-      sellerProceeds = price - platformFeeAmount - taxAmount;
+      sellerProceeds = priceUSDT - platformFeeAmount - taxAmount;
 
       logger.info({
         listingId: id,
-        salePrice: price,
+        salePrice: priceUSDT,
+        paymentType,
+        takaraAmount: paymentType === 'TAKARA' ? takaraAmount : undefined,
         platformFee: platformFeeAmount,
         taxAmount,
         sellerReceives: sellerProceeds
@@ -326,7 +362,7 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
         data: {
           status: 'SOLD',
           buyerId: userId,
-          soldPrice: price,
+          soldPrice: priceUSDT,
           soldAt: new Date(),
           saleTxSignature: txSignature
         }
@@ -345,18 +381,22 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
         data: {
           investmentId: listing.investmentId,
           type: 'NFT_SALE',
-          amount: price,
-          tokenType: 'USDT',
+          amount: paymentType === 'TAKARA' ? takaraAmount : priceUSDT,
+          tokenType: paymentType,
           txSignature,
           fromAddress: listing.seller.walletAddress || '',
           toAddress: '', // Will be filled with buyer's wallet
           status: 'CONFIRMED',
-          description: `NFT sale on marketplace: ${listing.investment.vault.name}`,
+          description: `NFT sale on marketplace: ${listing.investment.vault.name} (paid with ${paymentType})`,
           metadata: {
             listingId: id,
             sellerId: listing.sellerId,
             buyerId: userId,
-            platformFee: platformFeeAmount
+            platformFee: platformFeeAmount,
+            paymentType,
+            priceUSDT,
+            takaraAmount: paymentType === 'TAKARA' ? takaraAmount : undefined,
+            takaraPrice: paymentType === 'TAKARA' ? takaraPrice : undefined
           }
         }
       });
@@ -377,7 +417,9 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
       investmentId: listing.investmentId,
       buyerId: userId,
       sellerId: listing.sellerId,
-      price,
+      priceUSDT,
+      paymentType,
+      takaraAmount: paymentType === 'TAKARA' ? takaraAmount : undefined,
       platformFee: platformFeeAmount
     }, 'NFT purchased');
 
@@ -393,12 +435,16 @@ export async function purchaseNFT(req: Request, res: Response): Promise<void> {
       data: {
         investmentId: listing.investmentId,
         vaultName: listing.investment.vault.name,
-        pricePaid: price,
+        paymentType,
+        priceUSDT,
+        takaraAmount: paymentType === 'TAKARA' ? takaraAmount : undefined,
+        takaraPrice: paymentType === 'TAKARA' ? takaraPrice : undefined,
         platformFee: platformFeeAmount,
         taxAmount, // v2.2: 5% tax on WEXEL sale
         sellerReceived: sellerProceeds,
         nftMintAddress: listing.investment.nftMintAddress,
-        laikaIncluded: !!listing.investment.laikaBoost
+        laikaIncluded: !!listing.investment.laikaBoost,
+        ownershipTransferred: true
       }
     });
   } catch (error) {

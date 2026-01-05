@@ -53,7 +53,8 @@ export interface Vault {
   currentFilled: number
   totalCapacity?: number
   miningThreshold?: number // Mining starts when currentFilled >= this (v2.3)
-  isMining?: boolean // True when threshold reached (v2.3)
+  isActive?: boolean // True = accepting investments, false = closed (v2.3)
+  isMining?: boolean // True when vault is mining TAKARA (v2.3)
   acceptedPayments?: string // Comma-separated: USDT,TAKARA,TRX (v2.3)
   activeInvestments: number
 }
