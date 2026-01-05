@@ -125,6 +125,9 @@ export interface InvestmentCalculation {
     laikaDiscountPercent?: number
     laikaDiscountAmount?: number
     laikaDiscountedValueUSD?: number
+    // v2.8 - x100 LAIKA boost fields
+    laikaBoostValueUSD?: number
+    laikaPremiumPercent?: number
   }
   laika?: {
     // LAIKA boost details

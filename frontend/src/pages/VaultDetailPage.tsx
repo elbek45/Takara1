@@ -55,13 +55,13 @@ export default function VaultDetailPage() {
   const calculation = calculationResponse?.data
 
   // Calculate max LAIKA based on 50% of USDT amount
-  // Platform values LAIKA 50% HIGHER (boost = market * 1.5)
-  // So users need LESS LAIKA: to get $X boost, need $X/1.5 market value
+  // LAIKA x100 boost for Cosmodog community
+  // Users need much LESS LAIKA: x100 multiplier
   // @ts-ignore - Type definitions need updating
   const laikaToUsdtRate = calculation?.investment?.laikaPrice || laikaPriceResponse?.data?.price || 0.0000007
   const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.5 : 0
-  // Platform values LAIKA 50% higher, so need less market value: divide by 1.5
-  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 1.5
+  // x100 boost means divide by 100
+  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 100
   const maxLaikaBoost = laikaToUsdtRate > 0 ? maxLaikaMarketValueUSD / laikaToUsdtRate : 0
 
   if (vaultLoading) {
@@ -269,7 +269,7 @@ export default function VaultDetailPage() {
                     }`}
                   >
                     <div className="text-lg font-bold text-laika-purple mb-1">🐕 LAIKA</div>
-                    <div className="text-xs text-gray-400">Dog-themed meme token</div>
+                    <div className="text-xs text-gray-400">x100 price boost for community</div>
                   </button>
                   <button
                     type="button"
@@ -364,7 +364,7 @@ export default function VaultDetailPage() {
                         <span className={`font-bold text-sm ${
                           boostToken === 'LAIKA' ? 'text-laika-purple' : 'text-gold'
                         }`}>
-                          ${calculation.investment.laikaDiscountedValueUSD?.toFixed(2) || '0.00'} USDT
+                          ${calculation.investment.laikaBoostValueUSD?.toFixed(2) || '0.00'} USDT
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -384,6 +384,17 @@ export default function VaultDetailPage() {
                           </button>
                         </span>
                       </div>
+                      {boostToken === 'LAIKA' && (
+                        <div className="mt-2 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg">
+                          <div className="text-xs text-purple-300 text-center font-bold mb-1">
+                            🐕 LAIKA x100 Boost for Cosmodog Community!
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Market: ${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)}</span>
+                            <span className="text-purple-400 font-bold">x100 → ${((calculation?.investment?.laikaPrice || laikaToUsdtRate) * 100).toFixed(6)}</span>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex justify-between items-center border-t border-gray-700 pt-2">
                         <span className="text-laika-green font-bold">Extra APY:</span>
                         <span className="text-laika-green font-bold text-sm">
