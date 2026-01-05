@@ -117,11 +117,17 @@ export function PoweredBySlider() {
                     className="max-h-14 max-w-[200px] object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-300"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
-                      // Show partner name as fallback
+                      // Show partner name as fallback (XSS-safe)
                       target.style.display = 'none'
                       const parent = target.parentElement
                       if (parent) {
-                        parent.innerHTML = `<span style="color: ${GOLD}; font-weight: 600; font-size: 1.125rem;">${partner.name}</span>`
+                        // Use textContent instead of innerHTML to prevent XSS
+                        const span = document.createElement('span')
+                        span.textContent = partner.name
+                        span.style.color = GOLD
+                        span.style.fontWeight = '600'
+                        span.style.fontSize = '1.125rem'
+                        parent.appendChild(span)
                       }
                     }}
                   />

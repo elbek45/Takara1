@@ -72,3 +72,7 @@ Thumbs.db
 
 # Test wallet keys
 .keys/
+
+# Deployment secrets (NEVER commit)
+deploy.secrets
+TAKARA_CREDENTIALS_SECURE.txt

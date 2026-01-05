@@ -9,7 +9,7 @@ export default function ComingSoonPage() {
   const [error, setError] = useState('')
 
   const handleAccess = () => {
-    if (accessCode === 'takara2026') {
+    if (accessCode === 'takara2006') {
       localStorage.setItem('takara_access', 'granted')
       navigate('/app')
     } else {

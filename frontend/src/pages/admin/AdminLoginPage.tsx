@@ -96,15 +96,6 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            {/* Default Credentials Helper */}
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-              <p className="text-xs text-yellow-400">
-                <strong>Default credentials:</strong><br />
-                Username: <code className="bg-yellow-500/20 px-1 rounded">admin</code><br />
-                Password: <code className="bg-yellow-500/20 px-1 rounded">admin123</code>
-              </p>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"

@@ -31,6 +31,10 @@ async function main() {
   const investmentsDeleted = await prisma.investment.deleteMany({})
   console.log(`✅ Deleted ${investmentsDeleted.count} Investments`)
 
+  // 5.5 Delete TaxRecords (before users due to FK constraint)
+  const taxRecordsDeleted = await prisma.taxRecord.deleteMany({})
+  console.log(`✅ Deleted ${taxRecordsDeleted.count} TaxRecords`)
+
   // 6. Delete all Users (except admin which is in AdminUser table)
   const usersDeleted = await prisma.user.deleteMany({})
   console.log(`✅ Deleted ${usersDeleted.count} Users`)
@@ -56,7 +60,7 @@ async function main() {
   const toDelete: string[] = []
 
   for (const vault of allVaults) {
-    const key = `${vault.tier}-${vault.durationMonths}`
+    const key = `${vault.tier}-${vault.duration}`
     if (seen.has(key)) {
       toDelete.push(vault.id)
     } else {
@@ -71,13 +75,17 @@ async function main() {
     console.log(`✅ Deleted ${duplicatesDeleted.count} duplicate Vaults`)
   }
 
-  // 9. Reset Treasury taxes
-  const treasuryReset = await prisma.treasuryWallet.updateMany({
-    data: {
-      balance: 0
-    }
-  })
-  console.log(`✅ Reset ${treasuryReset.count} Treasury wallets`)
+  // 9. Reset Treasury balance (if table exists)
+  try {
+    const treasuryReset = await prisma.treasuryBalance.deleteMany({})
+    console.log(`✅ Deleted ${treasuryReset.count} Treasury balance records`)
+  } catch (e) {
+    console.log(`⚠️ TreasuryBalance table not found or empty`)
+  }
+
+  // 10. Reset MiningStats (test mining data)
+  const miningStatsReset = await prisma.miningStats.deleteMany({})
+  console.log(`✅ Deleted ${miningStatsReset.count} MiningStats records`)
 
   // 10. Show final state
   const finalStats = {

@@ -39,7 +39,7 @@ const initialFormData: VaultFormData = {
   requireTAKARA: false,
   takaraRatio: 0,
   totalCapacity: 10000000,
-  miningThreshold: 100000,
+  miningThreshold: 25000,
   acceptedPayments: 'USDT',
   isActive: true
 }
@@ -123,7 +123,7 @@ export default function AdminVaultsPage() {
       requireTAKARA: vault.requireTAKARA,
       takaraRatio: Number(vault.takaraRatio || 0),
       totalCapacity: Number(vault.totalCapacity || 10000000),
-      miningThreshold: Number(vault.miningThreshold || 100000),
+      miningThreshold: Number(vault.miningThreshold || 25000),
       acceptedPayments: vault.acceptedPayments || 'USDT',
       isActive: vault.isActive
     })
@@ -262,14 +262,14 @@ export default function AdminVaultsPage() {
                   <div
                     className="absolute inset-y-0 left-0 rounded-full transition-all"
                     style={{
-                      width: `${Math.min((Number(vault.currentFilled) / Number(vault.miningThreshold || 100000)) * 100, 100)}%`,
+                      width: `${Math.min((Number(vault.currentFilled) / Number(vault.miningThreshold || 25000)) * 100, 100)}%`,
                       background: vault.isMining ? 'linear-gradient(90deg, #FFD700, #22c55e)' : 'linear-gradient(90deg, #FFD700, #FFC000)'
                     }}
                   />
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-xs text-gray-500">${Number(vault.currentFilled).toLocaleString()}</span>
-                  <span className="text-xs text-gray-500">${Number(vault.miningThreshold || 100000).toLocaleString()}</span>
+                  <span className="text-xs text-gray-500">${Number(vault.miningThreshold || 25000).toLocaleString()}</span>
                 </div>
               </div>
 

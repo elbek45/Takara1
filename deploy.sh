@@ -72,28 +72,42 @@ deploy_backend() {
     --exclude 'coverage' \
     backend/ ${SERVER_USER}@${SERVER_IP}:${PROJECT_DIR}/backend/
 
+  # Load secrets from deploy.secrets file (not committed to git)
+  if [ ! -f "deploy.secrets" ]; then
+    echo -e "${RED}Error: deploy.secrets file not found!${NC}"
+    echo "Create deploy.secrets with the following variables:"
+    echo "  JWT_SECRET=<your-jwt-secret>"
+    echo "  DB_PASSWORD=<your-db-password>"
+    echo "  PLATFORM_WALLET=<solana-public-key>"
+    echo "  PLATFORM_WALLET_PRIVATE_KEY=<solana-private-key>"
+    echo "  PLATFORM_WALLET_ETH=<evm-wallet-address>"
+    exit 1
+  fi
+  source deploy.secrets
+
   echo -e "${YELLOW}⚙️  Creating .env.production...${NC}"
-  sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cat > ${PROJECT_DIR}/backend/.env.production <<'ENVEOF'
+  sshpass -p "${SERVER_PASS}" ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} "cat > ${PROJECT_DIR}/backend/.env.production <<ENVEOF
 NODE_ENV=production
 PORT=3000
 APP_VERSION=2.1.1
-DATABASE_URL=postgresql://takara:takara_password@127.0.0.1:5432/takara_gold
-JWT_SECRET=5518e3b09562c0335fce4022c6e6edc7a17f25c6cd309a1048296d960aa6b557
+DATABASE_URL=postgresql://takara:${DB_PASSWORD}@127.0.0.1:5432/takara_gold
+JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRES_IN=7d
 REDIS_URL=redis://localhost:6379
 FRONTEND_URL=https://takarafi.com
 CORS_ORIGIN=https://takarafi.com
 SOLANA_NETWORK=mainnet-beta
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-PLATFORM_WALLET=39YVQH3mg5ZpXKYiszHpxLkept8wsNmYHM3fLi6f7cVy
-PLATFORM_WALLET_PRIVATE_KEY=4ZhdsfoMEWbM4u4dFmzndJzbZaDEFpa6qmo21Xj6q3ApA68kxQQwLPnrFe6mwonxz3t7sqVVXUqW5URipCsk7frT
+PLATFORM_WALLET=${PLATFORM_WALLET}
+PLATFORM_WALLET_PRIVATE_KEY=${PLATFORM_WALLET_PRIVATE_KEY}
+PLATFORM_WALLET_ETH=${PLATFORM_WALLET_ETH}
 TAKARA_TOKEN_MINT=6biyv9NcaHmf8rKfLFGmj6eTwR9LBQtmi8dGUp2vRsgA
-LAIKA_TOKEN_MINT=8o5XXBWEGmKJ7hn6hPaEzYNfuMxCWhwBQu5NSZSReKPd
+LAIKA_TOKEN_MINT=Euoq6CyQFCjCVSLR9wFaUPDW19Y6ZHwEcJoZsEi643i1
 TRON_FULL_HOST=https://api.trongrid.io
 USDT_CONTRACT_TRON=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 PLATFORM_WALLET_TRON=TQ9ovCpPB2vXXeRbHXgTnxFkQKJAzdZNX9
-TEST_MODE=true
-SKIP_TX_VERIFICATION=true
+TEST_MODE=false
+SKIP_TX_VERIFICATION=false
 ENABLE_CRON_JOBS=true
 LOG_LEVEL=info
 RATE_LIMIT_WINDOW_MS=900000
