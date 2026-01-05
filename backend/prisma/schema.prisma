@@ -80,7 +80,7 @@ model Vault {
   currentFilled   Decimal       @default(0) @db.Decimal(20, 2)
 
   // Mining Threshold (v2.3)
-  miningThreshold Decimal       @default(100000) @db.Decimal(20, 2) // Mining starts when currentFilled >= this
+  miningThreshold Decimal       @default(25000) @db.Decimal(20, 2) // Mining starts when currentFilled >= this
   isMining        Boolean       @default(false) // True when threshold reached
 
   // Accepted Payment Methods (v2.3) - comma-separated: USDT,TAKARA,TRX
@@ -98,9 +98,10 @@ model Vault {
 }
 
 enum VaultTier {
-  STARTER // Tier 1
-  PRO     // Tier 2
-  ELITE   // Tier 3
+  STARTER // Tier 1 - Entry level
+  BASIC   // Tier 2 - Basic level
+  PRO     // Tier 3 - Advanced
+  ELITE   // Tier 4 - Premium
 }
 
 enum PayoutSchedule {

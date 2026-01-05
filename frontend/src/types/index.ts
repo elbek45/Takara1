@@ -7,6 +7,7 @@
 
 export enum VaultTier {
   STARTER = 'STARTER',
+  BASIC = 'BASIC',
   PRO = 'PRO',
   ELITE = 'ELITE',
 }

@@ -36,7 +36,7 @@ export default function VaultsPage() {
             Investment Vaults
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Choose from 9 premium vaults with varying durations, APY rates, and mining rewards
+            Choose from 16 premium vaults with varying durations, APY rates, and mining rewards
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export default function VaultsPage() {
                 Filter by Tier
               </label>
               <div className="flex flex-wrap gap-2">
-                {['ALL', VaultTier.STARTER, VaultTier.PRO, VaultTier.ELITE].map((tier) => (
+                {['ALL', VaultTier.STARTER, VaultTier.BASIC, VaultTier.PRO, VaultTier.ELITE].map((tier) => (
                   <button
                     key={tier}
                     onClick={() => setSelectedTier(tier as VaultTier | 'ALL')}
@@ -71,7 +71,7 @@ export default function VaultsPage() {
                 Filter by Duration
               </label>
               <div className="flex flex-wrap gap-2">
-                {['ALL', 18, 30, 36].map((duration) => (
+                {['ALL', 18, 20, 30, 36].map((duration) => (
                   <button
                     key={duration}
                     onClick={() => setSelectedDuration(duration as number | 'ALL')}
@@ -319,7 +319,7 @@ export default function VaultsPage() {
                     <div
                       className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
                       style={{
-                        width: `${Math.min((Number(vault.currentFilled || 0) / Number(vault.miningThreshold || 100000)) * 100, 100)}%`,
+                        width: `${Math.min((Number(vault.currentFilled || 0) / Number(vault.miningThreshold || 25000)) * 100, 100)}%`,
                         background: vault.isMining
                           ? 'linear-gradient(90deg, #FFD700, #22c55e)'
                           : 'linear-gradient(90deg, #FFD700, #FFC000)'
@@ -331,7 +331,7 @@ export default function VaultsPage() {
                       ${Number(vault.currentFilled || 0).toLocaleString()} collected
                     </span>
                     <span className="text-gold-400 font-medium">
-                      ${Number(vault.miningThreshold || 100000).toLocaleString()} threshold
+                      ${Number(vault.miningThreshold || 25000).toLocaleString()} threshold
                     </span>
                   </div>
                   {!vault.isMining && (
