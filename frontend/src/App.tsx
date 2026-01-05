@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import Layout from './components/layout/Layout'
 
 // Pages
+import ComingSoonPage from './pages/ComingSoonPage'
 import LandingPage from './pages/LandingPage'
 import VaultsPage from './pages/VaultsPage'
 import VaultDetailPage from './pages/VaultDetailPage'
@@ -31,12 +32,24 @@ import AdminPartnersPage from './pages/admin/AdminPartnersPage'
 import AdminClaimsPage from './pages/admin/AdminClaimsPage'
 import AdminMiningVaultsPage from './pages/admin/AdminMiningVaultsPage'
 
+// Protected route wrapper for /app
+function ProtectedApp({ children }: { children: React.ReactNode }) {
+  const hasAccess = localStorage.getItem('takara_access') === 'granted'
+  if (!hasAccess) {
+    return <Navigate to="/" replace />
+  }
+  return <>{children}</>
+}
+
 function App() {
   return (
     <>
       <Routes>
-        {/* Main App Routes */}
-        <Route path="/" element={<Layout />}>
+        {/* Coming Soon Landing */}
+        <Route path="/" element={<ComingSoonPage />} />
+
+        {/* Protected Main App Routes (for testing) */}
+        <Route path="/app" element={<ProtectedApp><Layout /></ProtectedApp>}>
           <Route index element={<LandingPage />} />
           <Route path="vaults" element={<VaultsPage />} />
           <Route path="vaults/:id" element={<VaultDetailPage />} />

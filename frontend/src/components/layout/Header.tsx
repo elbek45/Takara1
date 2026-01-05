@@ -7,11 +7,11 @@ import AuthModal from '../auth/AuthModal'
 import { TrustWalletButton, TrustWalletButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Vaults', href: '/vaults' },
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Portfolio', href: '/portfolio' },
-  { name: 'Marketplace', href: '/marketplace' },
+  { name: 'Home', href: '/app' },
+  { name: 'Vaults', href: '/app/vaults' },
+  { name: 'Dashboard', href: '/app/dashboard' },
+  { name: 'Portfolio', href: '/app/portfolio' },
+  { name: 'Marketplace', href: '/app/marketplace' },
 ]
 
 export default function Header() {
@@ -46,7 +46,7 @@ export default function Header() {
     queryClient.clear()
 
     // Redirect to home
-    window.location.href = '/'
+    window.location.href = '/app'
   }
 
   return (
@@ -55,7 +55,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/app" className="flex items-center space-x-2">
               <span className="text-2xl text-gold-300">宝</span>
               <span className="text-xl font-bold text-gold-300">
                 Takara
@@ -89,9 +89,9 @@ export default function Header() {
             {isAuthenticated && currentUser?.data ? (
               <>
                 <Link
-                  to="/profile"
+                  to="/app/profile"
                   className={`p-2.5 rounded-lg transition-colors ${
-                    location.pathname === '/profile'
+                    location.pathname === '/app/profile'
                       ? 'bg-green-900/20 text-gold-500'
                       : 'text-gray-300 hover:bg-green-900/10 hover:text-gold-400'
                   }`}
@@ -164,9 +164,9 @@ export default function Header() {
             })}
             {isAuthenticated && (
               <Link
-                to="/profile"
+                to="/app/profile"
                 className={`block px-4 py-2 rounded-lg text-base font-medium transition-colors ${
-                  location.pathname === '/profile'
+                  location.pathname === '/app/profile'
                     ? 'bg-green-900/20 text-gold-500'
                     : 'text-gray-300 hover:bg-green-900/10 hover:text-gold-400'
                 }`}
