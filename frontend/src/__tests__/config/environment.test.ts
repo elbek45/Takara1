@@ -5,7 +5,7 @@ describe('Production Environment Configuration', () => {
   const PRODUCTION_CONFIG = {
     VITE_API_URL: 'https://takarafi.com/api',
     VITE_SOLANA_NETWORK: 'mainnet-beta',
-    VITE_SOLANA_RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff',
+    VITE_SOLANA_RPC_URL: 'https://api.mainnet-beta.solana.com',
     VITE_ETHEREUM_NETWORK: 'mainnet',
     VITE_ETHEREUM_CHAIN_ID: '1',
     VITE_USDT_CONTRACT_ETH: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
@@ -22,9 +22,9 @@ describe('Production Environment Configuration', () => {
     expect(PRODUCTION_CONFIG.VITE_SOLANA_NETWORK).toBe('mainnet-beta')
   })
 
-  it('should use Helius RPC for Solana', () => {
-    expect(PRODUCTION_CONFIG.VITE_SOLANA_RPC_URL).toContain('helius-rpc.com')
-    expect(PRODUCTION_CONFIG.VITE_SOLANA_RPC_URL).toContain('api-key=')
+  it('should use public Solana RPC', () => {
+    expect(PRODUCTION_CONFIG.VITE_SOLANA_RPC_URL).toContain('solana.com')
+    expect(PRODUCTION_CONFIG.VITE_SOLANA_RPC_URL).toContain('mainnet-beta')
   })
 
   it('should use Ethereum mainnet', () => {

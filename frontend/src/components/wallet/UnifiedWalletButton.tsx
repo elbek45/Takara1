@@ -70,7 +70,8 @@ export function UnifiedWalletButton({
       }
     }
     fetchBalances()
-    const interval = setInterval(fetchBalances, 30000)
+    // Reduced polling frequency - balances are cached for 5 minutes
+    const interval = setInterval(fetchBalances, 120000) // 2 minutes
     return () => clearInterval(interval)
   }, [publicKey])
 
@@ -214,7 +215,8 @@ export function UnifiedWalletButtonCompact({ className = '' }: UnifiedWalletButt
       }
     }
     fetchBalances()
-    const interval = setInterval(fetchBalances, 30000)
+    // Reduced polling frequency - balances are cached for 5 minutes
+    const interval = setInterval(fetchBalances, 120000) // 2 minutes
     return () => clearInterval(interval)
   }, [publicKey])
 

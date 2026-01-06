@@ -13,9 +13,10 @@ initSentry()
 // Polyfill Buffer for browser
 window.Buffer = Buffer
 
-// Solana wallet adapter (for hooks compatibility, actual connection via window.phantom)
+// Solana wallet adapter
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
 import { clusterApiUrl } from '@solana/web3.js'
 
 import '@solana/wallet-adapter-react-ui/styles.css'
@@ -34,8 +35,8 @@ const queryClient = new QueryClient({
 // Solana RPC endpoint
 const endpoint = import.meta.env.VITE_SOLANA_RPC_URL || clusterApiUrl('devnet')
 
-// Empty wallets - we use direct window.phantom.solana connection
-const wallets: never[] = []
+// Configure Phantom wallet adapter
+const wallets = [new PhantomWalletAdapter()]
 
 // Fallback component for critical errors
 const ErrorFallback = () => (

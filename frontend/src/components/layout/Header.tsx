@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, User, LogIn } from 'lucide-react'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
 import { TrustWalletButton, TrustWalletButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
@@ -19,6 +20,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const queryClient = useQueryClient()
+  const { disconnect: disconnectPhantom } = useWallet()
 
   // Check if user is logged in (via password auth)
   const isAuthenticated = api.isAuthenticated()
@@ -29,15 +31,13 @@ export default function Header() {
     retry: false,
   })
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Logout from backend (clear JWT token)
     api.logout()
 
-    // Disconnect Phantom wallet directly
+    // Disconnect Phantom wallet via adapter
     try {
-      if (window.phantom?.solana) {
-        window.phantom.solana.disconnect()
-      }
+      await disconnectPhantom()
     } catch (error) {
       console.log('Phantom already disconnected')
     }

@@ -112,7 +112,7 @@ export function useEVMWallet() {
   const transferUSDT = useCallback(
     async (toAddress: string, amount: number) => {
       if (!state.isConnected || !state.address) {
-        throw new Error('Phantom not connected')
+        throw new Error('Trust Wallet not connected')
       }
 
       const result = await ethereumService.transferUSDT({
@@ -178,6 +178,61 @@ export function useEVMWallet() {
 
     autoConnect()
   }, [connect])
+
+  /**
+   * Listen for account/chain changes without page reload
+   * Uses refs to prevent stale closure issues and avoid infinite loops
+   */
+  useEffect(() => {
+    let lastProcessedAccount: string | null = null
+    let lastProcessedChain: number | null = null
+
+    const handleAccountChanged = async (event: CustomEvent<{ accounts: string[] }>) => {
+      const { accounts } = event.detail
+      const newAccount = accounts[0]?.toLowerCase()
+      const currentAccount = state.address?.toLowerCase()
+
+      // Skip if same account or no accounts (disconnect handled elsewhere)
+      if (!newAccount || newAccount === currentAccount || newAccount === lastProcessedAccount) {
+        return
+      }
+
+      lastProcessedAccount = newAccount
+      console.log('Account changed:', newAccount)
+
+      // Only reconnect if account actually changed
+      if (newAccount !== currentAccount) {
+        await connect()
+      }
+    }
+
+    const handleChainChanged = async (event: CustomEvent<{ chainId: string }>) => {
+      const newChainId = parseInt(event.detail.chainId, 16)
+
+      // Skip if same chain
+      if (newChainId === state.chainId || newChainId === lastProcessedChain) {
+        return
+      }
+
+      lastProcessedChain = newChainId
+      console.log('Chain changed:', newChainId)
+
+      setState((prev) => ({ ...prev, chainId: newChainId }))
+
+      // Check if on correct network (only warn once per chain change)
+      if (newChainId !== 1) {
+        toast.warning('Please switch to Ethereum Mainnet for USDT payments')
+      }
+    }
+
+    window.addEventListener('evmAccountChanged', handleAccountChanged as EventListener)
+    window.addEventListener('evmChainChanged', handleChainChanged as EventListener)
+
+    return () => {
+      window.removeEventListener('evmAccountChanged', handleAccountChanged as EventListener)
+      window.removeEventListener('evmChainChanged', handleChainChanged as EventListener)
+    }
+  }, [connect, state.address, state.chainId])
 
   return {
     ...state,

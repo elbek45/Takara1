@@ -1,6 +1,9 @@
 /**
  * Solana Service
  * Handles all Solana blockchain interactions
+ *
+ * Balance fetching uses backend proxy to avoid CORS and rate limiting
+ * Transactions still use direct RPC via wallet adapter
  */
 
 import {
@@ -18,9 +21,11 @@ import {
   getAccount,
 } from '@solana/spl-token'
 
-// Use environment RPC or fall back to public mainnet RPC
-// Primary: Helius public endpoint, Fallback: official Solana RPC
-const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
+// Backend API URL for proxy endpoints
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+
+// Direct RPC URL (only used for transactions, not balance fetching)
+const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
 
 // Simulation mode - skips real blockchain transactions for testing
 const SIMULATION_MODE = import.meta.env.VITE_SIMULATION_MODE === 'true'
@@ -30,8 +35,8 @@ const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') 
 const TAKARA_MINT = new PublicKey('6biyv9NcaHmf8rKfLFGmj6eTwR9LBQtmi8dGUp2vRsgA') // TAKARA Token (mainnet)
 const LAIKA_MINT = new PublicKey('27yzfJSNvYLBjgSNbMyXMMUWzx6T9q4B9TP7KVBS5vPo') // LAIKA Token (mainnet - Cosmodog)
 
-// Balance cache to reduce RPC calls (60 second TTL)
-const CACHE_TTL = 60000
+// Local cache for immediate access (backend also caches with Redis)
+const CACHE_TTL = 60000 // 1 minute local cache (backend caches for 5 min)
 const balanceCache = new Map<string, { value: number; timestamp: number }>()
 
 function getCachedBalance(key: string): number | null {
@@ -44,6 +49,21 @@ function getCachedBalance(key: string): number | null {
 
 function setCachedBalance(key: string, value: number): void {
   balanceCache.set(key, { value, timestamp: Date.now() })
+}
+
+/**
+ * Fetch balance from backend proxy
+ * Falls back to 0 on any error (non-critical feature)
+ */
+async function fetchBalanceFromProxy(endpoint: string): Promise<number> {
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`)
+    if (!response.ok) return 0
+    const data = await response.json()
+    return data.success ? data.data.balance : 0
+  } catch {
+    return 0
+  }
 }
 
 // Type for sendTransaction function from wallet adapter
@@ -61,50 +81,41 @@ class SolanaService {
   }
 
   /**
-   * Get SOL balance with caching
+   * Get SOL balance via backend proxy (with local caching)
    */
   async getBalance(publicKey: PublicKey): Promise<number> {
-    const cacheKey = `sol:${publicKey.toBase58()}`
+    const address = publicKey.toBase58()
+    const cacheKey = `sol:${address}`
     const cached = getCachedBalance(cacheKey)
     if (cached !== null) return cached
 
-    try {
-      const balance = await this.connection.getBalance(publicKey)
-      const result = balance / LAMPORTS_PER_SOL
-      setCachedBalance(cacheKey, result)
-      return result
-    } catch {
-      // Silently return 0 - balance check is non-critical
-      return 0
-    }
+    const balance = await fetchBalanceFromProxy(`/solana/balance/${address}`)
+    setCachedBalance(cacheKey, balance)
+    return balance
   }
 
   /**
-   * Get SPL token balance with caching
+   * Get SPL token balance via backend proxy (with local caching)
    */
   async getTokenBalance(
     walletPublicKey: PublicKey,
     mintPublicKey: PublicKey
   ): Promise<number> {
-    const cacheKey = `token:${walletPublicKey.toBase58()}:${mintPublicKey.toBase58()}`
+    const address = walletPublicKey.toBase58()
+    const mint = mintPublicKey.toBase58()
+    const cacheKey = `token:${address}:${mint}`
     const cached = getCachedBalance(cacheKey)
     if (cached !== null) return cached
 
-    try {
-      const tokenAccount = await getAssociatedTokenAddress(
-        mintPublicKey,
-        walletPublicKey
-      )
-      const accountInfo = await getAccount(this.connection, tokenAccount)
-      const result = Number(accountInfo.amount) / Math.pow(10, 6) // Assuming 6 decimals
-      setCachedBalance(cacheKey, result)
-      return result
-    } catch {
-      // Token account doesn't exist or RPC error - return 0 silently
-      // This is expected for wallets that haven't received this token yet
-      setCachedBalance(cacheKey, 0)
-      return 0
-    }
+    // Determine token name for cleaner URL
+    let tokenName = mint
+    if (mint === USDT_MINT.toBase58()) tokenName = 'USDT'
+    else if (mint === TAKARA_MINT.toBase58()) tokenName = 'TAKARA'
+    else if (mint === LAIKA_MINT.toBase58()) tokenName = 'LAIKA'
+
+    const balance = await fetchBalanceFromProxy(`/solana/token/${address}/${tokenName}`)
+    setCachedBalance(cacheKey, balance)
+    return balance
   }
 
   /**

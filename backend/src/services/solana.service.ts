@@ -27,11 +27,25 @@ import { getLogger } from '../config/logger';
 
 const logger = getLogger('solana-service');
 
+// Solana RPC URL priority:
+// 1. HELIUS_RPC_URL (paid, high limits)
+// 2. SOLANA_RPC_URL (custom)
+// 3. Public mainnet RPC (rate limited)
+const getRpcUrl = () => {
+  if (process.env.HELIUS_RPC_URL) {
+    logger.info('Using Helius RPC');
+    return process.env.HELIUS_RPC_URL;
+  }
+  if (process.env.SOLANA_RPC_URL) {
+    logger.info('Using custom Solana RPC');
+    return process.env.SOLANA_RPC_URL;
+  }
+  logger.info('Using public Solana mainnet RPC');
+  return 'https://api.mainnet-beta.solana.com';
+};
+
 // Solana connection
-export const connection = new Connection(
-  process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-  'confirmed'
-);
+export const connection = new Connection(getRpcUrl(), 'confirmed');
 
 // Platform wallet (loaded from env)
 let platformWallet: Keypair | null = null;

@@ -93,6 +93,10 @@ class EthereumService {
   private usdtContract: ethers.Contract | null = null;
   private rawProvider: any = null; // Store the raw ethereum provider
 
+  // Store bound handlers for proper removal
+  private boundAccountsChanged: ((accounts: string[]) => void) | null = null;
+  private boundChainChanged: ((chainId: string) => void) | null = null;
+
   // Network configuration from environment
   private readonly EXPECTED_CHAIN_ID = Number(import.meta.env.VITE_ETHEREUM_CHAIN_ID) || 1;
   private readonly NETWORK_NAME = import.meta.env.VITE_ETHEREUM_NETWORK === 'sepolia' ? 'Sepolia Testnet' : 'Ethereum Mainnet';
@@ -170,11 +174,18 @@ class EthereumService {
         this.usdtContract = null;
       }
 
+      // Remove old listeners before adding new ones (prevents accumulation)
+      this.removeEventListeners();
+
+      // Create and store bound handlers for proper removal later
+      this.boundAccountsChanged = this.handleAccountsChanged.bind(this);
+      this.boundChainChanged = this.handleChainChanged.bind(this);
+
       // Listen for account changes (use the specific provider)
-      this.rawProvider.on('accountsChanged', this.handleAccountsChanged.bind(this));
+      this.rawProvider.on('accountsChanged', this.boundAccountsChanged);
 
       // Listen for chain changes
-      this.rawProvider.on('chainChanged', this.handleChainChanged.bind(this));
+      this.rawProvider.on('chainChanged', this.boundChainChanged);
 
       return {
         address: accounts[0],
@@ -198,17 +209,30 @@ class EthereumService {
   }
 
   /**
-   * Disconnect wallet
+   * Remove event listeners safely
    */
-  async disconnect(): Promise<void> {
+  private removeEventListeners(): void {
     if (this.rawProvider) {
       try {
-        this.rawProvider.removeListener('accountsChanged', this.handleAccountsChanged);
-        this.rawProvider.removeListener('chainChanged', this.handleChainChanged);
+        if (this.boundAccountsChanged) {
+          this.rawProvider.removeListener('accountsChanged', this.boundAccountsChanged);
+        }
+        if (this.boundChainChanged) {
+          this.rawProvider.removeListener('chainChanged', this.boundChainChanged);
+        }
       } catch (e) {
         // Ignore errors during cleanup
       }
     }
+    this.boundAccountsChanged = null;
+    this.boundChainChanged = null;
+  }
+
+  /**
+   * Disconnect wallet
+   */
+  async disconnect(): Promise<void> {
+    this.removeEventListeners();
 
     this.provider = null;
     this.signer = null;
@@ -456,22 +480,24 @@ class EthereumService {
     return ethers.isAddress(address);
   }
 
-  // Event handlers
+  // Event handlers - NO PAGE RELOAD to prevent wallet disconnection issues
   private handleAccountsChanged(accounts: string[]) {
     console.log('Accounts changed:', accounts);
     if (accounts.length === 0) {
       // User disconnected wallet
       this.disconnect();
     } else {
-      // Account switched
-      window.location.reload();
+      // Account switched - emit custom event instead of reloading
+      // React components will handle state update via useEVMWallet hook
+      window.dispatchEvent(new CustomEvent('evmAccountChanged', { detail: { accounts } }));
     }
   }
 
   private handleChainChanged(chainId: string) {
     console.log('Chain changed:', chainId);
-    // Reload page on chain change
-    window.location.reload();
+    // Emit custom event instead of reloading
+    // React components will handle network validation
+    window.dispatchEvent(new CustomEvent('evmChainChanged', { detail: { chainId } }));
   }
 }
 

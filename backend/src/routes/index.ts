@@ -12,6 +12,7 @@ import marketplaceRoutes from './marketplace.routes';
 import adminRoutes from './admin.routes';
 import priceRoutes from './price.routes';
 import partnersRoutes from './partners.routes';
+import solanaRoutes from './solana.routes';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/marketplace', marketplaceRoutes);
 router.use('/admin', adminRoutes);
 router.use('/prices', priceRoutes);
 router.use('/partners', partnersRoutes);
+router.use('/solana', solanaRoutes);
 
 export default router;

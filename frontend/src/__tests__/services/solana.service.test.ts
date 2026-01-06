@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Test the caching logic separately
 
 describe('Balance Cache Logic', () => {
-  const CACHE_TTL = 60000
+  const CACHE_TTL = 60000 // 1 minute local cache (backend caches for 5 min)
   let balanceCache: Map<string, { value: number; timestamp: number }>
 
   beforeEach(() => {
@@ -115,18 +115,17 @@ describe('Token Mint Addresses', () => {
 })
 
 describe('RPC URL Configuration', () => {
-  it('should use Helius RPC for mainnet', () => {
-    const expectedRpcPattern = /mainnet\.helius-rpc\.com/
-    const heliusUrl = 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
+  it('should use public Solana mainnet RPC', () => {
+    const rpcUrl = 'https://api.mainnet-beta.solana.com'
 
-    expect(heliusUrl).toMatch(expectedRpcPattern)
-    expect(heliusUrl).toContain('api-key=')
+    expect(rpcUrl).toContain('mainnet-beta')
+    expect(rpcUrl).toContain('solana.com')
   })
 
-  it('should have valid Helius API key format', () => {
-    const apiKey = '1d8740dc-e5f4-421c-b823-e1bad1889eff'
-    // UUID v4 format
-    expect(apiKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+  it('should support fallback RPC pattern', () => {
+    // The service falls back to this URL if env var is not set
+    const fallbackUrl = 'https://api.mainnet-beta.solana.com'
+    expect(fallbackUrl).toMatch(/^https:\/\/api\.(mainnet-beta|devnet)\.solana\.com$/)
   })
 })
 

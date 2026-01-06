@@ -44,14 +44,16 @@ class ApiClient {
       (response) => response,
       (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-          // Don't redirect for auth-related requests where 401 is expected
+          // Don't redirect for non-critical requests
           const url = error.config?.url || ''
-          const isAuthRequest = url.includes('/auth/login') ||
-                                url.includes('/auth/register') ||
-                                url.includes('/connect-solana') ||
-                                url.includes('/connect-tron')
+          const skipRedirect = url.includes('/auth/') ||
+                               url.includes('/vaults') ||
+                               url.includes('/prices') ||
+                               url.includes('/marketplace') ||
+                               url.includes('/partners') ||
+                               url.includes('/investments')
 
-          if (!isAuthRequest) {
+          if (!skipRedirect) {
             // Clear token and redirect to home only for protected endpoints
             localStorage.removeItem('auth_token')
             window.location.href = '/'

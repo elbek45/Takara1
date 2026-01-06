@@ -1,43 +1,15 @@
 /**
  * Phantom Wallet Button
- * Direct connection to window.phantom.solana
+ * Uses Solana Wallet Adapter for consistent state across all components
  * Shows TAKARA and LAIKA (Cosmodog) balances
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { Wallet } from 'lucide-react'
-import { PublicKey } from '@solana/web3.js'
 import { solanaService } from '../../services/solana.service'
 import { api } from '../../services/api'
 import { toast } from 'sonner'
-
-interface PhantomProvider {
-  isPhantom: boolean
-  publicKey: PublicKey | null
-  isConnected: boolean
-  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: PublicKey }>
-  disconnect: () => Promise<void>
-  on: (event: string, callback: (...args: unknown[]) => void) => void
-  off: (event: string, callback: (...args: unknown[]) => void) => void
-}
-
-declare global {
-  interface Window {
-    phantom?: {
-      solana?: PhantomProvider
-    }
-  }
-}
-
-function getPhantomProvider(): PhantomProvider | null {
-  if (typeof window === 'undefined') return null
-
-  if (window.phantom?.solana?.isPhantom) {
-    return window.phantom.solana
-  }
-
-  return null
-}
 
 interface PhantomButtonProps {
   variant?: 'primary' | 'outline'
@@ -50,64 +22,11 @@ export function PhantomButton({
   size = 'md',
   className = '',
 }: PhantomButtonProps) {
-  const [publicKey, setPublicKey] = useState<PublicKey | null>(null)
-  const [connecting, setConnecting] = useState(false)
+  const { publicKey, connected, connecting, connect, disconnect, select, wallets } = useWallet()
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
-  const connected = !!publicKey
-
-  // Check existing connection on mount
-  useEffect(() => {
-    const checkExisting = async () => {
-      // Wait a bit for extensions to inject
-      await new Promise(r => setTimeout(r, 500))
-
-      const provider = getPhantomProvider()
-      if (!provider) return
-
-      // If already connected, get the public key
-      if (provider.isConnected && provider.publicKey) {
-        setPublicKey(provider.publicKey)
-        return
-      }
-
-      // Try eager connect (only if previously authorized)
-      try {
-        const resp = await provider.connect({ onlyIfTrusted: true })
-        setPublicKey(resp.publicKey)
-      } catch {
-        // User needs to click to connect
-      }
-    }
-    checkExisting()
-  }, [])
-
-  // Listen for wallet events
-  useEffect(() => {
-    const provider = getPhantomProvider()
-    if (!provider) return
-
-    const handleAccountChange = (newKey: PublicKey | null) => {
-      setPublicKey(newKey)
-    }
-
-    const handleDisconnect = () => {
-      setPublicKey(null)
-      setTakaraBalance('0')
-      setLaikaBalance('0')
-    }
-
-    provider.on('accountChanged', handleAccountChange)
-    provider.on('disconnect', handleDisconnect)
-
-    return () => {
-      provider.off('accountChanged', handleAccountChange)
-      provider.off('disconnect', handleDisconnect)
-    }
-  }, [])
-
-  // Fetch balances
+  // Fetch balances when connected
   useEffect(() => {
     if (!publicKey) {
       setTakaraBalance('0')
@@ -133,7 +52,7 @@ export function PhantomButton({
     return () => clearInterval(interval)
   }, [publicKey])
 
-  // Save wallet to backend
+  // Save wallet to backend when connected
   useEffect(() => {
     if (!publicKey || !api.isAuthenticated()) return
 
@@ -142,54 +61,52 @@ export function PhantomButton({
     })
   }, [publicKey])
 
-  const connect = useCallback(async () => {
-    const provider = getPhantomProvider()
-
-    if (!provider) {
-      toast.error('Phantom wallet not found')
-      window.open('https://phantom.app/', '_blank')
-      return
-    }
-
-    setConnecting(true)
+  const handleConnect = useCallback(async () => {
     try {
-      const resp = await provider.connect()
-      setPublicKey(resp.publicKey)
+      // Find Phantom wallet in available wallets
+      const phantomWallet = wallets.find(w => w.adapter.name === 'Phantom')
+
+      if (!phantomWallet) {
+        toast.error('Phantom wallet not found')
+        window.open('https://phantom.app/', '_blank')
+        return
+      }
+
+      // Select Phantom wallet
+      select(phantomWallet.adapter.name)
+
+      // Connect
+      await connect()
       toast.success('Phantom connected')
     } catch (err: unknown) {
       console.error('Phantom connect error:', err)
-      const error = err as { code?: number; message?: string }
+      const error = err as { code?: number; message?: string; name?: string }
 
-      if (error.code === 4001 || error.message?.includes('User rejected')) {
+      if (error.name === 'WalletNotReadyError') {
+        toast.error('Phantom wallet not found')
+        window.open('https://phantom.app/', '_blank')
+      } else if (error.code === 4001 || error.message?.includes('User rejected')) {
         toast.error('Connection rejected')
       } else {
         toast.error('Connection failed - try refreshing the page')
       }
-    } finally {
-      setConnecting(false)
     }
-  }, [])
+  }, [connect, select, wallets])
 
-  const disconnect = useCallback(async () => {
-    const provider = getPhantomProvider()
-    if (provider) {
-      try {
-        await provider.disconnect()
-      } catch {
-        // Already disconnected
-      }
+  const handleDisconnect = useCallback(async () => {
+    try {
+      await disconnect()
+      toast.info('Phantom disconnected')
+    } catch {
+      // Already disconnected
     }
-    setPublicKey(null)
-    setTakaraBalance('0')
-    setLaikaBalance('0')
-    toast.info('Phantom disconnected')
-  }, [])
+  }, [disconnect])
 
   const handleClick = () => {
     if (connected) {
-      disconnect()
+      handleDisconnect()
     } else {
-      connect()
+      handleConnect()
     }
   }
 
@@ -239,56 +156,16 @@ export function PhantomButton({
 
 // Compact version for mobile
 export function PhantomButtonCompact({ className = '' }: { className?: string }) {
-  const [publicKey, setPublicKey] = useState<PublicKey | null>(null)
-  const [connecting, setConnecting] = useState(false)
+  const { publicKey, connected, connecting, connect, disconnect, select, wallets } = useWallet()
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
-  const connected = !!publicKey
-
   useEffect(() => {
-    const checkExisting = async () => {
-      await new Promise(r => setTimeout(r, 500))
-      const provider = getPhantomProvider()
-      if (!provider) return
-
-      if (provider.isConnected && provider.publicKey) {
-        setPublicKey(provider.publicKey)
-        return
-      }
-
-      try {
-        const resp = await provider.connect({ onlyIfTrusted: true })
-        setPublicKey(resp.publicKey)
-      } catch {
-        // User needs to click
-      }
-    }
-    checkExisting()
-  }, [])
-
-  useEffect(() => {
-    const provider = getPhantomProvider()
-    if (!provider) return
-
-    const handleAccountChange = (newKey: PublicKey | null) => setPublicKey(newKey)
-    const handleDisconnect = () => {
-      setPublicKey(null)
+    if (!publicKey) {
       setTakaraBalance('0')
       setLaikaBalance('0')
+      return
     }
-
-    provider.on('accountChanged', handleAccountChange)
-    provider.on('disconnect', handleDisconnect)
-
-    return () => {
-      provider.off('accountChanged', handleAccountChange)
-      provider.off('disconnect', handleDisconnect)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!publicKey) return
 
     const fetchBalances = async () => {
       try {
@@ -313,37 +190,36 @@ export function PhantomButtonCompact({ className = '' }: { className?: string })
   }, [publicKey])
 
   const handleClick = async () => {
-    const provider = getPhantomProvider()
-
     if (connected) {
-      if (provider) {
-        try { await provider.disconnect() } catch {}
-      }
-      setPublicKey(null)
-      toast.info('Disconnected')
+      try {
+        await disconnect()
+        toast.info('Disconnected')
+      } catch {}
       return
     }
 
-    if (!provider) {
-      toast.error('Phantom not found')
-      window.open('https://phantom.app/', '_blank')
-      return
-    }
-
-    setConnecting(true)
     try {
-      const resp = await provider.connect()
-      setPublicKey(resp.publicKey)
+      const phantomWallet = wallets.find(w => w.adapter.name === 'Phantom')
+
+      if (!phantomWallet) {
+        toast.error('Phantom not found')
+        window.open('https://phantom.app/', '_blank')
+        return
+      }
+
+      select(phantomWallet.adapter.name)
+      await connect()
       toast.success('Connected')
     } catch (err: unknown) {
-      const error = err as { code?: number; message?: string }
-      if (error.code === 4001 || error.message?.includes('User rejected')) {
+      const error = err as { code?: number; message?: string; name?: string }
+      if (error.name === 'WalletNotReadyError') {
+        toast.error('Phantom not found')
+        window.open('https://phantom.app/', '_blank')
+      } else if (error.code === 4001 || error.message?.includes('User rejected')) {
         toast.error('Rejected')
       } else {
         toast.error('Failed - try refreshing')
       }
-    } finally {
-      setConnecting(false)
     }
   }
 

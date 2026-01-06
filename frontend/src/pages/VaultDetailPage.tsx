@@ -6,6 +6,7 @@ import { api } from '../services/api'
 import { ArrowLeft, TrendingUp, Coins, Calendar, DollarSign } from 'lucide-react'
 import InvestmentModal from '../components/investment/InvestmentModal'
 import { useAuth } from '../hooks/useAuth'
+import { useEVMWallet } from '../hooks/useEVMWallet'
 
 // Custom hook for debouncing (1 second delay)
 function useDebounce<T>(value: T, delay: number): T {
@@ -70,12 +71,16 @@ class CalculatorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
 export default function VaultDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { connected } = useWallet()
+  const { connected: solanaConnected } = useWallet()
+  const { isConnected: evmConnected } = useEVMWallet()
   const { isAuthenticated } = useAuth()
   const [usdtAmount, setUsdtAmount] = useState<string>('')
   const [boostToken, setBoostToken] = useState<'LAIKA' | 'TAKARA'>('LAIKA')
   const [laikaAmount, setLaikaAmount] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Check if any wallet is connected (Solana OR EVM)
+  const connected = solanaConnected || evmConnected
 
   // Debounce USDT amount - wait 1 second after user stops typing
   const debouncedUsdtAmount = useDebounce(usdtAmount, 1000)
@@ -106,11 +111,10 @@ export default function VaultDetailPage() {
 
   const takaraPrice = takaraPriceResponse?.data?.price ?? 0.001506
 
-  // Handler to update LAIKA amount and refresh price
+  // Handler to update LAIKA/TAKARA boost amount
+  // Price is already cached and auto-refreshed by useQuery
   const handleLaikaAmountChange = (newAmount: number) => {
     setLaikaAmount(newAmount)
-    // Refresh price when amount changes
-    refetchLaikaPrice()
   }
 
   // Safe parse function to prevent NaN
