@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
@@ -7,7 +7,7 @@ import { ArrowLeft, TrendingUp, Coins, Calendar, DollarSign } from 'lucide-react
 import InvestmentModal from '../components/investment/InvestmentModal'
 import { useAuth } from '../hooks/useAuth'
 
-// Custom hook for debouncing
+// Custom hook for debouncing (1 second delay)
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
@@ -24,6 +24,49 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
+// Error Boundary to prevent full page crashes
+interface ErrorBoundaryProps {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error?: Error
+}
+
+class CalculatorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Calculator error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-center">
+          <p className="text-red-400 mb-2">Calculator error occurred</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded"
+          >
+            Try Again
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function VaultDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -34,8 +77,8 @@ export default function VaultDetailPage() {
   const [laikaAmount, setLaikaAmount] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Debounce USDT amount to prevent rapid API calls
-  const debouncedUsdtAmount = useDebounce(usdtAmount, 500)
+  // Debounce USDT amount - wait 1 second after user stops typing
+  const debouncedUsdtAmount = useDebounce(usdtAmount, 1000)
 
   const { data: vaultResponse, isLoading: vaultLoading } = useQuery({
     queryKey: ['vault', id],
@@ -264,6 +307,7 @@ export default function VaultDetailPage() {
               </div>
             </div>
 
+            <CalculatorErrorBoundary>
             <div className="bg-background-card rounded-xl p-8 border border-green-900/20">
               <h2 className="text-2xl font-bold text-white mb-6">Investment Calculator</h2>
 
@@ -577,6 +621,7 @@ export default function VaultDetailPage() {
                 </div>
               )}
             </div>
+            </CalculatorErrorBoundary>
           </div>
         </div>
       </div>
