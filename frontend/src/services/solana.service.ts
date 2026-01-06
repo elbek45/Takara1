@@ -19,7 +19,15 @@ import {
 } from '@solana/spl-token'
 
 const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || 'devnet'
+// Use environment RPC or fall back to public RPC (with rate limits)
+// For production, consider using Helius, Alchemy, or QuickNode
 const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || `https://api.${SOLANA_NETWORK}.solana.com`
+
+// Fallback RPC endpoints for when primary fails (403 rate limit)
+const FALLBACK_RPC_URLS = [
+  'https://solana-mainnet.g.alchemy.com/v2/demo', // Alchemy demo
+  'https://rpc.ankr.com/solana', // Ankr free tier
+]
 
 // Simulation mode - skips real blockchain transactions for testing
 const SIMULATION_MODE = import.meta.env.VITE_SIMULATION_MODE === 'true'
@@ -38,36 +46,67 @@ type SendTransactionFn = (
 
 class SolanaService {
   private connection: Connection
+  private fallbackConnections: Connection[]
 
   constructor() {
     this.connection = new Connection(RPC_URL, 'confirmed')
+    this.fallbackConnections = FALLBACK_RPC_URLS.map(url => new Connection(url, 'confirmed'))
   }
 
   /**
-   * Get SOL balance
+   * Get SOL balance with fallback RPC support
    */
   async getBalance(publicKey: PublicKey): Promise<number> {
-    const balance = await this.connection.getBalance(publicKey)
-    return balance / LAMPORTS_PER_SOL
+    try {
+      const balance = await this.connection.getBalance(publicKey)
+      return balance / LAMPORTS_PER_SOL
+    } catch (error: any) {
+      // Try fallback RPCs on 403/rate limit
+      if (error?.message?.includes('403') || error?.message?.includes('rate')) {
+        for (const fallbackConn of this.fallbackConnections) {
+          try {
+            const balance = await fallbackConn.getBalance(publicKey)
+            return balance / LAMPORTS_PER_SOL
+          } catch {
+            continue
+          }
+        }
+      }
+      // Silently return 0 - balance check is non-critical
+      return 0
+    }
   }
 
   /**
-   * Get SPL token balance
+   * Get SPL token balance with fallback RPC support
    */
   async getTokenBalance(
     walletPublicKey: PublicKey,
     mintPublicKey: PublicKey
   ): Promise<number> {
-    try {
-      const tokenAccount = await getAssociatedTokenAddress(
-        mintPublicKey,
-        walletPublicKey
-      )
+    const tokenAccount = await getAssociatedTokenAddress(
+      mintPublicKey,
+      walletPublicKey
+    )
 
+    // Try primary connection first
+    try {
       const accountInfo = await getAccount(this.connection, tokenAccount)
       return Number(accountInfo.amount) / Math.pow(10, 6) // Assuming 6 decimals
-    } catch (error) {
-      console.error('Error getting token balance:', error)
+    } catch (error: any) {
+      // On 403/rate limit, try fallback RPCs
+      if (error?.message?.includes('403') || error?.message?.includes('rate')) {
+        for (const fallbackConn of this.fallbackConnections) {
+          try {
+            const accountInfo = await getAccount(fallbackConn, tokenAccount)
+            return Number(accountInfo.amount) / Math.pow(10, 6)
+          } catch {
+            continue
+          }
+        }
+      }
+      // Token account doesn't exist or all RPCs failed - return 0 silently
+      // This is expected for wallets that haven't received this token yet
       return 0
     }
   }
