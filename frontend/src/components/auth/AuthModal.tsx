@@ -79,10 +79,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       return
     }
 
-    if (mode === 'login') {
-      await loginMutation.mutateAsync()
-    } else {
-      await registerMutation.mutateAsync()
+    try {
+      if (mode === 'login') {
+        await loginMutation.mutateAsync()
+      } else {
+        await registerMutation.mutateAsync()
+      }
+    } catch {
+      // Error is already handled by onError callback
+      // This catch prevents unhandled promise rejection
     }
   }
 
