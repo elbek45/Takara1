@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Toaster } from 'sonner'
 
 // Layout
@@ -36,6 +36,12 @@ function ProtectedApp({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// Redirect legacy vault detail URLs to /app/vaults/:id
+function VaultRedirect() {
+  const { id } = useParams<{ id: string }>()
+  return <Navigate to={`/app/vaults/${id}`} replace />
+}
+
 function App() {
   return (
     <>
@@ -67,6 +73,17 @@ function App() {
         <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
         <Route path="/admin/partners" element={<AdminPartnersPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+
+        {/* Legacy routes redirect to /app */}
+        <Route path="/vaults" element={<Navigate to="/app/vaults" replace />} />
+        <Route path="/vaults/:id" element={<VaultRedirect />} />
+        <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="/portfolio" element={<Navigate to="/app/portfolio" replace />} />
+        <Route path="/marketplace" element={<Navigate to="/app/marketplace" replace />} />
+        <Route path="/faq" element={<Navigate to="/app/faq" replace />} />
+
+        {/* Catch-all: redirect to Coming Soon */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <Toaster
