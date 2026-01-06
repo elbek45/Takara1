@@ -123,8 +123,8 @@ export default function FAQPage() {
           <p>Takara uses a unique 2-step payment system for security and efficiency:</p>
 
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <p className="font-semibold text-purple-400 mb-2">Step 1: USDT Payment (Phantom)</p>
-            <p className="text-sm text-gray-300">Pay your USDT on <strong>Ethereum Mainnet</strong></p>
+            <p className="font-semibold text-purple-400 mb-2">Step 1: USDT Payment (Trust Wallet / MetaMask)</p>
+            <p className="text-sm text-gray-300">Pay your USDT on <strong>EVM Network (BSC)</strong></p>
             <p className="text-sm text-gray-400 mt-1">This is your main stacking deposit</p>
           </div>
 

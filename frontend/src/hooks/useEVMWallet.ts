@@ -136,7 +136,7 @@ export function useEVMWallet() {
     const isCorrectNetwork = await ethereumService.checkNetwork()
     if (!isCorrectNetwork) {
       await ethereumService.switchToMainnet()
-      toast.info('Switched to Ethereum Mainnet')
+      toast.info('Switched to EVM network')
     }
   }, [])
 

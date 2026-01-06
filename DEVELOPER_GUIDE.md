@@ -313,5 +313,283 @@ ENABLE_CRON_JOBS=true              # Enable background jobs
 
 ---
 
+## ⚠️ CRITICAL: Incomplete Features (TODOs)
+
+### 🔴 HIGH PRIORITY - Must Fix Before Production
+
+#### 1. Transaction Verification Bypassed
+**Files:** `backend/src/controllers/investment-2step.controller.ts` (lines 88, 248, 282)
+```typescript
+// CURRENT: txVerified = true (Simplified for initial deployment)
+// NEEDED: Implement full on-chain verification using solana.service.ts
+```
+**Risk:** Users can submit fake transaction hashes
+**Solution:** Implement `verifyTransactionDetails()` from solana.service.ts
+
+#### 2. LAIKA Token Return Not Implemented
+**File:** `backend/src/jobs/laikaReturn.ts` (lines 73, 197)
+```typescript
+// TODO: Transfer LAIKA tokens back to owner
+// Currently: Using placeholder signature
+```
+**Risk:** Users won't receive their LAIKA tokens back at term end
+**Solution:** Use `solana.service.transferFromPlatform()` with LAIKA mint address
+
+#### 3. NFT Minting Disabled
+**File:** `backend/src/controllers/investment-2step.controller.ts` (lines 320-327)
+```typescript
+// NFT minting disabled for initial deployment
+// TODO: Re-enable once platform wallet is configured
+```
+**Risk:** Users won't receive WEXEL NFTs
+**Solution:** Set `ENABLE_REAL_NFT_MINTING=true` in env and configure IPFS
+
+#### 4. Instant Sale Incomplete
+**File:** `backend/src/services/instantSale.service.ts` (lines 263-269)
+```typescript
+// TODO: Return LAIKA boost if exists
+// TODO: Transfer NFT ownership
+// TODO: Transfer USDT to seller
+```
+**Risk:** Instant sale button exists but doesn't actually transfer funds
+**Solution:** Implement actual token transfers using blockchain services
+
+#### 5. Admin Treasury Withdrawal - No Auth Check
+**File:** `backend/src/controllers/admin-treasury.controller.ts` (lines 352-356)
+```typescript
+// TODO: Verify admin is super admin
+// TODO: Perform actual token transfer
+```
+**Risk:** Any admin can withdraw; transfers are mocked
+**Solution:** Add role check + implement real transfers
+
+---
+
+### 🟡 MEDIUM PRIORITY - Should Fix
+
+#### 6. NFT Image URLs are Placeholders
+**File:** `backend/src/services/nft.service.ts` (line 82)
+```typescript
+image: `https://placeholder.takaragold.io/nft/${tier}.png`
+// TODO: Replace with actual IPFS image URL
+```
+**Solution:** Upload tier images to IPFS and update URLs
+
+#### 7. Real Ethereum Transfers Disabled
+**File:** `backend/src/services/ethereum.service.ts` (line 181)
+```typescript
+// Real Ethereum transfers disabled - returning mock signature
+return { txHash: 'mock_eth_tx_' + Date.now() }
+```
+**Solution:** Set `ENABLE_REAL_ETH_TRANSFERS=true` and add private key
+
+#### 8. Mining Power Calculation Missing
+**File:** `backend/src/controllers/admin-advanced.controller.ts` (line 57)
+```typescript
+const totalMiningPower = 0; // TODO: Calculate from active investments
+```
+**Solution:** Sum TAKARA APY * USDT invested for all active investments
+
+#### 9. Logger File Rotation Disabled
+**File:** `backend/src/config/logger.ts` (line 78)
+```typescript
+// TODO: Re-enable file rotation once pino-roll compatibility is fixed
+```
+**Risk:** Log files will grow indefinitely
+**Solution:** Configure pino-roll or use external log rotation
+
+---
+
+## 🔧 Architecture Overview for Programmer
+
+### Investment Flow (2-Step Payment)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      USER INITIATES INVESTMENT                   │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 1: USDT Payment (EVM Network - Trust Wallet/MetaMask)     │
+│  ─────────────────────────────────────────────────────────────  │
+│  1. Frontend: useEVMWallet.ts → ethereum.service.ts             │
+│  2. User sends USDT to platform EVM wallet                       │
+│  3. Backend: Creates investment with status=PENDING_TOKENS       │
+│  4. Stores txHash in database                                    │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2: TAKARA + LAIKA (Solana - Phantom Wallet)               │
+│  ─────────────────────────────────────────────────────────────  │
+│  1. Frontend: useWallet (Solana adapter)                         │
+│  2. Required TAKARA = vault.takaraRatio × (USDT/100)            │
+│  3. Optional LAIKA boost (x100 premium for Cosmodog)             │
+│  4. Backend: investment-2step.controller.ts                      │
+│  5. Verifies Solana transactions (⚠️ TODO: Currently bypassed)  │
+│  6. Creates LaikaBoost record if LAIKA deposited                 │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  ACTIVATION (72-hour delay)                                      │
+│  ─────────────────────────────────────────────────────────────  │
+│  Job: investmentActivation.ts (runs every hour)                  │
+│  1. Finds investments where createdAt + 72h < now                │
+│  2. Mints WEXEL NFT (⚠️ TODO: Currently disabled)               │
+│  3. Sets status=ACTIVE, startDate=now                            │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  DAILY MINING                                                    │
+│  ─────────────────────────────────────────────────────────────  │
+│  Job: dailyTakaraMining.ts (runs daily at 00:00 UTC)             │
+│  1. Base TAKARA = (USDT × takaraAPY) / 365                       │
+│  2. Boost multiplier from LAIKA (x100 value)                     │
+│  3. Mining difficulty adjustment (starts at 1.0)                 │
+│  4. Creates TakaraMining record                                  │
+│  5. User can claim with 5% tax                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+```
+
+### Boost Calculation Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  LAIKA BOOST (x100 Premium for Cosmodog Community)              │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  File: utils/laika.calculator.ts                                 │
+│  File: services/price.service.ts → calculateLaikaValueWithPremium│
+│                                                                  │
+│  Formula:                                                        │
+│  ─────────                                                       │
+│  laikaMarketValueUSD = laikaAmount × laikaPrice                 │
+│  laikaBoostValueUSD = laikaMarketValueUSD × 100  ← x100!        │
+│  maxBoostValueUSD = usdtInvested × 0.50 (50% cap)               │
+│  effectiveBoost = min(laikaBoostValueUSD, maxBoostValueUSD)     │
+│                                                                  │
+│  Example: $300 USDT investment                                   │
+│  ─────────────────────────────                                  │
+│  Max boost = $150 (50% of $300)                                  │
+│  LAIKA price = $0.0000007426                                     │
+│  Need $150/$100 = $1.50 market value for full boost              │
+│  LAIKA needed = $1.50 / $0.0000007426 = ~2,020,000 LAIKA        │
+│                                                                  │
+│  APY boost = (effectiveBoost / maxBoost) × (maxAPY - baseAPY)   │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  TAKARA BOOST (Market Value - No Premium)                       │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  File: utils/takara.calculator.ts                                │
+│                                                                  │
+│  Formula:                                                        │
+│  takaraBoostValue = takaraMarketValueUSD × 1.0 (no multiplier)  │
+│  maxBoostValueUSD = usdtInvested × 0.50                          │
+│                                                                  │
+│  TAKARA uses full market value (no premium like LAIKA)           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### TAKARA Dynamic Pricing Model
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  File: services/takara-pricing.service.ts                        │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  Initial Price: $0.001                                           │
+│  Target Price: $0.10 (over 5 years = 1825 days)                 │
+│                                                                  │
+│  Price = InitialPrice + (TargetPrice - InitialPrice) × Factor   │
+│                                                                  │
+│  Factor = 0.40 × timeFactor                                      │
+│         + 0.40 × supplyFactor                                    │
+│         + 0.20 × difficultyFactor                                │
+│                                                                  │
+│  timeFactor = daysElapsed / totalDays                            │
+│  supplyFactor = circulatingSupply / maxSupply                    │
+│  difficultyFactor = currentDifficulty - 1                        │
+│                                                                  │
+│  Current Price (Day 23): ~$0.001506                              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Production Readiness Checklist
+
+### Environment Setup
+- [ ] Set `NODE_ENV=production`
+- [ ] Set `TEST_MODE=false`
+- [ ] Set `SKIP_TX_VERIFICATION=false`
+- [ ] Set `ENABLE_REAL_NFT_MINTING=true`
+- [ ] Set `ENABLE_REAL_ETH_TRANSFERS=true`
+- [ ] Set `ENABLE_CRON_JOBS=true`
+
+### Blockchain Configuration
+- [ ] Configure Solana RPC (mainnet-beta)
+- [ ] Add platform wallet private keys (Solana, EVM)
+- [ ] Set USDT contract addresses (TRON, Ethereum/BSC)
+- [ ] Configure IPFS for NFT metadata
+
+### Security
+- [ ] Change JWT_SECRET from default
+- [ ] Change admin password from default
+- [ ] Enable rate limiting
+- [ ] Configure CORS for production domain only
+- [ ] Remove exposed credentials from deploy.sh
+
+### Monitoring
+- [ ] Set up Sentry DSN
+- [ ] Configure log rotation
+- [ ] Set up uptime monitoring
+- [ ] Configure alerts for failed jobs
+
+---
+
+## 📁 Key File Locations
+
+```
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── investment-2step.controller.ts  ← Main investment flow
+│   │   ├── admin.controller.ts             ← Admin operations
+│   │   └── marketplace.controller.ts       ← NFT marketplace
+│   ├── services/
+│   │   ├── price.service.ts                ← Token prices (LAIKA x100 here!)
+│   │   ├── takara-pricing.service.ts       ← Dynamic TAKARA price
+│   │   ├── solana.service.ts               ← Solana blockchain ops
+│   │   └── instantSale.service.ts          ← Instant sale feature
+│   ├── jobs/
+│   │   ├── dailyTakaraMining.ts            ← Daily mining calculation
+│   │   ├── investmentActivation.ts         ← 72h activation
+│   │   └── laikaReturn.ts                  ← Return tokens at term end
+│   └── utils/
+│       ├── laika.calculator.ts             ← LAIKA boost math
+│       ├── takara.calculator.ts            ← TAKARA boost math
+│       └── mining.calculator.ts            ← Mining APY calculations
+
+frontend/
+├── src/
+│   ├── pages/
+│   │   ├── VaultDetailPage.tsx             ← Investment UI
+│   │   ├── ComingSoonPage.tsx              ← Landing (password: takara2026)
+│   │   └── admin/                          ← Admin panel
+│   ├── services/
+│   │   ├── ethereum.service.ts             ← EVM wallet integration
+│   │   └── evm.service.ts                  ← BSC-specific operations
+│   └── hooks/
+│       └── useEVMWallet.ts                 ← EVM wallet hook
+```
+
+---
+
 *Last Updated: January 6, 2026*
-*Version: 2.2*
+*Version: 2.2.1*
