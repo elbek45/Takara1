@@ -41,7 +41,7 @@ export default function VaultDetailPage() {
     refetchInterval: 120 * 1000, // Refresh every 2 minutes
   })
 
-  const takaraPrice = takaraPriceResponse?.data?.price || 0.001506
+  const takaraPrice = takaraPriceResponse?.data?.price ?? 0.001506
 
   // Handler to update LAIKA amount and refresh price
   const handleLaikaAmountChange = (newAmount: number) => {
@@ -327,7 +327,7 @@ export default function VaultDetailPage() {
                         {laikaAmount.toLocaleString()} {boostToken}
                       </span>
                       <span className="text-xs text-gray-400">
-                        ≈ ${(laikaAmount * (boostToken === 'LAIKA' ? (calculation?.investment?.laikaPrice || laikaToUsdtRate) : takaraPrice)).toFixed(2)} USDT
+                        ≈ ${(laikaAmount * (boostToken === 'LAIKA' ? (calculation?.investment?.laikaPrice || laikaToUsdtRate || 0) : (takaraPrice || 0))).toFixed(2)} USDT
                       </span>
                     </div>
                   </div>
@@ -383,7 +383,7 @@ export default function VaultDetailPage() {
                         }`}>
                           ${boostToken === 'LAIKA'
                             ? (calculation.investment.laikaBoostValueUSD?.toFixed(2) || '0.00')
-                            : (laikaAmount * takaraPrice).toFixed(2)
+                            : ((laikaAmount * (takaraPrice || 0.001506)).toFixed(2))
                           } USDT
                         </span>
                       </div>
@@ -394,8 +394,8 @@ export default function VaultDetailPage() {
                             <span className="animate-pulse">Updating...</span>
                           ) : (
                             <>${boostToken === 'LAIKA'
-                              ? (calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)
-                              : takaraPrice.toFixed(6)
+                              ? (calculation?.investment?.laikaPrice || laikaToUsdtRate || 0.0000007).toFixed(8)
+                              : (takaraPrice || 0.001506).toFixed(6)
                             } USDT</>
                           )}
                           {boostToken === 'LAIKA' && (
@@ -427,7 +427,7 @@ export default function VaultDetailPage() {
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">Current Price:</span>
-                            <span className="text-gold font-bold">${takaraPrice.toFixed(6)}</span>
+                            <span className="text-gold font-bold">${(takaraPrice || 0.001506).toFixed(6)}</span>
                           </div>
                           <div className="text-xs text-gray-500 text-center mt-1">
                             Price grows based on time, supply & difficulty
