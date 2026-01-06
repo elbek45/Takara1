@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../services/api'
 import { VaultTier } from '../types'
@@ -342,12 +343,12 @@ export default function VaultsPage() {
                 </div>
 
                 {/* CTA */}
-                <a
-                  href={`/vaults/${vault.id}`}
+                <Link
+                  to={`/app/vaults/${vault.id}`}
                   className="btn-gold w-full text-center block py-3 rounded-lg font-semibold"
                 >
                   View Details
-                </a>
+                </Link>
               </div>
             ))}
           </div>
