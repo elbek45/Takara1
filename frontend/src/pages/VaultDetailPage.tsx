@@ -132,7 +132,8 @@ export default function VaultDetailPage() {
         // @ts-ignore - Type definitions need updating
         laikaAmount: laikaAmount > 0 ? laikaAmount : undefined,
       }),
-    enabled: !!id && !!debouncedUsdtAmount && parsedUsdtAmount > 0,
+    // Only fetch when: vault loaded, valid amount, AND amount >= minInvestment
+    enabled: !!id && !!vault && !!debouncedUsdtAmount && parsedUsdtAmount >= (vault?.minInvestment || 0),
     retry: false, // Don't retry on validation errors
     staleTime: 30000, // Cache for 30 seconds
   })
