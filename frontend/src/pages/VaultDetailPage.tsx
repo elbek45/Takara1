@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
@@ -6,6 +6,23 @@ import { api } from '../services/api'
 import { ArrowLeft, TrendingUp, Coins, Calendar, DollarSign } from 'lucide-react'
 import InvestmentModal from '../components/investment/InvestmentModal'
 import { useAuth } from '../hooks/useAuth'
+
+// Custom hook for debouncing
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 export default function VaultDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +33,9 @@ export default function VaultDetailPage() {
   const [boostToken, setBoostToken] = useState<'LAIKA' | 'TAKARA'>('LAIKA')
   const [laikaAmount, setLaikaAmount] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Debounce USDT amount to prevent rapid API calls
+  const debouncedUsdtAmount = useDebounce(usdtAmount, 500)
 
   const { data: vaultResponse, isLoading: vaultLoading } = useQuery({
     queryKey: ['vault', id],
@@ -51,17 +71,17 @@ export default function VaultDetailPage() {
   }
 
   const { data: calculationResponse, isLoading: calculating } = useQuery({
-    queryKey: ['calculate', id, usdtAmount, laikaAmount],
+    queryKey: ['calculate', id, debouncedUsdtAmount, laikaAmount],
     queryFn: () =>
       // @ts-ignore - Type definitions need updating
       api.calculateInvestment(id!, {
-        usdtAmount: parseFloat(usdtAmount),
+        usdtAmount: parseFloat(debouncedUsdtAmount),
         // @ts-ignore - Type definitions need updating
         laikaAmount: laikaAmount > 0 ? laikaAmount : undefined,
       }),
-    enabled: !!id && !!usdtAmount && parseFloat(usdtAmount) > 0,
+    enabled: !!id && !!debouncedUsdtAmount && parseFloat(debouncedUsdtAmount) > 0,
     retry: false, // Don't retry on validation errors
-    staleTime: 10000, // Cache for 10 seconds
+    staleTime: 30000, // Cache for 30 seconds
   })
 
   const calculation = calculationResponse?.data
