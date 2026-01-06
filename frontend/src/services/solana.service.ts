@@ -18,9 +18,9 @@ import {
   getAccount,
 } from '@solana/spl-token'
 
-const SOLANA_NETWORK = import.meta.env.VITE_SOLANA_NETWORK || 'mainnet-beta'
 // Use environment RPC or fall back to public mainnet RPC
-const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+// Primary: Helius public endpoint, Fallback: official Solana RPC
+const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL || 'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
 
 // Simulation mode - skips real blockchain transactions for testing
 const SIMULATION_MODE = import.meta.env.VITE_SIMULATION_MODE === 'true'
@@ -29,6 +29,22 @@ const SIMULATION_MODE = import.meta.env.VITE_SIMULATION_MODE === 'true'
 const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') // USDT on Solana mainnet
 const TAKARA_MINT = new PublicKey('6biyv9NcaHmf8rKfLFGmj6eTwR9LBQtmi8dGUp2vRsgA') // TAKARA Token (mainnet)
 const LAIKA_MINT = new PublicKey('27yzfJSNvYLBjgSNbMyXMMUWzx6T9q4B9TP7KVBS5vPo') // LAIKA Token (mainnet - Cosmodog)
+
+// Balance cache to reduce RPC calls (60 second TTL)
+const CACHE_TTL = 60000
+const balanceCache = new Map<string, { value: number; timestamp: number }>()
+
+function getCachedBalance(key: string): number | null {
+  const cached = balanceCache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.value
+  }
+  return null
+}
+
+function setCachedBalance(key: string, value: number): void {
+  balanceCache.set(key, { value, timestamp: Date.now() })
+}
 
 // Type for sendTransaction function from wallet adapter
 type SendTransactionFn = (
@@ -45,12 +61,18 @@ class SolanaService {
   }
 
   /**
-   * Get SOL balance
+   * Get SOL balance with caching
    */
   async getBalance(publicKey: PublicKey): Promise<number> {
+    const cacheKey = `sol:${publicKey.toBase58()}`
+    const cached = getCachedBalance(cacheKey)
+    if (cached !== null) return cached
+
     try {
       const balance = await this.connection.getBalance(publicKey)
-      return balance / LAMPORTS_PER_SOL
+      const result = balance / LAMPORTS_PER_SOL
+      setCachedBalance(cacheKey, result)
+      return result
     } catch {
       // Silently return 0 - balance check is non-critical
       return 0
@@ -58,24 +80,38 @@ class SolanaService {
   }
 
   /**
-   * Get SPL token balance
+   * Get SPL token balance with caching
    */
   async getTokenBalance(
     walletPublicKey: PublicKey,
     mintPublicKey: PublicKey
   ): Promise<number> {
+    const cacheKey = `token:${walletPublicKey.toBase58()}:${mintPublicKey.toBase58()}`
+    const cached = getCachedBalance(cacheKey)
+    if (cached !== null) return cached
+
     try {
       const tokenAccount = await getAssociatedTokenAddress(
         mintPublicKey,
         walletPublicKey
       )
       const accountInfo = await getAccount(this.connection, tokenAccount)
-      return Number(accountInfo.amount) / Math.pow(10, 6) // Assuming 6 decimals
+      const result = Number(accountInfo.amount) / Math.pow(10, 6) // Assuming 6 decimals
+      setCachedBalance(cacheKey, result)
+      return result
     } catch {
       // Token account doesn't exist or RPC error - return 0 silently
       // This is expected for wallets that haven't received this token yet
+      setCachedBalance(cacheKey, 0)
       return 0
     }
+  }
+
+  /**
+   * Clear balance cache (call after transactions)
+   */
+  clearCache(): void {
+    balanceCache.clear()
   }
 
   /**
