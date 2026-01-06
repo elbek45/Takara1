@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Loader2, User, Lock } from 'lucide-react'
 import { api } from '../../services/api'
 import { toast } from 'sonner'
@@ -14,6 +14,7 @@ interface AuthModalProps {
 type AuthMode = 'login' | 'register'
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+  const queryClient = useQueryClient()
   const [mode, setMode] = useState<AuthMode>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -32,10 +33,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setError('')
       onSuccess?.()
       onClose()
-      // Reload page to fetch user data and show wallet buttons
-      setTimeout(() => {
-        window.location.reload()
-      }, 500)
+      // Invalidate user query to refresh auth state without page reload
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || 'Login failed'
@@ -58,10 +57,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setError('')
       onSuccess?.()
       onClose()
-      // Reload page to fetch user data and show wallet buttons
-      setTimeout(() => {
-        window.location.reload()
-      }, 500)
+      // Invalidate user query to refresh auth state without page reload
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || 'Registration failed'
