@@ -60,6 +60,8 @@ export default function VaultDetailPage() {
         laikaAmount: laikaAmount > 0 ? laikaAmount : undefined,
       }),
     enabled: !!id && !!usdtAmount && parseFloat(usdtAmount) > 0,
+    retry: false, // Don't retry on validation errors
+    staleTime: 10000, // Cache for 10 seconds
   })
 
   const calculation = calculationResponse?.data
