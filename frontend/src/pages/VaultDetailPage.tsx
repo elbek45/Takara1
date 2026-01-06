@@ -381,7 +381,10 @@ export default function VaultDetailPage() {
                         <span className={`font-bold text-sm ${
                           boostToken === 'LAIKA' ? 'text-laika-purple' : 'text-gold'
                         }`}>
-                          ${calculation.investment.laikaBoostValueUSD?.toFixed(2) || '0.00'} USDT
+                          ${boostToken === 'LAIKA'
+                            ? (calculation.investment.laikaBoostValueUSD?.toFixed(2) || '0.00')
+                            : (laikaAmount * takaraPrice).toFixed(2)
+                          } USDT
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -390,15 +393,20 @@ export default function VaultDetailPage() {
                           {laikaPriceFetching ? (
                             <span className="animate-pulse">Updating...</span>
                           ) : (
-                            <>${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)} USDT</>
+                            <>${boostToken === 'LAIKA'
+                              ? (calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)
+                              : takaraPrice.toFixed(6)
+                            } USDT</>
                           )}
-                          <button
-                            onClick={() => refetchLaikaPrice()}
-                            className="text-xs text-laika-purple hover:text-laika-green transition-colors"
-                            title="Refresh price"
-                          >
-                            🔄
-                          </button>
+                          {boostToken === 'LAIKA' && (
+                            <button
+                              onClick={() => refetchLaikaPrice()}
+                              className="text-xs text-laika-purple hover:text-laika-green transition-colors"
+                              title="Refresh price"
+                            >
+                              🔄
+                            </button>
+                          )}
                         </span>
                       </div>
                       {boostToken === 'LAIKA' && (
@@ -409,6 +417,20 @@ export default function VaultDetailPage() {
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">Market: ${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)}</span>
                             <span className="text-purple-400 font-bold">x100 → ${((calculation?.investment?.laikaPrice || laikaToUsdtRate) * 100).toFixed(6)}</span>
+                          </div>
+                        </div>
+                      )}
+                      {boostToken === 'TAKARA' && (
+                        <div className="mt-2 p-2 bg-gradient-to-r from-gold/10 to-yellow-500/10 border border-gold/30 rounded-lg">
+                          <div className="text-xs text-gold text-center font-bold mb-1">
+                            💎 TAKARA Dynamic Pricing
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Current Price:</span>
+                            <span className="text-gold font-bold">${takaraPrice.toFixed(6)}</span>
+                          </div>
+                          <div className="text-xs text-gray-500 text-center mt-1">
+                            Price grows based on time, supply & difficulty
                           </div>
                         </div>
                       )}
