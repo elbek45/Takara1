@@ -33,6 +33,16 @@ export default function VaultDetailPage() {
     refetchInterval: 60 * 1000, // Refresh every 1 minute
   })
 
+  // Fetch TAKARA dynamic price (from admin stats endpoint)
+  const { data: takaraPriceResponse } = useQuery({
+    queryKey: ['takaraPrice'],
+    queryFn: () => api.getTakaraPrice(),
+    staleTime: 60 * 1000, // 1 minute
+    refetchInterval: 120 * 1000, // Refresh every 2 minutes
+  })
+
+  const takaraPrice = takaraPriceResponse?.data?.price || 0.001506
+
   // Handler to update LAIKA amount and refresh price
   const handleLaikaAmountChange = (newAmount: number) => {
     setLaikaAmount(newAmount)
@@ -181,14 +191,21 @@ export default function VaultDetailPage() {
               {/* TAKARA Requirement */}
               {vault.requireTAKARA && vault.takaraRatio && (
                 <div className="mt-6 p-4 bg-green-900/10 border border-green-900/30 rounded-lg">
-                  <div className="text-sm text-green-400 font-medium mb-1">
-                    ⚡ TAKARA Required
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-green-400 font-medium">
+                      ⚡ TAKARA Required
+                    </div>
+                    <div className="text-xs text-gold-400">
+                      ${takaraPrice.toFixed(6)}/TAKARA
+                    </div>
                   </div>
                   <div className="text-gray-300 text-sm">
                     <span className="font-semibold text-gold-400">{vault.takaraRatio} TAKARA</span> per <span className="font-semibold">$100 USDT</span>
+                    <span className="text-gray-500 ml-2">(~${(vault.takaraRatio * takaraPrice).toFixed(4)})</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     Example: $1,000 investment requires {(vault.takaraRatio * 10).toLocaleString()} TAKARA tokens
+                    <span className="text-gold-400/70 ml-1">(~${(vault.takaraRatio * 10 * takaraPrice).toFixed(2)})</span>
                   </div>
                 </div>
               )}
@@ -209,8 +226,8 @@ export default function VaultDetailPage() {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
                   <div>
-                    <div className="font-semibold text-white">USDT Payment (Phantom - Ethereum)</div>
-                    <div className="text-gray-400">Main investment amount via Phantom wallet</div>
+                    <div className="font-semibold text-white">USDT Payment (Trust Wallet - EVM)</div>
+                    <div className="text-gray-400">Main investment amount via Trust Wallet or MetaMask</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -284,7 +301,7 @@ export default function VaultDetailPage() {
                     }`}
                   >
                     <div className="text-lg font-bold text-gold mb-1">💎 TAKARA</div>
-                    <div className="text-xs text-gray-400">Platform native token</div>
+                    <div className="text-xs text-gray-400">Platform native token (${takaraPrice.toFixed(6)})</div>
                   </button>
                 </div>
               </div>
@@ -310,7 +327,7 @@ export default function VaultDetailPage() {
                         {laikaAmount.toLocaleString()} {boostToken}
                       </span>
                       <span className="text-xs text-gray-400">
-                        ≈ ${(laikaAmount * (calculation?.investment?.laikaPrice || laikaToUsdtRate)).toFixed(2)} USDT
+                        ≈ ${(laikaAmount * (boostToken === 'LAIKA' ? (calculation?.investment?.laikaPrice || laikaToUsdtRate) : takaraPrice)).toFixed(2)} USDT
                       </span>
                     </div>
                   </div>

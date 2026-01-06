@@ -198,13 +198,13 @@ describe('TAKARA Boost Calculator', () => {
   });
 
   describe('calculateCombinedBoost (LAIKA + TAKARA)', () => {
-    it('should calculate combined LAIKA and TAKARA boost', () => {
+    it('should calculate combined LAIKA and TAKARA boost with x100 multiplier', () => {
       const result = calculateCombinedBoost({
         baseAPY: 10,
         maxAPY: 20,
         usdtInvested: 1000,
-        laikaMarketValueUSD: 166.67, // 166.67 * 1.5 = 250 (50% boost)
-        takaraMarketValueUSD: 250    // 250 (50% of remaining)
+        laikaMarketValueUSD: 2.5, // 2.5 * 100 = 250 (50% of max 500)
+        takaraMarketValueUSD: 250 // 250 (50% of remaining boost)
       });
 
       expect(result.laikaBoost.additionalAPY).toBe(5);
@@ -218,19 +218,19 @@ describe('TAKARA Boost Calculator', () => {
         baseAPY: 10,
         maxAPY: 20,
         usdtInvested: 1000,
-        laikaMarketValueUSD: 500, // More than max
+        laikaMarketValueUSD: 10, // 10 * 100 = 1000 (more than max 500)
         takaraMarketValueUSD: 500 // More than max
       });
 
       expect(result.finalAPY).toBe(20);
     });
 
-    it('should work with only LAIKA boost', () => {
+    it('should work with only LAIKA boost (x100)', () => {
       const result = calculateCombinedBoost({
         baseAPY: 10,
         maxAPY: 20,
         usdtInvested: 1000,
-        laikaMarketValueUSD: 333.33, // 333.33 * 1.5 = 500 = full boost
+        laikaMarketValueUSD: 5, // 5 * 100 = 500 = full boost
         takaraMarketValueUSD: 0
       });
 
