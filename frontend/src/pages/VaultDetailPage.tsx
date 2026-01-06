@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react'
+import { useState, useEffect, useMemo, useCallback, Component, ErrorInfo, ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
@@ -113,16 +113,26 @@ export default function VaultDetailPage() {
     refetchLaikaPrice()
   }
 
-  const { data: calculationResponse, isLoading: calculating } = useQuery({
+  // Safe parse function to prevent NaN
+  const safeParseFloat = useCallback((value: string): number => {
+    const parsed = parseFloat(value)
+    return isNaN(parsed) ? 0 : parsed
+  }, [])
+
+  const parsedUsdtAmount = useMemo(() => safeParseFloat(debouncedUsdtAmount), [debouncedUsdtAmount, safeParseFloat])
+  // Current parsed amount for immediate use (non-debounced)
+  const currentParsedAmount = useMemo(() => safeParseFloat(usdtAmount), [usdtAmount, safeParseFloat])
+
+  const { data: calculationResponse, isLoading: calculating, error: calculateError } = useQuery({
     queryKey: ['calculate', id, debouncedUsdtAmount, laikaAmount],
     queryFn: () =>
       // @ts-ignore - Type definitions need updating
       api.calculateInvestment(id!, {
-        usdtAmount: parseFloat(debouncedUsdtAmount),
+        usdtAmount: parsedUsdtAmount,
         // @ts-ignore - Type definitions need updating
         laikaAmount: laikaAmount > 0 ? laikaAmount : undefined,
       }),
-    enabled: !!id && !!debouncedUsdtAmount && parseFloat(debouncedUsdtAmount) > 0,
+    enabled: !!id && !!debouncedUsdtAmount && parsedUsdtAmount > 0,
     retry: false, // Don't retry on validation errors
     staleTime: 30000, // Cache for 30 seconds
   })
@@ -132,12 +142,23 @@ export default function VaultDetailPage() {
   // Calculate max LAIKA based on 50% of USDT amount
   // LAIKA x100 boost for Cosmodog community
   // Users need much LESS LAIKA: x100 multiplier
-  // @ts-ignore - Type definitions need updating
-  const laikaToUsdtRate = calculation?.investment?.laikaPrice || laikaPriceResponse?.data?.price || 0.0000007
-  const maxLaikaBoostUSD = usdtAmount ? parseFloat(usdtAmount) * 0.5 : 0
-  // x100 boost means divide by 100
-  const maxLaikaMarketValueUSD = maxLaikaBoostUSD / 100
-  const maxLaikaBoost = laikaToUsdtRate > 0 ? maxLaikaMarketValueUSD / laikaToUsdtRate : 0
+  // Wrap in useMemo to prevent recalculation on every render
+  const { laikaToUsdtRate, maxLaikaBoostUSD, maxLaikaMarketValueUSD, maxLaikaBoost } = useMemo(() => {
+    // @ts-ignore - Type definitions need updating
+    const rate = calculation?.investment?.laikaPrice || laikaPriceResponse?.data?.price || 0.0000007
+    const currentUsdtAmount = safeParseFloat(usdtAmount)
+    const boostUSD = currentUsdtAmount > 0 ? currentUsdtAmount * 0.5 : 0
+    // x100 boost means divide by 100
+    const marketValueUSD = boostUSD / 100
+    const maxBoost = rate > 0 ? marketValueUSD / rate : 0
+
+    return {
+      laikaToUsdtRate: rate,
+      maxLaikaBoostUSD: boostUSD,
+      maxLaikaMarketValueUSD: marketValueUSD,
+      maxLaikaBoost: isFinite(maxBoost) ? maxBoost : 0
+    }
+  }, [calculation, laikaPriceResponse, usdtAmount, safeParseFloat])
 
   if (vaultLoading) {
     return (
@@ -324,7 +345,7 @@ export default function VaultDetailPage() {
                   min={vault.minInvestment}
                   className="w-full px-4 py-3 bg-background-elevated border border-green-900/30 focus:border-gold-500 rounded-lg text-white placeholder-gray-500 focus:outline-none"
                 />
-                {usdtAmount && parseFloat(usdtAmount) < vault.minInvestment && parseFloat(usdtAmount) > 0 && (
+                {usdtAmount && currentParsedAmount < vault.minInvestment && currentParsedAmount > 0 && (
                   <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <p className="text-sm text-yellow-400">
                       Minimum investment is <strong>${vault.minInvestment.toLocaleString()} USDT</strong>.
@@ -414,7 +435,7 @@ export default function VaultDetailPage() {
                         handleLaikaAmountChange(Math.min(value, maxLaikaBoost))
                       }}
                       placeholder={`Enter ${boostToken} amount (0 for no boost)`}
-                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
+                      disabled={!usdtAmount || currentParsedAmount === 0}
                       className={`w-full px-4 py-3 bg-background-elevated border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
                         boostToken === 'LAIKA'
                           ? 'border-laika-purple/30 focus:border-laika-purple'
@@ -428,7 +449,7 @@ export default function VaultDetailPage() {
                     {/* Max Boost Button */}
                     <button
                       onClick={() => handleLaikaAmountChange(maxLaikaBoost)}
-                      disabled={!usdtAmount || parseFloat(usdtAmount) === 0}
+                      disabled={!usdtAmount || currentParsedAmount === 0}
                       className={`mt-2 w-full py-2.5 rounded-lg font-semibold transition-all text-sm ${
                         boostToken === 'LAIKA'
                           ? 'bg-laika-purple hover:bg-laika-purple/80 text-white'
@@ -509,7 +530,7 @@ export default function VaultDetailPage() {
                     </div>
                   )}
 
-                  {!usdtAmount || parseFloat(usdtAmount) === 0 ? (
+                  {!usdtAmount || currentParsedAmount === 0 ? (
                     <div className="text-xs text-gray-500 italic mt-2">
                       💡 Enter USDT amount first to enable {boostToken} boost
                     </div>
@@ -526,6 +547,15 @@ export default function VaultDetailPage() {
                 <div className="text-center py-8">
                   <div className="loading-spinner mx-auto mb-2"></div>
                   <p className="text-sm text-gray-400">Calculating...</p>
+                </div>
+              )}
+
+              {/* Show error if calculation failed */}
+              {calculateError && !calculating && currentParsedAmount > 0 && (
+                <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg mb-4">
+                  <p className="text-sm text-red-400">
+                    Failed to calculate. Please check your input values.
+                  </p>
                 </div>
               )}
 
@@ -633,7 +663,7 @@ export default function VaultDetailPage() {
           onClose={() => setIsModalOpen(false)}
           vaultId={id!}
           calculation={calculation}
-          usdtAmount={parseFloat(usdtAmount)}
+          usdtAmount={currentParsedAmount}
           laikaAmount={laikaAmount}
           acceptedPayments={vault?.acceptedPayments || 'USDT,TRX'}
         />
