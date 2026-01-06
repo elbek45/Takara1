@@ -291,10 +291,10 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
     const laikaAmountValue = laikaAmount || 0;
     const laikaMarketValueUSD = laikaAmountValue * laikaPrice;
 
-    // Calculate LAIKA value (platform requires 50% MORE LAIKA than market rate)
+    // Calculate LAIKA value with x100 multiplier (Cosmodog community bonus)
     const laikaPremiumInfo = await calculateLaikaValueWithPremium(laikaAmountValue);
 
-    // Calculate LAIKA boost (boost value = market value / 1.50)
+    // Calculate LAIKA boost (boost value = market value × 100)
     const boostResult = calculateLaikaBoost({
       baseAPY: Number(vault.baseAPY),
       maxAPY: Number(vault.maxAPY),
@@ -343,8 +343,8 @@ export async function calculateInvestment(req: Request, res: Response): Promise<
           laikaAmount: laikaAmountValue,
           laikaPrice: laikaPrice, // Real-time price from DexScreener
           laikaMarketValueUSD: laikaMarketValueUSD, // Market price
-          laikaPremiumPercent: laikaPremiumInfo.premiumPercent, // 50% more LAIKA required
-          laikaBoostValueUSD: laikaPremiumInfo.finalValue, // Boost value (market / 1.5)
+          laikaPremiumPercent: laikaPremiumInfo.premiumPercent, // 9900% = x100 multiplier
+          laikaBoostValueUSD: laikaPremiumInfo.finalValue, // Boost value (market × 100)
           // For backward compatibility
           laikaValueUSD: laikaPremiumInfo.finalValue,
           laikaToUsdtRate: laikaPrice

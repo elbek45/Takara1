@@ -1,393 +1,305 @@
-# 🏆 Takara Gold v2.6
+# Takara Gold v2.2
 
-**Premium Dual-Blockchain Investment Platform & NFT Marketplace**
+**Premium DeFi Investment Platform with TAKARA Mining & NFT Marketplace**
 
-> **"TAKARA — это новая криптовалюта, которая скоро будет листиться на биржах. Успей намайнить её первым! А в качестве приятного бонуса — получай стабильный доход в USDT."**
+> **Live:** https://takarafi.com (Password: `takara2026`)
 
-## 📋 Overview
+## Overview
 
-Takara Gold is a next-generation DeFi platform with **dual-blockchain architecture** that allows users to:
+Takara Gold is a next-generation DeFi platform that combines:
 
-- 💰 **Invest USDT** via Ethereum (ERC-20) or TRON (TRC-20) in 9 different Vault types with 4-12% APY
-- ⛏️ **Mine TAKARA tokens** daily on Solana (600M total supply over 5 years)
-- 🚀 **Boost earnings** with LAIKA The Cosmodog tokens on Solana up to 12% APY
-- 🎨 **Trade positions** on integrated NFT marketplace (Solana)
-- 💎 **Own investment NFTs** representing your position (Solana)
+- **USDT Staking** - Up to 20% APY across 16 vault configurations
+- **TAKARA Mining** - Mine platform tokens daily (600M supply over 5 years)
+- **LAIKA x100 Boost** - Special boost for Cosmodog community
+- **NFT Marketplace** - Trade investment positions as WEXEL NFTs
 
-## ✨ Key Features
+## Key Features
 
-### 🏦 9 Vault Types Across 3 Tiers
+### 16 Vaults (4 Tiers × 4 Durations)
 
-| Tier | Duration | Base APY | Max APY | Mining Power |
-|------|----------|----------|---------|--------------|
-| **Starter** | 12-36M | 4-6% | 8% | 50-150% |
-| **Pro** | 12-36M | 4.5-7% | 10% | 120-200% |
-| **Elite** | 12-36M | 5-8% | **12%** | 250-350% |
+| Duration | STARTER | BASIC | PRO | ELITE |
+|----------|---------|-------|-----|-------|
+| **18M** | 6.5-7.5% | 7-8% | 7.5-8.3% | 8-8.67% |
+| **20M** | 8.5-9.5% | 9-10% | 9.5-10.4% | 10-10.8% |
+| **30M** | 13-15% | 14-16% | 15-17% | 16-18% |
+| **36M** | 14-16% | 15-17% | 17-19% | 18-20% |
 
-### 🔥 Unique Features
+- **STARTER 18M** - No TAKARA required (entry point for new users)
+- **All other vaults** - Require TAKARA tokens (5-40 per $100 USDT)
 
-- **NFT-Backed Positions**: Each investment = unique Solana NFT
-- **Dual Income**: Stable USDT APY + daily TAKARA mining
-- **LAIKA Boost**: Increase APY by depositing LAIKA The Cosmodog tokens
-- **Marketplace**: Sell your position before term ends
-- **Dynamic Difficulty**: TAKARA mining difficulty adjusts with network
+### LAIKA x100 Boost (Cosmodog Community)
 
-## 🏗️ Architecture
+Special multiplier for LAIKA holders:
 
-### Dual-Blockchain Flow
+```
+Market Value × 100 = Boost Value
+
+Example: $300 USDT investment
+- Max boost = $150 (50% of investment)
+- LAIKA price = $0.0000007426
+- Market value needed = $1.50 ($150 / 100)
+- LAIKA needed = ~2,020,000 tokens for full boost
+```
+
+### TAKARA Dynamic Pricing
+
+Price grows over 5 years based on:
+- **Time Factor** (40%) - Days elapsed since launch
+- **Supply Factor** (40%) - Circulating supply
+- **Difficulty Factor** (20%) - Mining difficulty
+
+```
+Initial: $0.001 → Target: $0.10 (5 years)
+Current: ~$0.001507
+```
+
+## Architecture
+
+### 2-Step Payment Process
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    INVESTMENT PROCESS                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Step 1: USDT Deposit (Ethereum or TRON)                   │
-│  ┌──────────────────────────────────────────────┐           │
-│  │  MetaMask (ETH)   OR   TronLink (TRC20)     │           │
-│  │  └─> Platform Wallet                         │           │
-│  └──────────────────────────────────────────────┘           │
-│                       ↓                                      │
-│  Step 2: TAKARA Requirement (Solana)                        │
-│  ┌──────────────────────────────────────────────┐           │
-│  │  Phantom Wallet                              │           │
-│  │  └─> Transfer TAKARA (Tier 2/3 only)        │           │
-│  └──────────────────────────────────────────────┘           │
-│                       ↓                                      │
-│  Step 3: LAIKA Boost (Optional, Solana)                     │
-│  ┌──────────────────────────────────────────────┐           │
-│  │  Phantom Wallet                              │           │
-│  │  └─> Transfer LAIKA for APY boost           │           │
-│  └──────────────────────────────────────────────┘           │
-│                       ↓                                      │
-│  Step 4: NFT Minting & Rewards (Solana)                     │
-│  ┌──────────────────────────────────────────────┐           │
-│  │  Investment NFT minted to Phantom           │           │
-│  │  TAKARA mining rewards daily                 │           │
-│  └──────────────────────────────────────────────┘           │
+│  STEP 1: USDT Payment (Trust Wallet / MetaMask - EVM)       │
+│  → Send USDT to platform wallet on BSC/Ethereum             │
+│  → Investment created with status PENDING_TOKENS            │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 2: TAKARA + LAIKA (Phantom - Solana)                  │
+│  → Required TAKARA (if vault requires)                      │
+│  → Optional LAIKA for APY boost                             │
+│  → 72-hour activation delay                                 │
+│  → WEXEL NFT minted                                         │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Daily Mining + Scheduled Payouts                           │
+│  → TAKARA mined daily based on vault TAKARA APY             │
+│  → USDT payouts (monthly/end of term)                       │
+│  → 5% tax on TAKARA claims                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### File Structure
+### Technology Stack
+
+**Backend:**
+- Node.js 20 + Express.js + TypeScript
+- Prisma ORM + PostgreSQL
+- Redis caching
+- PM2 process management
+- Pino logging
+
+**Frontend:**
+- React 18 + Vite + TypeScript
+- TanStack Query + Zustand
+- Tailwind CSS
+- Solana Wallet Adapter
+- ethers.js for EVM
+
+**Blockchain:**
+- Solana (TAKARA, LAIKA, NFTs)
+- EVM (BSC/Ethereum for USDT)
+- TRON support (optional)
+
+## Project Structure
 
 ```
 takara-gold/
-├── backend/          # Node.js + Express + Prisma
-├── frontend/         # React + Vite + TypeScript
+├── backend/
 │   ├── src/
+│   │   ├── controllers/        # API endpoints
+│   │   │   ├── investment-2step.controller.ts  # Main investment flow
+│   │   │   ├── admin.controller.ts             # Admin operations
+│   │   │   └── marketplace.controller.ts       # NFT marketplace
 │   │   ├── services/
-│   │   │   ├── ethereum.service.ts    # MetaMask integration
-│   │   │   └── solana.service.ts      # Phantom integration
-│   │   ├── hooks/
-│   │   │   ├── useMetaMask.ts         # Ethereum wallet hook
-│   │   │   └── useTronLink.ts         # TronLink hook
-│   │   └── types/
-│   │       └── blockchain.ts          # Multi-chain types
-├── contracts/        # Solana Smart Contracts (Anchor)
-└── docs/            # Documentation
+│   │   │   ├── price.service.ts                # Token prices (LAIKA x100)
+│   │   │   ├── takara-pricing.service.ts       # Dynamic TAKARA price
+│   │   │   └── solana.service.ts               # Blockchain operations
+│   │   ├── jobs/
+│   │   │   ├── dailyTakaraMining.ts            # Daily mining
+│   │   │   ├── investmentActivation.ts         # 72h activation
+│   │   │   └── laikaReturn.ts                  # Return tokens at end
+│   │   └── utils/
+│   │       ├── laika.calculator.ts             # LAIKA x100 math
+│   │       ├── takara.calculator.ts            # TAKARA boost math
+│   │       └── mining.calculator.ts            # Mining calculations
+│   └── prisma/
+│       └── schema.prisma                       # Database schema
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── ComingSoonPage.tsx              # Landing (protected)
+│   │   │   ├── VaultDetailPage.tsx             # Investment UI
+│   │   │   └── admin/                          # Admin panel
+│   │   ├── services/
+│   │   │   ├── ethereum.service.ts             # EVM wallet
+│   │   │   └── api.ts                          # API client
+│   │   └── hooks/
+│   │       └── useEVMWallet.ts                 # Wallet hook
+│   └── .env.production                         # Production config
+├── DEVELOPER_GUIDE.md                          # Developer documentation
+├── BUSINESS_LOGIC.md                           # Business rules
+└── report05.md                                 # Security audit
 ```
 
-## 🛠️ Technology Stack
-
-### Backend
-- **Runtime**: Node.js 20 LTS
-- **Framework**: Express.js 4.x
-- **Language**: TypeScript 5.x
-- **ORM**: Prisma 5.x
-- **Database**: PostgreSQL 15
-- **Cache**: Redis 7
-- **Jobs**: BullMQ 5.x
-
-### Frontend
-- **Framework**: React 18
-- **Build**: Vite 5
-- **Language**: TypeScript 5
-- **UI**: Shadcn/UI + Tailwind CSS 3
-- **State**: Zustand + TanStack Query
-- **Routing**: React Router 6
-
-### Blockchain (Dual-Chain Architecture)
-
-**Ethereum Chain (USDT Deposits)**
-- **Network**: Ethereum Mainnet
-- **Standard**: ERC-20
-- **Library**: ethers.js 6.9
-- **Wallet**: MetaMask
-- **USDT Contract**: `0xdac17f958d2ee523a2206206994597c13d831ec7`
-
-**Solana Chain (Tokens & NFTs)**
-- **Network**: Solana Mainnet
-- **Framework**: Anchor 0.29
-- **RPC**: Helius
-- **Wallet**: Phantom
-- **Tokens**: TAKARA, LAIKA
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 ```bash
-# Required
 node >= 20.0.0
 npm >= 10.0.0
 postgresql >= 15.0
 redis >= 7.0
-
-# For contracts
-rust >= 1.70
-solana-cli >= 1.16
-anchor-cli >= 0.29
 ```
 
-### Installation
+### Development Setup
 
 ```bash
-# Clone repository
-git clone <repo-url>
+# Clone
+git clone https://github.com/elbek45/Takara1.git
 cd takara-gold
 
-# Install backend
+# Backend
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your configuration
-
-# Setup database
 npm run prisma:migrate
-npm run prisma:seed
+npm run dev
 
-# Start backend
-npm run dev  # http://localhost:3000
-
-# Install frontend
-cd ../frontend
+# Frontend (new terminal)
+cd frontend
 npm install
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start frontend
-npm run dev  # http://localhost:5173
+npm run dev
 ```
 
-## 📊 Database Schema
+### Production Deployment
 
-### Core Models
+```bash
+# Backend
+cd backend
+npm run build
+pm2 start ecosystem.config.js
 
-- **User**: User accounts with Solana wallet
-- **Vault**: 9 predefined vault configurations
-- **Investment**: User investments with NFT tracking
-- **LaikaBoost**: LAIKA boost data per investment
-- **TakaraMining**: Daily mining records
-- **MarketplaceListing**: NFT marketplace listings
-- **WithdrawalRequest**: Token withdrawal requests
-
-## 🔐 Security Features
-
-- ✅ JWT authentication
-- ✅ Solana wallet signature verification
-- ✅ Rate limiting
-- ✅ Helmet security headers
-- ✅ CORS protection
-- ✅ Input validation (Zod)
-- ✅ SQL injection prevention (Prisma)
-
-## 📈 Investment Tiers
-
-### Tier 1: Starter (Entry Level)
-- **Requirement**: USDT only
-- **Min**: $100
-- **Max APY**: 8%
-- **Best for**: Beginners
-
-### Tier 2: Pro (Intermediate)
-- **Requirement**: USDT + 30 TAKARA per 100 USDT
-- **Min**: $1,000
-- **Max APY**: 10%
-- **Best for**: Active investors
-
-### Tier 3: Elite (Premium)
-- **Requirement**: USDT + 50 TAKARA per 100 USDT
-- **Min**: $5,000
-- **Max APY**: **12%** 🔥
-- **Mining Power**: Up to **350%** ⚡
-- **Best for**: Serious investors
-
-## ⛏️ TAKARA Mining
-
-### Tokenomics
-- **Total Supply**: 600,000,000 TAKARA
-- **Mining Period**: 5 years (60 months)
-- **Distribution**: Daily to active investors
-- **Difficulty**: Dynamic (increases with network growth)
-
-### Mining Formula
-```typescript
-daily_takara = (mining_power / 100) × (usdt_invested / 1000) × base_rate / difficulty
+# Frontend
+cd frontend
+npm run build
+# Deploy dist/ to web server
 ```
 
-## 💜 LAIKA Boost System
+## API Endpoints
 
-### How It Works
-1. **Real-time pricing** from DexScreener API (Solana DEX aggregator)
-2. **Platform rate**: 50% more LAIKA required than market rate
-   - Market: 0.5 LAIKA = 1 USDT
-   - Platform: 0.75 LAIKA = 1 USDT (for boost calculation)
-3. **Max boost**: 50% of USDT investment value
-4. APY increases proportionally to effective LAIKA boost value
-5. LAIKA returned to NFT owner at term end
-
-### Boost Formula
-```typescript
-boost_value = laika_market_value / 1.50  // Platform requires 50% more LAIKA
-max_boost = usdt_invested * 0.50         // Max 50% of investment
-effective_boost = min(boost_value, max_boost)
-```
-
-### Example
-```
-Investment: $10,000 USDT in Elite Vault 36M
-Base APY: 8%
-Max APY: 12%
-Max Boost Value: $5,000 (50% of $10,000)
-
-To achieve full boost:
-- Need $7,500 worth of LAIKA at market price
-- Boost value: $7,500 / 1.5 = $5,000 (100% fill)
-- Final APY: 12% (max for Elite tier)
-```
-
-### LAIKA Token
-- **Mint**: `Euoq6CyQFCjCVSLR9wFaUPDW19Y6ZHwEcJoZsEi643i1`
-- **Chain**: Solana
-- **Price Source**: DexScreener (primary), CoinGecko (fallback)
-- **Cache**: 1 hour TTL
-
-## 🎨 NFT Marketplace
-
-- List your investment NFT for sale
-- Set your own price
-- 2.5% platform fee
-- Buyer gets all future yields + LAIKA
-- On-chain ownership transfer
-
-## 📝 API Endpoints
+### Public
+- `GET /api/vaults` - List all vaults
+- `GET /api/vaults/:id` - Vault details
+- `GET /api/prices` - LAIKA & TAKARA prices
+- `GET /api/prices/laika` - LAIKA price
+- `GET /api/prices/takara` - TAKARA dynamic price
 
 ### Authentication
 - `POST /api/auth/nonce` - Get signature nonce
-- `POST /api/auth/login` - Login with wallet signature
+- `POST /api/auth/connect-solana` - Connect Solana wallet
 
-### Vaults
-- `GET /api/vaults` - List all 9 vaults
-- `GET /api/vaults/:id` - Get vault details
-
-### Investments
-- `POST /api/investments` - Create investment
-- `GET /api/investments/my` - My investments
-- `POST /api/investments/:id/claim-yield` - Claim USDT yield
+### Investments (Protected)
+- `POST /api/investments/2step/init` - Initialize investment
+- `POST /api/investments/2step/complete` - Complete with tokens
+- `GET /api/investments/my` - User's investments
 - `POST /api/investments/:id/claim-takara` - Claim mined TAKARA
-
-### LAIKA Boost
-- `POST /api/investments/:id/laika-boost` - Add LAIKA boost
-- `GET /api/laika/calculator` - Calculate boost APY
 
 ### Marketplace
 - `GET /api/marketplace` - Browse listings
-- `POST /api/marketplace/list` - List NFT for sale
-- `POST /api/marketplace/:id/buy` - Purchase NFT
+- `POST /api/marketplace/list` - List NFT
+- `POST /api/marketplace/:id/buy` - Buy NFT
 
-## 🧪 Testing
+### Admin
+- `POST /api/admin/login` - Admin login
+- `GET /api/admin/dashboard` - Dashboard stats
+- `GET /api/admin/takara/stats` - TAKARA statistics
+
+## Environment Variables
+
+### Backend (.env)
+
+```env
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/takara
+
+# Auth
+JWT_SECRET=your-secret-key
+
+# Blockchain
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+PLATFORM_WALLET_PRIVATE_KEY=...
+
+# Feature Flags
+TEST_MODE=false
+ENABLE_REAL_NFT_MINTING=true
+ENABLE_CRON_JOBS=true
+```
+
+### Frontend (.env)
+
+```env
+VITE_API_URL=https://takarafi.com/api
+VITE_SOLANA_NETWORK=mainnet-beta
+VITE_PLATFORM_WALLET_SOL=39YVQH3mg5ZpXKYiszHpxLkept8wsNmYHM3fLi6f7cVy
+```
+
+## Security
+
+- JWT authentication with wallet signatures
+- Rate limiting on all endpoints
+- CORS protection (production domain only)
+- Input validation (Zod schemas)
+- SQL injection prevention (Prisma)
+- 5% tax on TAKARA claims (treasury)
+
+## Testing
 
 ```bash
-# Backend tests
 cd backend
-npm test
-npm run test:watch
-
-# Frontend tests
-cd frontend
-npm test
+npm test                    # Run all tests
+npm run test:watch          # Watch mode
+npm test -- --coverage      # Coverage report
 ```
 
-## 📦 Deployment
+## Documentation
 
-### Backend (Node.js)
-```bash
-npm run build
-npm start
-```
+- **DEVELOPER_GUIDE.md** - Complete function reference + TODOs
+- **BUSINESS_LOGIC.md** - Business rules and formulas
+- **report05.md** - Security audit findings
 
-### Frontend (Static)
-```bash
-npm run build
-# Deploy dist/ to Vercel/Netlify/Cloudflare
-```
+## URLs
 
-### Database
-- Use managed PostgreSQL (Supabase/AWS RDS)
-- Enable automated backups
-- Set up connection pooling
-
-## 🔮 Roadmap
-
-### Phase 1: MVP (Current)
-- [x] 9 Vault types
-- [x] LAIKA boost system
-- [x] TAKARA mining calculator
-- [x] Database schema
-- [x] API implementation
-- [x] Frontend UI
-- [x] Dual-blockchain integration (Ethereum + Solana)
-- [x] MetaMask integration for USDT (ERC-20)
-- [x] Phantom wallet integration for TAKARA/LAIKA
-- [x] TronLink integration for USDT (TRC-20)
-
-### Phase 2: Launch
-- [ ] Smart contract deployment
-- [ ] NFT minting
-- [ ] Marketplace
-- [ ] Admin panel
-- [ ] Production deployment
-
-### Phase 3: Growth
-- [ ] Mobile app
-- [ ] Referral system
-- [ ] Staking mechanism
-- [ ] DAO governance
-- [ ] TAKARA exchange listing
-
-## 📄 License
-
-MIT License
-
-## 🤝 Contributing
-
-Contributions welcome! Please read CONTRIBUTING.md first.
-
-## 📞 Support
-
-- Documentation: `/docs`
-- Issues: GitHub Issues
-- Email: support@takaragold.io
-
----
+- **Production:** https://takarafi.com
+- **Admin Panel:** https://takarafi.com/admin
+- **API:** https://takarafi.com/api
+- **GitHub:** https://github.com/elbek45/Takara1
 
 ## Changelog
 
-### v2.6 (December 2025)
-- **LAIKA Boost v2.6**: Platform requires 50% more LAIKA than market rate
-- **DexScreener Integration**: Real-time LAIKA pricing from Solana DEXes
-- **Price Sources Priority**: DexScreener -> CoinGecko -> CoinMarketCap
-- **Boost Formula**: `boost_value = market_value / 1.50`
-
-### v2.5 (December 2025)
-- LAIKA boost system improvements
-- Price caching (1 hour TTL)
+### v2.2.1 (January 2026)
+- Fixed LAIKA x100 boost calculation
+- Added TAKARA dynamic price display
+- Fixed text inconsistencies (Trust Wallet)
+- Added legacy route redirects
+- Updated DEVELOPER_GUIDE with TODOs
 
 ### v2.2 (December 2025)
-- Dual-blockchain architecture (Ethereum + Solana)
-- MetaMask and Phantom wallet integration
-- TronLink support for TRC-20 USDT
+- 16 vault structure (4 tiers × 4 durations)
+- LAIKA x100 boost for Cosmodog community
+- Coming Soon landing page
+- 2-step payment process
+- Dynamic TAKARA pricing
+
+### v2.1 (November 2025)
+- Initial release
+- 9 vault types
+- Basic LAIKA boost (1.5x)
+- NFT marketplace
 
 ---
 
-Version: 2.6
-Last Updated: December 2025
+**Version:** 2.2.1
+**Last Updated:** January 6, 2026
+**License:** MIT

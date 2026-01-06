@@ -236,7 +236,7 @@ export function formatBoostResult(result: TakaraBoostResult): string {
  * Calculate combined boost (LAIKA + TAKARA)
  *
  * When both boosts are applied:
- * 1. Calculate LAIKA boost first (platform values at 50% ABOVE market = 150%)
+ * 1. Calculate LAIKA boost first (x100 multiplier for Cosmodog community!)
  * 2. Use LAIKA-boosted APY as base for TAKARA
  * 3. TAKARA boost adds on top (uses full market value, no discount)
  * 4. Final APY capped at vault maxAPY
