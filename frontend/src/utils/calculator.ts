@@ -16,8 +16,8 @@ export function safeParseFloat(value: string): number {
 /**
  * Calculate maximum LAIKA boost values
  *
- * LAIKA has x100 boost multiplier for Cosmodog community
- * This means users need much LESS LAIKA to achieve full boost
+ * LAIKA has x2 boost multiplier for Cosmodog community
+ * This means users need 2x LESS LAIKA to achieve full boost
  */
 export interface LaikaBoostCalculation {
   laikaToUsdtRate: number
@@ -42,8 +42,8 @@ export function calculateLaikaBoostValues(params: {
   // Max boost USD = 50% of USDT investment
   const boostUSD = currentUsdtAmount > 0 ? currentUsdtAmount * 0.5 : 0
 
-  // x100 boost means divide by 100 to get required market value
-  const marketValueUSD = boostUSD / 100
+  // x2 boost means divide by 2 to get required market value
+  const marketValueUSD = boostUSD / 2
 
   // Calculate max LAIKA tokens needed
   const maxBoost = rate > 0 ? marketValueUSD / rate : 0
@@ -103,9 +103,9 @@ export function calculateBoostValueUSD(params: {
   if (tokenAmount <= 0) return 0
 
   if (boostToken === 'LAIKA') {
-    // LAIKA has x100 multiplier
+    // LAIKA has x2 multiplier
     const marketValue = tokenAmount * laikaPrice
-    return marketValue * 100
+    return marketValue * 2
   } else {
     // TAKARA uses full market value
     return tokenAmount * takaraPrice

@@ -1,25 +1,25 @@
 /**
- * LAIKA Boost Calculator v2.8
+ * LAIKA Boost Calculator v2.9
  *
- * Implements the LAIKA boost mechanism with platform x100 valuation
+ * Implements the LAIKA boost mechanism with platform x2 valuation
  * Specially for LAIKA the Cosmodog community!
  *
  * Key Rules:
  * 1. LAIKA market value = laikaAmount × laikaPrice (USDT) - fetched from DexScreener
- * 2. Platform values LAIKA x100 HIGHER: boost value = market value × 100
- *    Example: $1 worth of LAIKA at market = $100 boost value
+ * 2. Platform values LAIKA x2 HIGHER: boost value = market value × 2
+ *    Example: $1 worth of LAIKA at market = $2 boost value
  * 3. Max boost value = USDT investment × 0.50 (max 50% of investment)
  * 4. Max APY depends on vault baseAPY and tier boost range
  * 5. LAIKA is returned to NFT owner at end of term
  *
- * This means users need 100x LESS LAIKA to achieve the same boost!
- * Example: $1 worth of LAIKA at market price = $100 boost value
+ * This means users need 2x LESS LAIKA to achieve the same boost!
+ * Example: $1 worth of LAIKA at market price = $2 boost value
  */
 
 import { VaultTier } from '../config/vaults.config';
 
-// Platform values LAIKA x100 higher than market for boost (bonus for Cosmodog community!)
-export const LAIKA_PREMIUM_PERCENT = 9900; // x100
+// Platform values LAIKA x2 higher than market for boost (bonus for Cosmodog community!)
+export const LAIKA_PREMIUM_PERCENT = 100; // x2
 
 export interface LaikaBoostInput {
   baseAPY: number;
@@ -45,16 +45,16 @@ export interface LaikaBoostResult {
 
 /**
  * Calculate the final APY with LAIKA boost
- * x100 multiplier for Cosmodog community!
+ * x2 multiplier for Cosmodog community!
  */
 export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
   const { baseAPY, maxAPY: inputMaxAPY, tier, usdtInvested, laikaMarketValueUSD } = input;
 
   const maxAPY = inputMaxAPY || baseAPY + 2;
 
-  // Platform values LAIKA x100 higher - boost value = market * 100 (huge bonus!)
+  // Platform values LAIKA x2 higher - boost value = market * 2 (bonus!)
   const laikaPremiumPercent = LAIKA_PREMIUM_PERCENT;
-  const laikaBoostValueUSD = laikaMarketValueUSD * 100; // x100 for Cosmodog community!
+  const laikaBoostValueUSD = laikaMarketValueUSD * 2; // x2 for Cosmodog community!
 
   // Maximum boost value = 50% of USDT investment
   const maxLaikaValueUSD = usdtInvested * 0.50;
@@ -96,7 +96,7 @@ export function calculateLaikaBoost(input: LaikaBoostInput): LaikaBoostResult {
 
 /**
  * Calculate required LAIKA (at market value) for desired APY
- * x100 multiplier - users need 100x LESS LAIKA!
+ * x2 multiplier - users need 2x LESS LAIKA!
  */
 export function calculateRequiredLaikaForAPY(
   baseAPY: number,
@@ -107,9 +107,9 @@ export function calculateRequiredLaikaForAPY(
   const maxBoostValueUSD = usdtInvested * 0.50;
 
   if (desiredAPY >= maxAPY) {
-    // For full boost: boostValue = marketValue * 100 = maxBoostValueUSD
-    // marketValue = maxBoostValueUSD / 100
-    return Number((maxBoostValueUSD / 100).toFixed(2));
+    // For full boost: boostValue = marketValue * 2 = maxBoostValueUSD
+    // marketValue = maxBoostValueUSD / 2
+    return Number((maxBoostValueUSD / 2).toFixed(2));
   }
 
   if (desiredAPY <= baseAPY) {
@@ -122,8 +122,8 @@ export function calculateRequiredLaikaForAPY(
 
   const requiredBoostValueUSD = (maxBoostValueUSD * boostFillPercent) / 100;
 
-  // Convert boost value to market value (divide by 100 - need way less!)
-  const requiredMarketValueUSD = requiredBoostValueUSD / 100;
+  // Convert boost value to market value (divide by 2)
+  const requiredMarketValueUSD = requiredBoostValueUSD / 2;
 
   return Number(requiredMarketValueUSD.toFixed(2));
 }
@@ -161,8 +161,8 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
     };
   }
 
-  // Calculate boost value (market * 100) and check against maximum
-  const laikaBoostValueUSD = laikaMarketValueUSD * 100; // x100!
+  // Calculate boost value (market * 2) and check against maximum
+  const laikaBoostValueUSD = laikaMarketValueUSD * 2; // x2!
   const maxBoostValueUSD = usdtInvested * 0.50;
 
   if (laikaBoostValueUSD > maxBoostValueUSD) {
@@ -177,7 +177,7 @@ export function validateLaikaBoost(input: LaikaBoostInput): {
 
 /**
  * Get boost recommendation for user
- * x100 multiplier - users need 100x LESS LAIKA!
+ * x2 multiplier - users need 2x LESS LAIKA!
  */
 export function getBoostRecommendation(
   baseAPY: number,
@@ -190,9 +190,9 @@ export function getBoostRecommendation(
 } {
   const maxBoostValueUSD = usdtInvested * 0.50;
 
-  // For full boost: boostValue = marketValue * 100 = maxBoostValueUSD
-  // marketValue = maxBoostValueUSD / 100 (need 100x less LAIKA!)
-  const fullBoostMarketValue = maxBoostValueUSD / 100;
+  // For full boost: boostValue = marketValue * 2 = maxBoostValueUSD
+  // marketValue = maxBoostValueUSD / 2 (need 2x less LAIKA!)
+  const fullBoostMarketValue = maxBoostValueUSD / 2;
 
   const midAPY = baseAPY + ((maxAPY - baseAPY) / 2);
   const partialLaikaMarketValue = fullBoostMarketValue * 0.5;
@@ -219,7 +219,7 @@ export function getBoostRecommendation(
 export function formatBoostResult(result: LaikaBoostResult): string {
   const lines = [
     `🐕 LAIKA Market Value: $${result.laikaMarketValueUSD.toFixed(2)}`,
-    `📊 Platform Rate: x100 (9900% bonus for Cosmodog community!)`,
+    `📊 Platform Rate: x2 (100% bonus for Cosmodog community!)`,
     `💰 Boost Value: $${result.laikaBoostValueUSD.toFixed(2)}`,
     ``,
     `📊 APY Boost:`,

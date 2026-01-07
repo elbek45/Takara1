@@ -363,28 +363,28 @@ async function calculateTakaraBasePrice(): Promise<number> {
 }
 
 /**
- * Calculate LAIKA value in USDT with platform x100 PREMIUM for boost
+ * Calculate LAIKA value in USDT with platform x2 PREMIUM for boost
  *
- * Special x100 multiplier for LAIKA (Cosmodog community bonus)!
- * This is a MASSIVE BONUS for users - they need 100x LESS LAIKA!
- * Formula: boostValueUSD = laikaAmount × laikaPrice × 100
+ * Special x2 multiplier for LAIKA (Cosmodog community bonus)!
+ * This is a BONUS for users - they need 2x LESS LAIKA!
+ * Formula: boostValueUSD = laikaAmount × laikaPrice × 2
  *
- * Example: $1 worth of LAIKA at market = $100 boost value
- * Or: to get $100 boost, you only need $1 worth of LAIKA at market price
+ * Example: $1 worth of LAIKA at market = $2 boost value
+ * Or: to get $2 boost, you only need $1 worth of LAIKA at market price
  */
 export async function calculateLaikaValueWithPremium(laikaAmount: number): Promise<{
   laikaAmount: number;
   laikaPrice: number;
   marketValue: number; // Market price in USD
-  premiumPercent: number; // Platform premium (9900% = x100 bonus!)
-  premiumAmount: number; // Bonus amount (marketValue × 99)
-  finalValue: number; // Boost value (market × 100)
+  premiumPercent: number; // Platform premium (100% = x2 bonus!)
+  premiumAmount: number; // Bonus amount (marketValue × 1)
+  finalValue: number; // Boost value (market × 2)
 }> {
   const laikaPrice = await getLaikaPrice();
   const marketValue = laikaAmount * laikaPrice;
-  const premiumPercent = 9900; // x100 multiplier for LAIKA community (9900% bonus)
-  const premiumAmount = marketValue * 99; // Bonus amount
-  const finalValue = marketValue * 100; // x100 boost: market value × 100
+  const premiumPercent = 100; // x2 multiplier for LAIKA community (100% bonus)
+  const premiumAmount = marketValue * 1; // Bonus amount
+  const finalValue = marketValue * 2; // x2 boost: market value × 2
 
   return {
     laikaAmount,
@@ -422,9 +422,9 @@ export async function calculateLaikaValueWithDiscount(laikaAmount: number): Prom
 /**
  * Calculate required LAIKA amount (at market value) for desired boost USD value
  *
- * x100 multiplier for LAIKA (Cosmodog community bonus)
- * If you need $100 boost value, you only need $1 worth of LAIKA at market price
- * Users need 99% LESS LAIKA thanks to x100 multiplier!
+ * x2 multiplier for LAIKA (Cosmodog community bonus)
+ * If you need $2 boost value, you only need $1 worth of LAIKA at market price
+ * Users need 50% LESS LAIKA thanks to x2 multiplier!
  */
 export async function calculateRequiredLaika(desiredUSDValue: number): Promise<{
   desiredUSDValue: number;
@@ -435,12 +435,12 @@ export async function calculateRequiredLaika(desiredUSDValue: number): Promise<{
 }> {
   const laikaPrice = await getLaikaPrice();
 
-  // Since boostValue = marketValue × 100 (x100 multiplier)
-  // marketValue = desiredUSDValue / 100
+  // Since boostValue = marketValue × 2 (x2 multiplier)
+  // marketValue = desiredUSDValue / 2
   // laikaAmount = marketValue / laikaPrice
-  const marketValue = desiredUSDValue / 100; // x100 LAIKA boost
+  const marketValue = desiredUSDValue / 2; // x2 LAIKA boost
   const requiredLaikaAmount = marketValue / laikaPrice;
-  const savings = desiredUSDValue - marketValue; // 99% savings thanks to x100!
+  const savings = desiredUSDValue - marketValue; // 50% savings thanks to x2!
 
   return {
     desiredUSDValue,

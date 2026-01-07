@@ -145,16 +145,16 @@ export default function VaultDetailPage() {
   const calculation = calculationResponse?.data
 
   // Calculate max LAIKA based on 50% of USDT amount
-  // LAIKA x100 boost for Cosmodog community
-  // Users need much LESS LAIKA: x100 multiplier
+  // LAIKA x2 boost for Cosmodog community
+  // Users need 2x LESS LAIKA: x2 multiplier
   // Wrap in useMemo to prevent recalculation on every render
   const { laikaToUsdtRate, maxLaikaBoostUSD, maxLaikaMarketValueUSD, maxLaikaBoost } = useMemo(() => {
     // @ts-ignore - Type definitions need updating
     const rate = calculation?.investment?.laikaPrice || laikaPriceResponse?.data?.price || 0.0000007
     const currentUsdtAmount = safeParseFloat(usdtAmount)
     const boostUSD = currentUsdtAmount > 0 ? currentUsdtAmount * 0.5 : 0
-    // x100 boost means divide by 100
-    const marketValueUSD = boostUSD / 100
+    // x2 boost means divide by 2
+    const marketValueUSD = boostUSD / 2
     const maxBoost = rate > 0 ? marketValueUSD / rate : 0
 
     return {
@@ -378,7 +378,7 @@ export default function VaultDetailPage() {
                     }`}
                   >
                     <div className="text-lg font-bold text-laika-purple mb-1">🐕 LAIKA</div>
-                    <div className="text-xs text-gray-400">x100 price boost for community</div>
+                    <div className="text-xs text-gray-400">x2 price boost for community</div>
                   </button>
                   <button
                     type="button"
@@ -504,11 +504,11 @@ export default function VaultDetailPage() {
                       {boostToken === 'LAIKA' && (
                         <div className="mt-2 p-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg">
                           <div className="text-xs text-purple-300 text-center font-bold mb-1">
-                            🐕 LAIKA x100 Boost for Cosmodog Community!
+                            🐕 LAIKA x2 Boost for Cosmodog Community!
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">Market: ${(calculation?.investment?.laikaPrice || laikaToUsdtRate).toFixed(8)}</span>
-                            <span className="text-purple-400 font-bold">x100 → ${((calculation?.investment?.laikaPrice || laikaToUsdtRate) * 100).toFixed(6)}</span>
+                            <span className="text-purple-400 font-bold">x2 → ${((calculation?.investment?.laikaPrice || laikaToUsdtRate) * 2).toFixed(6)}</span>
                           </div>
                         </div>
                       )}

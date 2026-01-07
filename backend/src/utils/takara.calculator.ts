@@ -236,7 +236,7 @@ export function formatBoostResult(result: TakaraBoostResult): string {
  * Calculate combined boost (LAIKA + TAKARA)
  *
  * When both boosts are applied:
- * 1. Calculate LAIKA boost first (x100 multiplier for Cosmodog community!)
+ * 1. Calculate LAIKA boost first (x2 multiplier for Cosmodog community!)
  * 2. Use LAIKA-boosted APY as base for TAKARA
  * 3. TAKARA boost adds on top (uses full market value, no discount)
  * 4. Final APY capped at vault maxAPY
@@ -255,9 +255,9 @@ export function calculateCombinedBoost(params: {
 } {
   const { baseAPY, maxAPY, usdtInvested, laikaMarketValueUSD, takaraMarketValueUSD } = params;
 
-  // Step 1: Calculate LAIKA boost (x100 for Cosmodog community!)
-  // boostValue = marketValue * 100
-  const laikaBoostValue = laikaMarketValueUSD * 100;
+  // Step 1: Calculate LAIKA boost (x2 for Cosmodog community!)
+  // boostValue = marketValue * 2
+  const laikaBoostValue = laikaMarketValueUSD * 2;
   const maxBoostValue = usdtInvested * 0.50;
   const effectiveLaikaValue = Math.min(laikaBoostValue, maxBoostValue);
   const laikaBoostFill = maxBoostValue > 0 ? (effectiveLaikaValue / maxBoostValue) * 100 : 0;
