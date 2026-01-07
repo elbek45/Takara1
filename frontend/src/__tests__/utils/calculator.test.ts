@@ -46,9 +46,9 @@ describe('calculateLaikaBoostValues', () => {
 
     expect(result.laikaToUsdtRate).toBe(defaultLaikaPrice)
     expect(result.maxLaikaBoostUSD).toBe(500) // 50% of 1000
-    expect(result.maxLaikaMarketValueUSD).toBe(5) // 500 / 100 (x100 multiplier)
-    // maxLaikaBoost = 5 / 0.0000007 ≈ 7,142,857 LAIKA tokens
-    expect(result.maxLaikaBoost).toBeCloseTo(7142857.14, 0)
+    expect(result.maxLaikaMarketValueUSD).toBe(250) // 500 / 2 (x2 multiplier)
+    // maxLaikaBoost = 250 / 0.0000007 ≈ 357,142,857 LAIKA tokens
+    expect(result.maxLaikaBoost).toBeCloseTo(357142857.14, 0)
   })
 
   it('should calculate correct values for $10000 USDT', () => {
@@ -58,7 +58,7 @@ describe('calculateLaikaBoostValues', () => {
     })
 
     expect(result.maxLaikaBoostUSD).toBe(5000) // 50% of 10000
-    expect(result.maxLaikaMarketValueUSD).toBe(50) // 5000 / 100
+    expect(result.maxLaikaMarketValueUSD).toBe(2500) // 5000 / 2 (x2 multiplier)
   })
 
   it('should return 0 for empty USDT amount', () => {
@@ -141,7 +141,7 @@ describe('calculateBoostValueUSD', () => {
   const laikaPrice = 0.0000007
   const takaraPrice = 0.001506
 
-  it('should calculate LAIKA boost with x100 multiplier', () => {
+  it('should calculate LAIKA boost with x2 multiplier', () => {
     const result = calculateBoostValueUSD({
       boostToken: 'LAIKA',
       tokenAmount: 1000000, // 1M LAIKA
@@ -150,8 +150,8 @@ describe('calculateBoostValueUSD', () => {
     })
 
     // Market value = 1000000 * 0.0000007 = 0.7 USD
-    // Boost value = 0.7 * 100 = 70 USD
-    expect(result).toBeCloseTo(70, 2)
+    // Boost value = 0.7 * 2 = 1.4 USD (x2 multiplier for Cosmodog community)
+    expect(result).toBeCloseTo(1.4, 2)
   })
 
   it('should calculate TAKARA boost without multiplier', () => {

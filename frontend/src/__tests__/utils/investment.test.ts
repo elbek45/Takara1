@@ -45,17 +45,17 @@ describe('Investment APY Calculations', () => {
 })
 
 describe('Boost Calculations', () => {
-  it('should calculate LAIKA boost with x100 multiplier', () => {
+  it('should calculate LAIKA boost with x2 multiplier', () => {
     const calculateLaikaBoostValue = (laikaAmount: number, laikaPrice: number): number => {
       const marketValue = laikaAmount * laikaPrice
-      return marketValue * 100 // x100 multiplier
+      return marketValue * 2 // x2 multiplier for Cosmodog community
     }
 
-    // 1M LAIKA at $0.0000007 = $0.70 market value = $70 boost value
-    expect(calculateLaikaBoostValue(1000000, 0.0000007)).toBeCloseTo(70, 2)
+    // 1M LAIKA at $0.0000007 = $0.70 market value = $1.40 boost value
+    expect(calculateLaikaBoostValue(1000000, 0.0000007)).toBeCloseTo(1.4, 2)
 
-    // 10M LAIKA at $0.0000007 = $7.00 market value = $700 boost value
-    expect(calculateLaikaBoostValue(10000000, 0.0000007)).toBeCloseTo(700, 2)
+    // 10M LAIKA at $0.0000007 = $7.00 market value = $14.00 boost value
+    expect(calculateLaikaBoostValue(10000000, 0.0000007)).toBeCloseTo(14, 2)
   })
 
   it('should calculate TAKARA boost without multiplier', () => {
@@ -83,14 +83,14 @@ describe('Boost Calculations', () => {
   it('should calculate required LAIKA for max boost', () => {
     const calculateRequiredLaika = (usdtAmount: number, laikaPrice: number): number => {
       const maxBoostUSD = usdtAmount * 0.5
-      const requiredMarketValue = maxBoostUSD / 100 // x100 multiplier means divide by 100
+      const requiredMarketValue = maxBoostUSD / 2 // x2 multiplier means divide by 2
       return requiredMarketValue / laikaPrice
     }
 
     // $1000 USDT, LAIKA at $0.0000007
-    // Max boost = $500, required market value = $5
-    // Required LAIKA = $5 / $0.0000007 ≈ 7,142,857
-    expect(calculateRequiredLaika(1000, 0.0000007)).toBeCloseTo(7142857, 0)
+    // Max boost = $500, required market value = $250
+    // Required LAIKA = $250 / $0.0000007 ≈ 357,142,857
+    expect(calculateRequiredLaika(1000, 0.0000007)).toBeCloseTo(357142857, 0)
   })
 
   it('should calculate required TAKARA for max boost', () => {
