@@ -1,16 +1,16 @@
 /**
  * Takara Gold v2.7 - Vault Configuration
  *
- * 4 Vaults by Duration:
- * - 18M = Starter (7.6% APY, max 9.6% with boost, 14.4% total return)
- * - 20M = Beginner (8.5% APY, max 10.5% with boost, 16.8% total return)
- * - 30M = Pro (13.43% APY, max 16.43% with boost, 46.5% total return)
- * - 36M = Elite (15.2% APY, max 19.2% with boost, 57.6% total return)
+ * 4 ELITE Vaults by Duration (max APY with boost):
+ * - 18M: 7.6% base / 9.6% max → 14.4% total return
+ * - 20M: 8.08% base / 10.08% max → 16.8% total return
+ * - 30M: 15.6% base / 18.6% max → 46.5% total return
+ * - 36M: 15.2% base / 19.2% max → 57.6% total return
  *
+ * Tier offsets from ELITE: PRO -1%, BASIC -2%, STARTER -3%
  * Mining Threshold: $25,000 per vault
  * Min Investment: $300
- *
- * LAIKA Boost: +2% to +4% depending on vault
+ * Payout: Monthly
  */
 
 export enum VaultTier {
@@ -74,13 +74,13 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 300,
     maxInvestment: 999999999,
-    baseAPY: 8.5,
-    maxAPY: 10.5, // +2% max LAIKA boost, 16.8% total return
+    baseAPY: 8.08,
+    maxAPY: 10.08, // +2% max LAIKA boost, 16.8% total return
     takaraAPY: 100,
     miningPower: 100,
     requireTAKARA: true,
     takaraRatio: 15, // 15 TAKARA per 100 USDT
-    description: '20-month vault with 8.5% APY, requires 15 TAKARA per 100 USDT'
+    description: '20-month vault with 8.08% APY, requires 15 TAKARA per 100 USDT'
   },
 
   // ==================== PRO (30 Months) ====================
@@ -92,13 +92,13 @@ export const VAULTS: VaultConfig[] = [
     payoutSchedule: PayoutSchedule.MONTHLY,
     minInvestment: 300,
     maxInvestment: 999999999,
-    baseAPY: 13.43,
-    maxAPY: 16.43, // +3% max LAIKA boost, 46.5% total return
+    baseAPY: 15.6,
+    maxAPY: 18.6, // +3% max LAIKA boost, 46.5% total return
     takaraAPY: 200,
     miningPower: 200,
     requireTAKARA: true,
     takaraRatio: 25, // 25 TAKARA per 100 USDT
-    description: 'Pro 30-month vault with 13.43% APY, requires 25 TAKARA per 100 USDT'
+    description: 'Pro 30-month vault with 15.6% APY, requires 25 TAKARA per 100 USDT'
   },
 
   // ==================== ELITE (36 Months) ====================

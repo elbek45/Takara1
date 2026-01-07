@@ -8,11 +8,13 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // APY configuration by duration and tier
+// Total Return = maxAPY × (duration / 12)
+// ELITE targets: 18M=14.4%, 20M=16.8%, 30M=46.5%, 36M=57.6%
 const vaultConfig = {
-  18: { elite: { base: 7.6, max: 9.6 }, takaraRatio: 0, requireTAKARA: false },
-  20: { elite: { base: 8.5, max: 10.5 }, takaraRatio: 15, requireTAKARA: true },
-  30: { elite: { base: 13.43, max: 16.43 }, takaraRatio: 25, requireTAKARA: true },
-  36: { elite: { base: 15.2, max: 19.2 }, takaraRatio: 40, requireTAKARA: true }
+  18: { elite: { base: 7.6, max: 9.6 }, takaraRatio: 0, requireTAKARA: false },      // 14.4% total
+  20: { elite: { base: 8.08, max: 10.08 }, takaraRatio: 15, requireTAKARA: true },   // 16.8% total
+  30: { elite: { base: 15.6, max: 18.6 }, takaraRatio: 25, requireTAKARA: true },    // 46.5% total
+  36: { elite: { base: 15.2, max: 19.2 }, takaraRatio: 40, requireTAKARA: true }     // 57.6% total
 }
 
 // Tier offsets from ELITE
