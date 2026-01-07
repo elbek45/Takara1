@@ -13,45 +13,49 @@ async function main() {
   await prisma.vault.updateMany({
     where: { duration: 18 },
     data: {
-      maxAPY: 10,
+      baseAPY: 7.6,
+      maxAPY: 9.6,
       takaraRatio: 0,
       requireTAKARA: false
     }
   })
-  console.log('✅ Starter 18M: maxAPY=10, takaraRatio=0')
+  console.log('✅ Starter 18M: baseAPY=7.6, maxAPY=9.6, takaraRatio=0')
 
   // Beginner 20M
   await prisma.vault.updateMany({
     where: { duration: 20 },
     data: {
-      maxAPY: 13,
+      baseAPY: 8.5,
+      maxAPY: 10.5,
       takaraRatio: 15,
       requireTAKARA: true
     }
   })
-  console.log('✅ Beginner 20M: maxAPY=13, takaraRatio=15')
+  console.log('✅ Beginner 20M: baseAPY=8.5, maxAPY=10.5, takaraRatio=15')
 
   // Pro 30M
   await prisma.vault.updateMany({
     where: { duration: 30 },
     data: {
-      maxAPY: 27,
+      baseAPY: 13.43,
+      maxAPY: 16.43,
       takaraRatio: 25,
       requireTAKARA: true
     }
   })
-  console.log('✅ Pro 30M: maxAPY=27, takaraRatio=25')
+  console.log('✅ Pro 30M: baseAPY=13.43, maxAPY=16.43, takaraRatio=25')
 
   // Elite 36M
   await prisma.vault.updateMany({
     where: { duration: 36 },
     data: {
-      maxAPY: 29,
+      baseAPY: 15.2,
+      maxAPY: 19.2,
       takaraRatio: 40,
       requireTAKARA: true
     }
   })
-  console.log('✅ Elite 36M: maxAPY=29, takaraRatio=40')
+  console.log('✅ Elite 36M: baseAPY=15.2, maxAPY=19.2, takaraRatio=40')
 
   console.log('\n📊 Final values:')
   const vaults = await prisma.vault.findMany({
