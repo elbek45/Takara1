@@ -227,7 +227,7 @@ export default function AdminVaultsPage() {
                 <div className="flex justify-between bg-gold-500/10 -mx-2 px-2 py-1 rounded">
                   <span className="text-gray-400">Total Return:</span>
                   <span className="text-gold-400 font-bold">
-                    {(vault.baseAPY * vault.duration / 12).toFixed(0)}% → {(vault.maxAPY * vault.duration / 12).toFixed(0)}%
+                    {(vault.baseAPY * vault.duration / 12).toFixed(1)}% → {(vault.maxAPY * vault.duration / 12).toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex justify-between">

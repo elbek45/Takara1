@@ -257,7 +257,7 @@ export default function VaultDetailPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-gold-400">
-                      {(vault.baseAPY * vault.duration / 12).toFixed(0)}% → {(vault.maxAPY * vault.duration / 12).toFixed(0)}%
+                      {(vault.baseAPY * vault.duration / 12).toFixed(1)}% → {(vault.maxAPY * vault.duration / 12).toFixed(1)}%
                     </div>
                   </div>
                 </div>
