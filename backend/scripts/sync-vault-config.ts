@@ -1,61 +1,50 @@
 /**
  * Sync vault values with config
+ * v2.7 - Different APY by tier (ELITE max, PRO -1%, BASIC -2%, STARTER -3%)
  */
 
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// APY configuration by duration and tier
+const vaultConfig = {
+  18: { elite: { base: 7.6, max: 9.6 }, takaraRatio: 0, requireTAKARA: false },
+  20: { elite: { base: 8.5, max: 10.5 }, takaraRatio: 15, requireTAKARA: true },
+  30: { elite: { base: 13.43, max: 16.43 }, takaraRatio: 25, requireTAKARA: true },
+  36: { elite: { base: 15.2, max: 19.2 }, takaraRatio: 40, requireTAKARA: true }
+}
+
+// Tier offsets from ELITE
+const tierOffsets = {
+  ELITE: 0,
+  PRO: 1,
+  BASIC: 2,
+  STARTER: 3
+}
+
 async function main() {
-  console.log('Syncing vault configuration...\n')
+  console.log('Syncing vault configuration v2.7...\n')
 
-  // Starter 18M - no TAKARA required
-  await prisma.vault.updateMany({
-    where: { duration: 18 },
-    data: {
-      baseAPY: 7.6,
-      maxAPY: 9.6,
-      takaraRatio: 0,
-      requireTAKARA: false
-    }
-  })
-  console.log('✅ Starter 18M: baseAPY=7.6, maxAPY=9.6, takaraRatio=0')
+  for (const [duration, config] of Object.entries(vaultConfig)) {
+    const dur = Number(duration)
 
-  // Beginner 20M
-  await prisma.vault.updateMany({
-    where: { duration: 20 },
-    data: {
-      baseAPY: 8.5,
-      maxAPY: 10.5,
-      takaraRatio: 15,
-      requireTAKARA: true
-    }
-  })
-  console.log('✅ Beginner 20M: baseAPY=8.5, maxAPY=10.5, takaraRatio=15')
+    for (const [tier, offset] of Object.entries(tierOffsets)) {
+      const baseAPY = Number((config.elite.base - offset).toFixed(2))
+      const maxAPY = Number((config.elite.max - offset).toFixed(2))
 
-  // Pro 30M
-  await prisma.vault.updateMany({
-    where: { duration: 30 },
-    data: {
-      baseAPY: 13.43,
-      maxAPY: 16.43,
-      takaraRatio: 25,
-      requireTAKARA: true
+      await prisma.vault.updateMany({
+        where: { duration: dur, tier },
+        data: {
+          baseAPY,
+          maxAPY,
+          takaraRatio: config.takaraRatio,
+          requireTAKARA: config.requireTAKARA
+        }
+      })
+      console.log(`✅ ${dur}M ${tier}: baseAPY=${baseAPY}, maxAPY=${maxAPY}`)
     }
-  })
-  console.log('✅ Pro 30M: baseAPY=13.43, maxAPY=16.43, takaraRatio=25')
-
-  // Elite 36M
-  await prisma.vault.updateMany({
-    where: { duration: 36 },
-    data: {
-      baseAPY: 15.2,
-      maxAPY: 19.2,
-      takaraRatio: 40,
-      requireTAKARA: true
-    }
-  })
-  console.log('✅ Elite 36M: baseAPY=15.2, maxAPY=19.2, takaraRatio=40')
+  }
 
   console.log('\n📊 Final values:')
   const vaults = await prisma.vault.findMany({
