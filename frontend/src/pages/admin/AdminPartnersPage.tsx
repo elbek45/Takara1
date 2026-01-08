@@ -48,6 +48,7 @@ export default function AdminPartnersPage() {
     onSuccess: () => {
       toast.success('Partner created successfully')
       queryClient.invalidateQueries({ queryKey: ['admin-partners'] })
+      queryClient.invalidateQueries({ queryKey: ['partners'] }) // Also invalidate public partners cache
       closeModal()
     },
     onError: (error: any) => {
@@ -63,6 +64,7 @@ export default function AdminPartnersPage() {
     onSuccess: () => {
       toast.success('Partner updated successfully')
       queryClient.invalidateQueries({ queryKey: ['admin-partners'] })
+      queryClient.invalidateQueries({ queryKey: ['partners'] }) // Also invalidate public partners cache
       closeModal()
     },
     onError: (error: any) => {
@@ -78,6 +80,7 @@ export default function AdminPartnersPage() {
     onSuccess: () => {
       toast.success('Partner deleted successfully')
       queryClient.invalidateQueries({ queryKey: ['admin-partners'] })
+      queryClient.invalidateQueries({ queryKey: ['partners'] }) // Also invalidate public partners cache
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to delete partner')

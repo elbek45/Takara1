@@ -19,11 +19,9 @@ interface Partner {
   isActive?: boolean
 }
 
-// Default partners if API not available
-const defaultPartners: Partner[] = [
-  { id: '1', name: 'COPPAM', logoUrl: '/images/partners/coppam.png', displayOrder: 1 },
-  { id: '2', name: 'Digital Commerce Bank', logoUrl: '/images/partners/dcb.svg', displayOrder: 2 },
-]
+// Default partners removed - only show partners from database
+// If you want default partners, add them via Admin Panel
+const defaultPartners: Partner[] = []
 
 export function PoweredBySlider() {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -44,6 +42,11 @@ export function PoweredBySlider() {
   })
 
   const displayPartners = partners && partners.length > 0 ? partners : defaultPartners
+
+  // Don't render if no partners
+  if (!displayPartners || displayPartners.length === 0) {
+    return null
+  }
 
   // Auto-scroll animation
   useEffect(() => {
