@@ -145,10 +145,12 @@ export function PhantomButton({
       {connecting ? (
         <span>Connecting...</span>
       ) : connected && publicKey ? (
-        <span>
-          {formatAddress(publicKey.toBase58())}
-          <span className="ml-1 text-xs opacity-80">
-            (${usdtBalance} USDT)
+        <span className="flex items-center gap-2">
+          <span>{formatAddress(publicKey.toBase58())}</span>
+          <span className="text-xs opacity-90 flex gap-1.5">
+            <span className="text-blue-300">${usdtBalance}</span>
+            <span className="text-green-300">{takaraBalance}T</span>
+            <span className="text-purple-300">{laikaBalance}L</span>
           </span>
         </span>
       ) : (
@@ -247,7 +249,16 @@ export function PhantomButtonCompact({ className = '' }: { className?: string })
       {connecting ? (
         'Connecting...'
       ) : connected && publicKey ? (
-        `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)} ($${usdtBalance})`
+        <span className="flex items-center gap-1.5">
+          <span>{publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}</span>
+          <span className="text-xs opacity-90">
+            <span className="text-blue-300">${usdtBalance}</span>
+            {' '}
+            <span className="text-green-300">{takaraBalance}T</span>
+            {' '}
+            <span className="text-purple-300">{laikaBalance}L</span>
+          </span>
+        </span>
       ) : (
         'Connect Phantom'
       )}

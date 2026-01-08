@@ -36,7 +36,6 @@ export default function InvestmentModal({
   const [usdtBalance, setUsdtBalance] = useState<number>(0)
   const [takaraBalance, setTakaraBalance] = useState<number>(0)
   const [laikaBalance, setLaikaBalance] = useState<number>(0)
-  const [solBalance, setSolBalance] = useState<number>(0)
 
   // Parse accepted payment methods
   const availablePayments = useMemo(() => {
@@ -57,16 +56,14 @@ export default function InvestmentModal({
     const fetchSolanaBalances = async () => {
       if (publicKey) {
         try {
-          const [usdt, takara, laika, sol] = await Promise.all([
+          const [usdt, takara, laika] = await Promise.all([
             solanaService.getUSDTBalance(publicKey),
             solanaService.getTAKARABalance(publicKey),
             solanaService.getLAIKABalance(publicKey),
-            solanaService.getBalance(publicKey),
           ])
           setUsdtBalance(usdt)
           setTakaraBalance(takara)
           setLaikaBalance(laika)
-          setSolBalance(sol)
         } catch (error) {
           console.error('Failed to fetch Solana balances:', error)
         }
@@ -386,10 +383,6 @@ export default function InvestmentModal({
                           </span>
                         </div>
                       )}
-                      <div className="bg-gray-500/10 rounded px-2 py-1">
-                        <span className="text-gray-400 text-sm">SOL: </span>
-                        <span className="text-white text-sm font-bold">{solBalance.toFixed(4)}</span>
-                      </div>
                     </div>
                     {hasInsufficientUSDT && (
                       <div className="text-xs text-red-400 mt-2">
