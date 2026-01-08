@@ -98,9 +98,12 @@ export default function LandingPage() {
             {/* Left Content */}
             <div className="space-y-8">
               {/* Logo */}
-              <div className="flex items-center gap-3">
-                <span className="text-5xl" style={{ color: GOLD }}>宝</span>
-                <span className="text-4xl font-bold text-white">Takara</span>
+              <div className="flex items-center">
+                <img
+                  src="/images/brand/logo-blue.png"
+                  alt="Takara"
+                  className="h-16 sm:h-20 w-auto"
+                />
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
