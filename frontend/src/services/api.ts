@@ -345,8 +345,12 @@ class ApiClient {
   async adminUploadPartnerLogo(file: File): Promise<ApiResponse<{ url: string }>> {
     const formData = new FormData()
     formData.append('logo', file)
-    // Don't set Content-Type manually - axios will set it automatically with correct boundary
-    const { data } = await this.client.post<ApiResponse<{ url: string }>>('/partners/admin/upload', formData)
+    // Set Content-Type to undefined to let axios set multipart/form-data with correct boundary
+    const { data } = await this.client.post<ApiResponse<{ url: string }>>('/partners/admin/upload', formData, {
+      headers: {
+        'Content-Type': undefined as unknown as string,
+      },
+    })
     return data
   }
 }
