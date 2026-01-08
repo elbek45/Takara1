@@ -42,16 +42,12 @@ export function PoweredBySlider() {
   })
 
   const displayPartners = partners && partners.length > 0 ? partners : defaultPartners
-
-  // Don't render if no partners
-  if (!displayPartners || displayPartners.length === 0) {
-    return null
-  }
+  const hasPartners = displayPartners && displayPartners.length > 0
 
   // Auto-scroll animation
   useEffect(() => {
     const scrollContainer = scrollRef.current
-    if (!scrollContainer || isPaused) return
+    if (!scrollContainer || isPaused || !hasPartners) return
 
     let animationId: number
     let scrollPosition = 0
@@ -69,7 +65,12 @@ export function PoweredBySlider() {
     animationId = requestAnimationFrame(animate)
 
     return () => cancelAnimationFrame(animationId)
-  }, [isPaused, displayPartners])
+  }, [isPaused, displayPartners, hasPartners])
+
+  // Don't render if no partners (after all hooks)
+  if (!hasPartners) {
+    return null
+  }
 
   // Duplicate partners for seamless loop
   const duplicatedPartners = [...displayPartners, ...displayPartners, ...displayPartners]
