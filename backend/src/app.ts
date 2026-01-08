@@ -8,6 +8,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import dotenv from 'dotenv';
 import { connectDatabase } from './config/database';
 import { APP_CONFIG, RATE_LIMIT, CORS_CONFIG } from './config/constants';
@@ -85,6 +86,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parser (for httpOnly cookies)
 app.use(cookieParser());
+
+// Static file serving (for uploaded partner logos, etc.)
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Rate limiting
 const limiter = rateLimit({

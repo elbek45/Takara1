@@ -43,11 +43,13 @@ export function PoweredBySlider() {
 
   const displayPartners = partners && partners.length > 0 ? partners : defaultPartners
   const hasPartners = displayPartners && displayPartners.length > 0
+  // Need at least 3 partners for smooth scroll animation
+  const shouldAnimate = displayPartners.length >= 3
 
-  // Auto-scroll animation
+  // Auto-scroll animation (only if enough partners for smooth loop)
   useEffect(() => {
     const scrollContainer = scrollRef.current
-    if (!scrollContainer || isPaused || !hasPartners) return
+    if (!scrollContainer || isPaused || !hasPartners || !shouldAnimate) return
 
     let animationId: number
     let scrollPosition = 0
@@ -65,15 +67,17 @@ export function PoweredBySlider() {
     animationId = requestAnimationFrame(animate)
 
     return () => cancelAnimationFrame(animationId)
-  }, [isPaused, displayPartners, hasPartners])
+  }, [isPaused, displayPartners, hasPartners, shouldAnimate])
 
   // Don't render if no partners (after all hooks)
   if (!hasPartners) {
     return null
   }
 
-  // Duplicate partners for seamless loop
-  const duplicatedPartners = [...displayPartners, ...displayPartners, ...displayPartners]
+  // Duplicate partners for seamless loop (only if animating)
+  const duplicatedPartners = shouldAnimate
+    ? [...displayPartners, ...displayPartners, ...displayPartners]
+    : displayPartners
 
   return (
     <section className="py-16 bg-navy-900 relative overflow-hidden">
@@ -101,11 +105,11 @@ export function PoweredBySlider() {
 
           <div
             ref={scrollRef}
-            className="overflow-hidden py-4"
+            className={`py-4 ${shouldAnimate ? 'overflow-hidden' : 'overflow-visible'}`}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
-            <div className="flex items-center gap-16 w-max">
+            <div className={`flex items-center gap-16 ${shouldAnimate ? 'w-max' : 'justify-center flex-wrap'}`}>
               {duplicatedPartners.map((partner, index) => (
                 <a
                   key={`${partner.id}-${index}`}

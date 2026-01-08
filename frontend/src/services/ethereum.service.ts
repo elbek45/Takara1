@@ -158,9 +158,15 @@ class EthereumService {
       const network = await this.provider.getNetwork();
       const chainId = Number(network.chainId);
 
-      // Get balance
-      const balance = await this.provider.getBalance(accounts[0]);
-      const balanceInEth = ethers.formatEther(balance);
+      // Get balance (with error handling for Trust Wallet RPC issues)
+      let balanceInEth = '0';
+      try {
+        const balance = await this.provider.getBalance(accounts[0]);
+        balanceInEth = ethers.formatEther(balance);
+      } catch (balanceError) {
+        console.warn('Failed to get ETH balance (RPC issue):', balanceError);
+        // Continue without balance - Trust Wallet RPC may be unavailable
+      }
 
       // Initialize USDT contract only if contract address is configured
       if (this.USDT_CONTRACT_ADDRESS) {
@@ -253,16 +259,21 @@ class EthereumService {
    */
   async getBalance(address?: string): Promise<string> {
     if (!this.provider) {
-      throw new Error('Provider not initialized');
+      return '0';
     }
 
     const addr = address || await this.getAddress();
     if (!addr) {
-      throw new Error('No address provided');
+      return '0';
     }
 
-    const balance = await this.provider.getBalance(addr);
-    return ethers.formatEther(balance);
+    try {
+      const balance = await this.provider.getBalance(addr);
+      return ethers.formatEther(balance);
+    } catch (error) {
+      console.warn('Failed to get ETH balance:', error);
+      return '0';
+    }
   }
 
   /**
