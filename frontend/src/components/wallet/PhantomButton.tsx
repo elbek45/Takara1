@@ -1,7 +1,7 @@
 /**
  * Phantom Wallet Button
  * Uses Solana Wallet Adapter for consistent state across all components
- * Shows TAKARA and LAIKA (Cosmodog) balances
+ * Shows USDT, TAKARA and LAIKA balances on Solana
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -23,12 +23,14 @@ export function PhantomButton({
   className = '',
 }: PhantomButtonProps) {
   const { publicKey, connected, connecting, connect, disconnect, select, wallets } = useWallet()
+  const [usdtBalance, setUsdtBalance] = useState<string>('0')
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
   // Fetch balances when connected
   useEffect(() => {
     if (!publicKey) {
+      setUsdtBalance('0')
       setTakaraBalance('0')
       setLaikaBalance('0')
       return
@@ -36,10 +38,12 @@ export function PhantomButton({
 
     const fetchBalances = async () => {
       try {
-        const [takara, laika] = await Promise.all([
+        const [usdt, takara, laika] = await Promise.all([
+          solanaService.getUSDTBalance(publicKey),
           solanaService.getTAKARABalance(publicKey),
           solanaService.getLAIKABalance(publicKey),
         ])
+        setUsdtBalance(usdt.toFixed(2))
         setTakaraBalance(takara.toFixed(2))
         setLaikaBalance(laika.toFixed(2))
       } catch (err) {
@@ -135,7 +139,7 @@ export function PhantomButton({
         ${connecting ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
-      title={connected && publicKey ? `${publicKey.toBase58()}\nTAKARA: ${takaraBalance}\nLAIKA: ${laikaBalance}` : 'Connect Phantom'}
+      title={connected && publicKey ? `${publicKey.toBase58()}\nUSDT: ${usdtBalance}\nTAKARA: ${takaraBalance}\nLAIKA: ${laikaBalance}` : 'Connect Phantom'}
     >
       <Wallet className="h-4 w-4" />
       {connecting ? (
@@ -144,7 +148,7 @@ export function PhantomButton({
         <span>
           {formatAddress(publicKey.toBase58())}
           <span className="ml-1 text-xs opacity-80">
-            ({takaraBalance} TAKARA / {laikaBalance} LAIKA)
+            (${usdtBalance} USDT)
           </span>
         </span>
       ) : (
@@ -157,11 +161,13 @@ export function PhantomButton({
 // Compact version for mobile
 export function PhantomButtonCompact({ className = '' }: { className?: string }) {
   const { publicKey, connected, connecting, connect, disconnect, select, wallets } = useWallet()
+  const [usdtBalance, setUsdtBalance] = useState<string>('0')
   const [takaraBalance, setTakaraBalance] = useState<string>('0')
   const [laikaBalance, setLaikaBalance] = useState<string>('0')
 
   useEffect(() => {
     if (!publicKey) {
+      setUsdtBalance('0')
       setTakaraBalance('0')
       setLaikaBalance('0')
       return
@@ -169,10 +175,12 @@ export function PhantomButtonCompact({ className = '' }: { className?: string })
 
     const fetchBalances = async () => {
       try {
-        const [takara, laika] = await Promise.all([
+        const [usdt, takara, laika] = await Promise.all([
+          solanaService.getUSDTBalance(publicKey),
           solanaService.getTAKARABalance(publicKey),
           solanaService.getLAIKABalance(publicKey),
         ])
+        setUsdtBalance(usdt.toFixed(2))
         setTakaraBalance(takara.toFixed(2))
         setLaikaBalance(laika.toFixed(2))
       } catch {
@@ -239,7 +247,7 @@ export function PhantomButtonCompact({ className = '' }: { className?: string })
       {connecting ? (
         'Connecting...'
       ) : connected && publicKey ? (
-        `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)} (${takaraBalance}/${laikaBalance})`
+        `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)} ($${usdtBalance})`
       ) : (
         'Connect Phantom'
       )}

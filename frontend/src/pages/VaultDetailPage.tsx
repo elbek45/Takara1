@@ -6,7 +6,6 @@ import { api } from '../services/api'
 import { ArrowLeft, TrendingUp, Coins, Calendar, DollarSign } from 'lucide-react'
 import InvestmentModal from '../components/investment/InvestmentModal'
 import { useAuth } from '../hooks/useAuth'
-import { useEVMWallet } from '../hooks/useEVMWallet'
 
 // Custom hook for debouncing (1 second delay)
 function useDebounce<T>(value: T, delay: number): T {
@@ -71,16 +70,12 @@ class CalculatorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
 export default function VaultDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { connected: solanaConnected } = useWallet()
-  const { isConnected: evmConnected } = useEVMWallet()
+  const { connected } = useWallet()
   const { isAuthenticated } = useAuth()
   const [usdtAmount, setUsdtAmount] = useState<string>('')
   const [boostToken, setBoostToken] = useState<'LAIKA' | 'TAKARA'>('LAIKA')
   const [laikaAmount, setLaikaAmount] = useState<number>(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
-
-  // Check if any wallet is connected (Solana OR EVM)
-  const connected = solanaConnected || evmConnected
 
   // Debounce USDT amount - wait 1 second after user stops typing
   const debouncedUsdtAmount = useDebounce(usdtAmount, 1000)
@@ -311,22 +306,15 @@ export default function VaultDetailPage() {
                 <div className="h-10 w-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
                   <span className="text-xl">💳</span>
                 </div>
-                <h3 className="text-lg font-bold text-white">2-Step Payment Process</h3>
+                <h3 className="text-lg font-bold text-white">Payment Process</h3>
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
+                  <div className="flex-shrink-0 w-6 h-6 bg-purple-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
                   <div>
-                    <div className="font-semibold text-white">USDT Payment (Trust Wallet - EVM)</div>
-                    <div className="text-gray-400">Main investment amount via Trust Wallet or MetaMask</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-black rounded-full flex items-center justify-center font-bold">2</div>
-                  <div>
-                    <div className="font-semibold text-white">TAKARA + LAIKA (Phantom - Solana)</div>
+                    <div className="font-semibold text-white">All Payments via Phantom (Solana)</div>
                     <div className="text-gray-400">
-                      {vault.requireTAKARA ? 'Required TAKARA tokens' : 'No TAKARA required'} + optional LAIKA boost for extra APY
+                      USDT + {vault.requireTAKARA ? 'TAKARA tokens' : 'No TAKARA required'} + optional LAIKA boost
                     </div>
                   </div>
                 </div>

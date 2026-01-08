@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
             <Lock className="h-8 w-8 text-background-primary" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Admin Panel</h1>
-          <p className="text-gray-400">Takara <span className="text-gold-500">宝</span> v2.2</p>
+          <p className="text-gray-400">Takara v2.2</p>
         </div>
 
         {/* Login Form */}

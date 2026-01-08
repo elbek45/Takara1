@@ -10,9 +10,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-3">
             <div>
-              <span className="text-lg font-bold text-gradient-gold">
-                Takara <span className="text-gold-500">宝</span>
-              </span>
+              <img
+                src="/images/brand/logo-takara.png"
+                alt="Takara"
+                className="h-8 w-auto"
+              />
             </div>
             <p className="text-sm text-gray-400">
               Premium stacking vaults on Solana with TAKARA mining rewards.
@@ -77,7 +79,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-8 border-t border-green-900/20">
           <p className="text-center text-sm text-gray-500">
-            © {currentYear} Takara <span className="text-gold-500">宝</span>. All rights reserved.
+            © {currentYear} Takara. All rights reserved.
           </p>
         </div>
       </div>

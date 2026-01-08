@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, ArrowRight, Loader2, CheckCircle, Wallet } from 'lucide-react'
 import { api } from '../../services/api'
 import { solanaService } from '../../services/solana.service'
-import { useEVMWallet } from '../../hooks/useEVMWallet'
 import { toast } from 'sonner'
 import type { InvestmentCalculation, PaymentMethod } from '../../types'
 
@@ -30,16 +29,11 @@ export default function InvestmentModal({
   acceptedPayments = 'USDT,TAKARA',
 }: InvestmentModalProps) {
   const { publicKey, sendTransaction } = useWallet()
-  const {
-    isConnected: evmConnected,
-    address: evmAddress,
-    usdtBalance: evmUsdtBalance,
-    transferUSDT: transferUSDTEVM
-  } = useEVMWallet()
 
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('review')
   const [txSignature, setTxSignature] = useState<string>('')
+  const [usdtBalance, setUsdtBalance] = useState<number>(0)
   const [takaraBalance, setTakaraBalance] = useState<number>(0)
   const [laikaBalance, setLaikaBalance] = useState<number>(0)
   const [solBalance, setSolBalance] = useState<number>(0)
@@ -63,11 +57,13 @@ export default function InvestmentModal({
     const fetchSolanaBalances = async () => {
       if (publicKey) {
         try {
-          const [takara, laika, sol] = await Promise.all([
+          const [usdt, takara, laika, sol] = await Promise.all([
+            solanaService.getUSDTBalance(publicKey),
             solanaService.getTAKARABalance(publicKey),
             solanaService.getLAIKABalance(publicKey),
             solanaService.getBalance(publicKey),
           ])
+          setUsdtBalance(usdt)
           setTakaraBalance(takara)
           setLaikaBalance(laika)
           setSolBalance(sol)
@@ -81,30 +77,30 @@ export default function InvestmentModal({
 
   const investMutation = useMutation({
     mutationFn: async () => {
+      if (!publicKey || !sendTransaction) {
+        throw new Error('Phantom wallet must be connected')
+      }
+
       let paymentSignature: string
+      const platformWallet = solanaService.getPlatformWalletAddress()
 
       if (paymentMethod === 'USDT') {
-        // USDT payment via Trust Wallet (EVM)
-        if (!evmConnected || !evmAddress) {
-          throw new Error('Trust Wallet must be connected for USDT payment')
-        }
-
-        toast.info('Step 1/2: Transferring USDT via Trust Wallet...')
-        const platformWallet = import.meta.env.VITE_PLATFORM_WALLET_ETH || '0x...'
-        const result = await transferUSDTEVM(platformWallet, usdtAmount)
-        paymentSignature = result.txHash
+        // USDT payment via Phantom (Solana)
+        toast.info('Step 1/2: Transferring USDT via Phantom...')
+        paymentSignature = await solanaService.transferUSDT(
+          publicKey,
+          platformWallet,
+          usdtAmount,
+          sendTransaction
+        )
         toast.success('USDT transferred successfully!')
 
         // If TAKARA is also required for this vault
         if (calculation.investment.requiredTAKARA > 0) {
-          if (!publicKey || !sendTransaction) {
-            throw new Error('Phantom wallet must also be connected for TAKARA requirement')
-          }
           toast.info('Step 2/2: Transferring TAKARA via Phantom...')
-          const solPlatformWallet = solanaService.getPlatformWalletAddress()
           await solanaService.transferTAKARA(
             publicKey,
-            solPlatformWallet,
+            platformWallet,
             calculation.investment.requiredTAKARA,
             sendTransaction
           )
@@ -112,14 +108,9 @@ export default function InvestmentModal({
         }
       } else {
         // TAKARA payment via Phantom (Solana)
-        if (!publicKey || !sendTransaction) {
-          throw new Error('Phantom wallet must be connected for TAKARA payment')
-        }
-
         const takaraPaymentAmount = calculation.investment.requiredTAKARA || usdtAmount
         if (takaraPaymentAmount > 0) {
-          toast.info('Step 1/2: Transferring TAKARA via Phantom (Solana)...')
-          const platformWallet = solanaService.getPlatformWalletAddress()
+          toast.info('Step 1/2: Transferring TAKARA via Phantom...')
           const result = await solanaService.transferTAKARA(
             publicKey,
             platformWallet,
@@ -215,21 +206,17 @@ export default function InvestmentModal({
     ? (calculation.investment.requiredTAKARA || usdtAmount)
     : calculation.investment.requiredTAKARA || 0
 
-  const hasInsufficientUSDT = paymentMethod === 'USDT' && evmUsdtBalance < usdtAmount
+  const hasInsufficientUSDT = paymentMethod === 'USDT' && usdtBalance < usdtAmount
   const hasInsufficientTAKARA = takaraRequired > 0 && takaraBalance < takaraRequired
   const hasInsufficientLAIKA = laikaAmount > 0 && laikaBalance < laikaAmount
 
-  // Wallet requirements
-  const needsPhantom = paymentMethod === 'TAKARA' || takaraRequired > 0 || laikaAmount > 0
-  const needsTrustWallet = paymentMethod === 'USDT'
-  const missingPhantom = needsPhantom && !publicKey
-  const missingTrustWallet = needsTrustWallet && !evmConnected
+  // Wallet requirements - all payments via Phantom now
+  const missingPhantom = !publicKey
 
-  const isDisabled = investMutation.isPending || missingPhantom || missingTrustWallet || hasInsufficientUSDT || hasInsufficientTAKARA || hasInsufficientLAIKA
+  const isDisabled = investMutation.isPending || missingPhantom || hasInsufficientUSDT || hasInsufficientTAKARA || hasInsufficientLAIKA
 
   let buttonText = `Proceed to Transfer (${paymentMethod})`
   if (missingPhantom) buttonText = 'Connect Phantom Wallet First'
-  else if (missingTrustWallet) buttonText = 'Connect Trust Wallet First'
   else if (hasInsufficientUSDT) buttonText = 'Insufficient USDT Balance'
   else if (hasInsufficientTAKARA) buttonText = 'Insufficient TAKARA Balance'
   else if (hasInsufficientLAIKA) buttonText = 'Insufficient LAIKA Balance'
@@ -288,7 +275,7 @@ export default function InvestmentModal({
                           ${usdtAmount.toLocaleString()}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          via Trust Wallet
+                          via Phantom (Solana)
                         </div>
                       </div>
                     </button>
@@ -320,17 +307,9 @@ export default function InvestmentModal({
                   )}
                 </div>
 
-                {paymentMethod === 'USDT' && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 text-sm text-blue-300">
-                    <strong>Note:</strong> USDT payment via Trust Wallet (BSC/Ethereum network).
-                  </div>
-                )}
-
-                {paymentMethod === 'TAKARA' && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded p-3 text-sm text-green-300">
-                    <strong>Note:</strong> Payment via Phantom wallet on Solana network.
-                  </div>
-                )}
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded p-3 text-sm text-purple-300">
+                  <strong>Note:</strong> All payments via Phantom wallet on Solana network.
+                </div>
               </div>
 
               {/* LAIKA Boost Info */}
@@ -357,96 +336,74 @@ export default function InvestmentModal({
               )}
 
               {/* Wallet Connection Status */}
-              {(missingPhantom || missingTrustWallet) && (
+              {missingPhantom && (
                 <div className="bg-red-500/10 border-2 border-red-500/50 rounded-lg p-4">
                   <div className="text-sm text-red-400 font-bold mb-2">
-                    Required Wallets Not Connected
+                    Phantom Wallet Not Connected
                   </div>
-                  <div className="text-sm text-gray-300 space-y-2">
-                    {missingTrustWallet && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-400">✗</span>
-                        <span><strong>Trust Wallet</strong> - Required for USDT payment</span>
-                      </div>
-                    )}
-                    {missingPhantom && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-400">✗</span>
-                        <span><strong>Phantom</strong> - Required for {paymentMethod === 'TAKARA' ? 'TAKARA payment' : 'TAKARA/LAIKA'}</span>
-                      </div>
-                    )}
+                  <div className="text-sm text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-400">✗</span>
+                      <span><strong>Phantom</strong> - Required for all payments on Solana</span>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Connected Wallets & Balances */}
-              {!missingPhantom && !missingTrustWallet && (
+              {/* Connected Wallet & Balances */}
+              {!missingPhantom && publicKey && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-sm text-green-400 font-medium mb-3">
                     <Wallet className="h-4 w-4" />
-                    <span>Connected Wallets</span>
+                    <span>Connected Wallet</span>
                   </div>
-                  <div className="space-y-3">
-                    {/* Trust Wallet (for USDT) */}
-                    {paymentMethod === 'USDT' && evmConnected && (
-                      <div className="bg-black/20 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                          <span className="text-sm text-gray-300">Trust Wallet</span>
-                          <span className="text-xs text-gray-500">{evmAddress?.slice(0, 6)}...{evmAddress?.slice(-4)}</span>
-                        </div>
-                        <div className="bg-blue-500/10 rounded px-2 py-1 inline-block">
+                  <div className="bg-black/20 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      <span className="text-sm text-gray-300">Phantom</span>
+                      <span className="text-xs text-gray-500">{publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}</span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {paymentMethod === 'USDT' && (
+                        <div className="bg-blue-500/10 rounded px-2 py-1">
                           <span className="text-gray-400 text-sm">USDT: </span>
-                          <span className={`font-bold text-sm ${evmUsdtBalance >= usdtAmount ? 'text-green-400' : 'text-red-400'}`}>
-                            {evmUsdtBalance.toFixed(2)}
+                          <span className={`font-bold text-sm ${usdtBalance >= usdtAmount ? 'text-green-400' : 'text-red-400'}`}>
+                            {usdtBalance.toFixed(2)}
                           </span>
                         </div>
-                        {hasInsufficientUSDT && (
-                          <div className="text-xs text-red-400 mt-2">
-                            Insufficient USDT! Need ${usdtAmount.toLocaleString()}, have ${evmUsdtBalance.toFixed(2)}
-                          </div>
-                        )}
+                      )}
+                      <div className="bg-green-500/10 rounded px-2 py-1">
+                        <span className="text-gray-400 text-sm">TAKARA: </span>
+                        <span className={`font-bold text-sm ${takaraBalance >= takaraRequired ? 'text-green-400' : 'text-red-400'}`}>
+                          {takaraBalance.toLocaleString()}
+                        </span>
+                      </div>
+                      {laikaAmount > 0 && (
+                        <div className="bg-purple-500/10 rounded px-2 py-1">
+                          <span className="text-gray-400 text-sm">LAIKA: </span>
+                          <span className={`font-bold text-sm ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
+                            {laikaBalance.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="bg-gray-500/10 rounded px-2 py-1">
+                        <span className="text-gray-400 text-sm">SOL: </span>
+                        <span className="text-white text-sm font-bold">{solBalance.toFixed(4)}</span>
+                      </div>
+                    </div>
+                    {hasInsufficientUSDT && (
+                      <div className="text-xs text-red-400 mt-2">
+                        Insufficient USDT! Need ${usdtAmount.toLocaleString()}, have ${usdtBalance.toFixed(2)}
                       </div>
                     )}
-
-                    {/* Phantom (for TAKARA/LAIKA) */}
-                    {publicKey && needsPhantom && (
-                      <div className="bg-black/20 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                          <span className="text-sm text-gray-300">Phantom</span>
-                          <span className="text-xs text-gray-500">{publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}</span>
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                          <div className="bg-green-500/10 rounded px-2 py-1">
-                            <span className="text-gray-400 text-sm">TAKARA: </span>
-                            <span className={`font-bold text-sm ${takaraBalance >= takaraRequired ? 'text-green-400' : 'text-red-400'}`}>
-                              {takaraBalance.toLocaleString()}
-                            </span>
-                          </div>
-                          {laikaAmount > 0 && (
-                            <div className="bg-purple-500/10 rounded px-2 py-1">
-                              <span className="text-gray-400 text-sm">LAIKA: </span>
-                              <span className={`font-bold text-sm ${laikaBalance >= laikaAmount ? 'text-green-400' : 'text-red-400'}`}>
-                                {laikaBalance.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                          <div className="bg-gray-500/10 rounded px-2 py-1">
-                            <span className="text-gray-400 text-sm">SOL: </span>
-                            <span className="text-white text-sm font-bold">{solBalance.toFixed(4)}</span>
-                          </div>
-                        </div>
-                        {hasInsufficientTAKARA && (
-                          <div className="text-xs text-red-400 mt-2">
-                            Insufficient TAKARA! Need {takaraRequired.toLocaleString()}, have {takaraBalance.toLocaleString()}
-                          </div>
-                        )}
-                        {hasInsufficientLAIKA && (
-                          <div className="text-xs text-red-400 mt-2">
-                            Insufficient LAIKA! Need {laikaAmount.toLocaleString()}, have {laikaBalance.toLocaleString()}
-                          </div>
-                        )}
+                    {hasInsufficientTAKARA && (
+                      <div className="text-xs text-red-400 mt-2">
+                        Insufficient TAKARA! Need {takaraRequired.toLocaleString()}, have {takaraBalance.toLocaleString()}
+                      </div>
+                    )}
+                    {hasInsufficientLAIKA && (
+                      <div className="text-xs text-red-400 mt-2">
+                        Insufficient LAIKA! Need {laikaAmount.toLocaleString()}, have {laikaBalance.toLocaleString()}
                       </div>
                     )}
                   </div>

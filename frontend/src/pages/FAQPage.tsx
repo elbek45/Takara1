@@ -13,10 +13,10 @@ export default function FAQPage() {
   const faqs: FAQItem[] = [
     {
       category: 'Getting Started',
-      question: 'What is Takara 宝?',
+      question: 'What is Takara?',
       answer: (
         <div className="space-y-2">
-          <p>Takara 宝 is a premium DeFi platform on Solana that offers three ways to earn:</p>
+          <p>Takara is a premium DeFi platform on Solana that offers three ways to earn:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Base APY:</strong> 7.73-25% on USDT deposits</li>
             <li><strong>LAIKA Boost:</strong> Up to +4% additional APY</li>
@@ -30,11 +30,11 @@ export default function FAQPage() {
       question: 'What wallets do I need?',
       answer: (
         <div className="space-y-2">
-          <p>You need TWO wallets for stacking on Takara:</p>
+          <p>You need <strong>Phantom Wallet</strong> for stacking on Takara:</p>
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
             <p className="font-semibold text-purple-400 mb-1">Phantom Wallet</p>
-            <p className="text-sm">For USDT payment (Ethereum) + TAKARA/LAIKA tokens (Solana)</p>
-            <p className="text-xs text-gray-400 mt-1">Phantom supports both Ethereum and Solana networks</p>
+            <p className="text-sm">For all payments: USDT, TAKARA, and LAIKA tokens on Solana</p>
+            <p className="text-xs text-gray-400 mt-1">All transactions happen on the Solana network</p>
           </div>
         </div>
       )
@@ -51,8 +51,8 @@ export default function FAQPage() {
               <div className="flex gap-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">1</div>
                 <div>
-                  <p className="font-semibold text-white mb-1">Connect Both Wallets</p>
-                  <p className="text-sm text-gray-400">Connect Phantom wallet on the platform</p>
+                  <p className="font-semibold text-white mb-1">Connect Phantom Wallet</p>
+                  <p className="text-sm text-gray-400">Connect your Phantom wallet on the platform</p>
                 </div>
               </div>
             </div>
@@ -94,9 +94,8 @@ export default function FAQPage() {
               <div className="flex gap-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-gold-500 text-black rounded-full flex items-center justify-center font-bold">5</div>
                 <div>
-                  <p className="font-semibold text-white mb-1">Complete 2-Step Payment</p>
-                  <p className="text-sm text-gray-400">→ Pay USDT via Phantom (Ethereum)</p>
-                  <p className="text-sm text-gray-400">→ Pay TAKARA + LAIKA via Phantom (Solana)</p>
+                  <p className="font-semibold text-white mb-1">Complete Payment</p>
+                  <p className="text-sm text-gray-400">Pay USDT + TAKARA + LAIKA via Phantom on Solana</p>
                 </div>
               </div>
             </div>
@@ -117,21 +116,15 @@ export default function FAQPage() {
     },
     {
       category: 'Stacking Process',
-      question: 'What is the 2-step payment process?',
+      question: 'How does the payment process work?',
       answer: (
         <div className="space-y-3">
-          <p>Takara uses a unique 2-step payment system for security and efficiency:</p>
+          <p>All payments are made via <strong>Phantom wallet on Solana</strong>:</p>
 
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <p className="font-semibold text-purple-400 mb-2">Step 1: USDT Payment (Trust Wallet / MetaMask)</p>
-            <p className="text-sm text-gray-300">Pay your USDT on <strong>EVM Network (BSC)</strong></p>
-            <p className="text-sm text-gray-400 mt-1">This is your main stacking deposit</p>
-          </div>
-
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <p className="font-semibold text-purple-400 mb-2">Step 2: TAKARA + LAIKA (Phantom)</p>
-            <p className="text-sm text-gray-300">Pay required TAKARA tokens on <strong>Solana Mainnet</strong></p>
-            <p className="text-sm text-gray-300 mt-1">If you chose boost: pay LAIKA tokens</p>
+            <p className="font-semibold text-purple-400 mb-2">Payment via Phantom (Solana)</p>
+            <p className="text-sm text-gray-300">Pay USDT (Solana) + TAKARA tokens in a single flow</p>
+            <p className="text-sm text-gray-300 mt-1">If you chose boost: LAIKA tokens are also transferred</p>
             <p className="text-sm text-gray-400 mt-2">💡 <strong>TAKARA Requirements:</strong></p>
             <ul className="text-xs text-gray-400 mt-1 ml-4 space-y-1">
               <li>• 18M vaults: STARTER/PRO - No TAKARA | ELITE - 25 per 100 USDT</li>
@@ -140,9 +133,9 @@ export default function FAQPage() {
             </ul>
           </div>
 
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-3">
-            <p className="text-sm text-yellow-400">
-              ⚠️ <strong>Important:</strong> You must complete both steps. If you only pay USDT without completing the Phantom step, your stacking will be rejected.
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mt-3">
+            <p className="text-sm text-green-400">
+              ✅ <strong>Simple:</strong> All payments happen on Solana via Phantom wallet - fast and low fees!
             </p>
           </div>
         </div>
@@ -405,7 +398,7 @@ export default function FAQPage() {
         <div className="space-y-3">
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
             <p className="font-semibold text-green-400 mb-2">✓ Blockchain Security</p>
-            <p className="text-sm text-gray-300">All transactions on Solana & Ethereum blockchains</p>
+            <p className="text-sm text-gray-300">All transactions on Solana blockchain</p>
             <p className="text-sm text-gray-400">Immutable and transparent</p>
           </div>
 
@@ -442,7 +435,7 @@ export default function FAQPage() {
             Frequently Asked Questions
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Everything you need to know about stacking on Takara <span className="text-gold-500">宝</span>
+            Everything you need to know about stacking on Takara
           </p>
         </div>
 

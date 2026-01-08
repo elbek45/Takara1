@@ -105,18 +105,12 @@ export default function AdminUsersPage() {
                         <div className="space-y-0.5">
                           {user.walletAddress && (
                             <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-purple-500" title="Phantom (Solana) - TAKARA/LAIKA"></span>
+                              <span className="w-2 h-2 rounded-full bg-purple-500" title="Phantom (Solana) - USDT/TAKARA/LAIKA"></span>
                               <span className="text-xs text-gray-500">{user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}</span>
                             </div>
                           )}
-                          {user.tronAddress && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-red-500" title="Trust Wallet (TRON) - USDT"></span>
-                              <span className="text-xs text-gray-500">{user.tronAddress.slice(0, 6)}...{user.tronAddress.slice(-4)}</span>
-                            </div>
-                          )}
-                          {!user.walletAddress && !user.tronAddress && (
-                            <span className="text-xs text-gray-600">No wallets connected</span>
+                          {!user.walletAddress && (
+                            <span className="text-xs text-gray-600">No wallet connected</span>
                           )}
                         </div>
                       </div>

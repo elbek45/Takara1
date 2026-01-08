@@ -5,8 +5,9 @@ import { ArrowRight, Shield, Zap, Coins, ChevronDown, Pickaxe, Rocket, CreditCar
 import { PoweredBySlider } from '../components/landing'
 import { api } from '../services/api'
 
-// Gold color constant for inline styles
-const GOLD = '#FFD700'
+// Brand colors from brandbook
+const GOLD = '#EFCE92'
+const NAVY = '#0F1F40'
 
 export default function LandingPage() {
   const [expandedBlock, setExpandedBlock] = useState<number | null>(null)
@@ -64,30 +65,47 @@ export default function LandingPage() {
         <div className="absolute inset-0 zen-circles"></div>
         <div className="absolute inset-0 seigaiha-pattern opacity-50"></div>
 
-        {/* Gold Tree */}
-        <div className="absolute top-20 right-0 w-[600px] h-[600px] opacity-20">
-          <img src="/images/brand/gold-tree.png" alt="" className="w-full h-full object-contain" />
+        {/* Gold Tree - Animated */}
+        <div className="absolute top-10 right-0 w-[500px] h-[500px] opacity-30 animate-float hidden lg:block">
+          <img src="/images/brand/gold-tree.png" alt="" className="w-full h-full object-contain drop-shadow-2xl" />
         </div>
 
-        {/* Decorative gold circles */}
-        <div className="absolute top-10 left-10 w-64 h-64 rounded-full opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
-        <div className="absolute bottom-20 left-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-5" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 70%)` }}></div>
+        {/* Floating Gold Coins */}
+        <div className="absolute top-[15%] left-[5%] w-24 h-24 opacity-40 animate-float hidden md:block" style={{ animationDelay: '0s', animationDuration: '6s' }}>
+          <img src="/images/brand/gold-coin.png" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="absolute top-[60%] left-[8%] w-16 h-16 opacity-30 animate-float hidden md:block" style={{ animationDelay: '2s', animationDuration: '8s' }}>
+          <img src="/images/brand/gold-coin.png" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="absolute top-[40%] right-[15%] w-20 h-20 opacity-25 animate-float hidden lg:block" style={{ animationDelay: '1s', animationDuration: '7s' }}>
+          <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain" />
+        </div>
 
-        {/* Animated floating circles */}
+        {/* Abstract Gold Shape */}
+        <div className="absolute bottom-10 left-[10%] w-48 h-48 opacity-15 animate-spin-slow hidden lg:block">
+          <img src="/images/brand/gold-abstract.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
+        {/* Decorative gold circles with blur */}
+        <div className="absolute top-10 left-10 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: GOLD }}></div>
+        <div className="absolute bottom-20 left-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl" style={{ background: GOLD }}></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-10 blur-2xl" style={{ background: GOLD }}></div>
+
+        {/* Animated floating particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
-              className="absolute rounded-full animate-pulse"
+              className="absolute rounded-full animate-float-particle"
               style={{
-                width: `${20 + i * 10}px`,
-                height: `${20 + i * 10}px`,
-                background: `radial-gradient(circle, ${GOLD}20 0%, transparent 70%)`,
-                top: `${10 + i * 12}%`,
-                left: `${5 + i * 12}%`,
-                animationDelay: `${i * 0.3}s`,
-                animationDuration: `${3 + i * 0.5}s`
+                width: `${4 + (i % 5) * 3}px`,
+                height: `${4 + (i % 5) * 3}px`,
+                background: GOLD,
+                opacity: 0.3 + (i % 3) * 0.1,
+                top: `${5 + (i * 6) % 90}%`,
+                left: `${3 + (i * 7) % 94}%`,
+                animationDelay: `${i * 0.4}s`,
+                animationDuration: `${4 + (i % 4) * 2}s`
               }}
             />
           ))}
@@ -100,7 +118,7 @@ export default function LandingPage() {
               {/* Logo */}
               <div className="flex items-center">
                 <img
-                  src="/images/brand/logo-blue.png"
+                  src="/images/brand/logo-takara.png"
                   alt="Takara"
                   className="h-16 sm:h-20 w-auto"
                 />
@@ -166,7 +184,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              Why Choose Takara <span style={{ color: GOLD }}>宝</span>?
+              Why Choose Takara?
             </h2>
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">
               Principal protected, community mined, insured RWA yield
@@ -283,8 +301,17 @@ export default function LandingPage() {
           <div className="absolute top-20 left-10 w-72 h-72 rounded-full blur-[100px]" style={{ background: GOLD }}></div>
           <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full blur-[100px]" style={{ background: GOLD }}></div>
         </div>
+
+        {/* Floating coins decoration */}
+        <div className="absolute top-[10%] right-[5%] w-20 h-20 opacity-20 animate-float hidden lg:block" style={{ animationDelay: '0.5s' }}>
+          <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="absolute bottom-[20%] left-[3%] w-16 h-16 opacity-15 animate-float hidden lg:block" style={{ animationDelay: '1.5s' }}>
+          <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
         {/* Floating concentric circles */}
-        <div className="absolute top-1/4 left-1/4 w-40 h-40 opacity-5">
+        <div className="absolute top-1/4 left-1/4 w-40 h-40 opacity-10 animate-spin-slow">
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
             <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
@@ -294,16 +321,26 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left - Coin Image */}
+            {/* Left - Coin Image with animation */}
             <div className="flex justify-center relative">
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[300px] h-[300px] rounded-full opacity-20 blur-3xl" style={{ background: GOLD }}></div>
+                <div className="w-[350px] h-[350px] rounded-full opacity-30 blur-3xl animate-pulse" style={{ background: GOLD }}></div>
               </div>
-              <img
-                src="/images/brand/coin-swirl.png"
-                alt="$TKR Token"
-                className="w-[350px] h-auto relative z-10"
-              />
+              {/* Main coin */}
+              <div className="relative animate-float" style={{ animationDuration: '5s' }}>
+                <img
+                  src="/images/brand/icon.png"
+                  alt="$TKR Token"
+                  className="w-[320px] h-auto relative z-10 drop-shadow-2xl"
+                />
+                {/* Orbiting smaller coins */}
+                <div className="absolute -top-4 -right-4 w-16 h-16 animate-float" style={{ animationDelay: '0.5s', animationDuration: '3s' }}>
+                  <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain opacity-60" />
+                </div>
+                <div className="absolute -bottom-2 -left-6 w-12 h-12 animate-float" style={{ animationDelay: '1s', animationDuration: '4s' }}>
+                  <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain opacity-50" />
+                </div>
+              </div>
             </div>
 
             {/* Right - Tokenomics Info */}
@@ -700,16 +737,38 @@ export default function LandingPage() {
         {/* Japanese patterns */}
         <div className="absolute inset-0 zen-circles opacity-30"></div>
         <div className="absolute inset-0 seigaiha-pattern opacity-20"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-15" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 40%)` }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-20 animate-pulse" style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 40%)` }}></div>
+
+        {/* Gold Tree on left */}
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] opacity-15 hidden lg:block">
+          <img src="/images/brand/gold-tree.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
+        {/* Floating coins */}
+        <div className="absolute top-[15%] right-[10%] w-20 h-20 opacity-30 animate-float hidden md:block" style={{ animationDuration: '5s' }}>
+          <img src="/images/brand/gold-coin.png" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="absolute bottom-[25%] left-[15%] w-16 h-16 opacity-25 animate-float hidden md:block" style={{ animationDelay: '1s', animationDuration: '6s' }}>
+          <img src="/images/brand/icon.png" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="absolute top-[40%] left-[5%] w-12 h-12 opacity-20 animate-float hidden lg:block" style={{ animationDelay: '2s', animationDuration: '7s' }}>
+          <img src="/images/brand/gold-coin.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
+        {/* Abstract shape */}
+        <div className="absolute top-10 right-10 w-32 h-32 opacity-10 animate-spin-slow hidden lg:block">
+          <img src="/images/brand/gold-abstract.png" alt="" className="w-full h-full object-contain" />
+        </div>
+
         {/* Animated concentric circles */}
-        <div className="absolute top-20 left-20 w-40 h-40 opacity-10 animate-float">
+        <div className="absolute top-20 left-20 w-40 h-40 opacity-15 animate-spin-slow" style={{ animationDuration: '30s' }}>
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
             <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
             <circle cx="50" cy="50" r="25" fill="none" stroke={GOLD} strokeWidth="0.5" />
           </svg>
         </div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 opacity-10 animate-float" style={{ animationDelay: '1s' }}>
+        <div className="absolute bottom-20 right-20 w-40 h-40 opacity-15 animate-spin-slow" style={{ animationDuration: '25s', animationDirection: 'reverse' }}>
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <circle cx="50" cy="50" r="45" fill="none" stroke={GOLD} strokeWidth="0.5" />
             <circle cx="50" cy="50" r="35" fill="none" stroke={GOLD} strokeWidth="0.5" />
@@ -717,8 +776,34 @@ export default function LandingPage() {
           </svg>
         </div>
 
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={`cta-particle-${i}`}
+              className="absolute rounded-full animate-float-particle"
+              style={{
+                width: `${3 + (i % 4) * 2}px`,
+                height: `${3 + (i % 4) * 2}px`,
+                background: GOLD,
+                opacity: 0.4,
+                top: `${10 + (i * 8) % 80}%`,
+                left: `${5 + (i * 10) % 90}%`,
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${5 + (i % 3) * 2}s`
+              }}
+            />
+          ))}
+        </div>
+
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <div className="text-6xl mb-4" style={{ color: GOLD }}>宝</div>
+          <div className="animate-float" style={{ animationDuration: '6s' }}>
+            <img
+              src="/images/brand/logo-takara.png"
+              alt="Takara"
+              className="h-16 md:h-20 w-auto mx-auto mb-4 drop-shadow-lg"
+            />
+          </div>
           <h2 className="text-3xl sm:text-5xl font-bold text-white leading-tight">
             Takara is for users who want capital protection first and rewards second
           </h2>
@@ -728,7 +813,7 @@ export default function LandingPage() {
           <div className="pt-4">
             <Link
               to="/vaults"
-              className="btn-gold inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-lg"
+              className="btn-gold inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-lg animate-pulse-glow"
             >
               Start Earning Today
               <ArrowRight className="h-6 w-6" />

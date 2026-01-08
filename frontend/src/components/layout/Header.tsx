@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { api } from '../../services/api'
 import AuthModal from '../auth/AuthModal'
-import { TrustWalletButton, TrustWalletButtonCompact, PhantomButton, PhantomButtonCompact } from '../wallet'
+import { PhantomButton, PhantomButtonCompact } from '../wallet'
 
 const navigation = [
   { name: 'Home', href: '/app' },
@@ -55,11 +55,12 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/app" className="flex items-center space-x-2">
-              <span className="text-2xl text-gold-300">宝</span>
-              <span className="text-xl font-bold text-gold-300">
-                Takara
-              </span>
+            <Link to="/app" className="flex items-center">
+              <img
+                src="/images/brand/logo-takara.png"
+                alt="Takara"
+                className="h-10 w-auto"
+              />
             </Link>
           </div>
 
@@ -116,12 +117,9 @@ export default function Header() {
               </button>
             )}
 
-            {/* Wallet Buttons - Only show if authenticated */}
+            {/* Wallet Button - Only show if authenticated */}
             {isAuthenticated && (
-              <div className="flex items-center gap-2">
-                <PhantomButton />
-                <TrustWalletButton variant="outline" size="md" />
-              </div>
+              <PhantomButton />
             )}
           </div>
 
@@ -190,11 +188,10 @@ export default function Header() {
               </button>
             )}
 
-            {/* Wallet Buttons - Only show if authenticated */}
+            {/* Wallet Button - Only show if authenticated */}
             {isAuthenticated && (
               <div className="pt-2 space-y-2">
                 <PhantomButtonCompact className="w-full" />
-                <TrustWalletButtonCompact className="w-full" />
 
                 {/* Logout Button for mobile */}
                 {currentUser?.data && (

@@ -36,9 +36,11 @@ export default function ComingSoonPage() {
       <div className="relative z-10 text-center px-4 max-w-2xl">
         {/* Logo */}
         <div className="mb-8">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-2">
-            Takara <span className="text-gold-500">宝</span>
-          </h1>
+          <img
+            src="/images/brand/logo-takara.png"
+            alt="Takara"
+            className="h-20 md:h-28 w-auto mx-auto mb-4"
+          />
           <p className="text-gray-400 text-lg">Premium Investment Platform</p>
         </div>
 

@@ -57,7 +57,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 100,
+            baseTakaraAPY: 100,
+            maxTakaraAPY: 200,
             duration: 30,
           },
         },
@@ -67,7 +68,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 50,
+            baseTakaraAPY: 50,
+            maxTakaraAPY: 100,
             duration: 12,
           },
         },
@@ -105,7 +107,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 50,
+            baseTakaraAPY: 50,
+            maxTakaraAPY: 100,
             duration: 12,
           },
         },
@@ -178,7 +181,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 50,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 100,
+            baseTakaraAPY: 100,
+            maxTakaraAPY: 200,
             duration: 30,
           },
         },
@@ -213,7 +217,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 100,
+            baseTakaraAPY: 100,
+            maxTakaraAPY: 200,
             duration: 30,
           },
         },
@@ -223,7 +228,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 50,
+            baseTakaraAPY: 50,
+            maxTakaraAPY: 100,
             duration: 12,
           },
         },
@@ -265,7 +271,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 50,
+            baseTakaraAPY: 50,
+            maxTakaraAPY: 100,
             duration: 12,
           },
         },
@@ -303,7 +310,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 100,
+            baseTakaraAPY: 100,
+            maxTakaraAPY: 200,
             duration: 30,
           },
         },
@@ -313,7 +321,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 50,
+            baseTakaraAPY: 50,
+            maxTakaraAPY: 100,
             duration: 12,
           },
         },
@@ -369,7 +378,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 350, // Elite
+            baseTakaraAPY: 350, // Elite
+            maxTakaraAPY: 500,
             duration: 36,
           },
         },
@@ -400,7 +410,8 @@ describe('Daily TAKARA Mining Job', () => {
           pendingTAKARA: 0,
           status: 'ACTIVE',
           vault: {
-            takaraAPY: 100,
+            baseTakaraAPY: 100,
+            maxTakaraAPY: 200,
             duration: 30,
           },
         },

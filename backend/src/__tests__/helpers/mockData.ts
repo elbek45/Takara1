@@ -57,7 +57,8 @@ export const mockVaults = {
     requireTAKARA: false,
     baseAPY: 4.0,
     maxAPY: 8.0,
-    takaraAPY: 50,
+    baseTakaraAPY: 50,
+    maxTakaraAPY: 100,
     isActive: true,
   },
 
@@ -72,7 +73,8 @@ export const mockVaults = {
     takaraRatio: 30,
     baseAPY: 5.5,
     maxAPY: 11.0,
-    takaraAPY: 100,
+    baseTakaraAPY: 100,
+    maxTakaraAPY: 200,
     isActive: true,
   },
 
@@ -87,7 +89,8 @@ export const mockVaults = {
     takaraRatio: 50,
     baseAPY: 8.0,
     maxAPY: 16.0,
-    takaraAPY: 350,
+    baseTakaraAPY: 350,
+    maxTakaraAPY: 500,
     isActive: true,
   },
 
@@ -101,7 +104,8 @@ export const mockVaults = {
     requireTAKARA: false,
     baseAPY: 4.0,
     maxAPY: 8.0,
-    takaraAPY: 50,
+    baseTakaraAPY: 50,
+    maxTakaraAPY: 100,
     isActive: false, // Inactive
   },
 };

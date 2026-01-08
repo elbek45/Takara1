@@ -337,10 +337,7 @@ export default function AdminClaimsPage() {
                       )}
                       {claim.status === 'COMPLETED' && claim.txSignature && (
                         <a
-                          href={claim.claimType === 'USDT'
-                            ? `https://tronscan.org/#/transaction/${claim.txSignature}`
-                            : `https://solscan.io/tx/${claim.txSignature}?cluster=devnet`
-                          }
+                          href={`https://solscan.io/tx/${claim.txSignature}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
