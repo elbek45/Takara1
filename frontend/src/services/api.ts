@@ -345,12 +345,18 @@ class ApiClient {
   async adminUploadPartnerLogo(file: File): Promise<ApiResponse<{ url: string }>> {
     const formData = new FormData()
     formData.append('logo', file)
-    // Set Content-Type to undefined to let axios set multipart/form-data with correct boundary
-    const { data } = await this.client.post<ApiResponse<{ url: string }>>('/partners/admin/upload', formData, {
-      headers: {
-        'Content-Type': undefined as unknown as string,
-      },
+    // Use native fetch for file uploads to avoid axios Content-Type issues
+    const token = localStorage.getItem('admin_token')
+    const response = await fetch(`${API_URL}/partners/admin/upload`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData,
+      credentials: 'include',
     })
+    const data = await response.json()
+    if (!response.ok) {
+      throw { response: { data } }
+    }
     return data
   }
 }
