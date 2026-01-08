@@ -20,23 +20,26 @@ import { authenticateAdmin } from '../middleware/auth.middleware';
 const router = Router();
 
 // Multer error handling middleware
-const handleMulterError = (err: any, req: Request, res: Response, next: NextFunction) => {
+const handleMulterError = (err: any, req: Request, res: Response, next: NextFunction): void => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'File too large. Maximum size is 5MB.',
       });
+      return;
     }
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: `Upload error: ${err.message}`,
     });
+    return;
   } else if (err) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: err.message || 'Upload failed',
     });
+    return;
   }
   next();
 };
