@@ -228,24 +228,34 @@ export async function adminDeletePartner(req: Request, res: Response) {
  */
 export async function adminUploadPartnerLogo(req: Request, res: Response) {
   try {
-    if (!req.file) {
+    // Check for multer errors in request
+    if ((req as any).fileValidationError) {
       return res.status(400).json({
         success: false,
-        error: 'No file uploaded',
+        error: (req as any).fileValidationError,
       });
     }
 
+    if (!req.file) {
+      console.log('Upload request received but no file attached. Headers:', req.headers['content-type']);
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded. Make sure to select a file and use multipart/form-data.',
+      });
+    }
+
+    console.log('File uploaded successfully:', req.file.filename, 'Size:', req.file.size);
     const url = `/uploads/partners/${req.file.filename}`;
 
     return res.json({
       success: true,
       data: { url },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to upload logo:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to upload logo',
+      error: error.message || 'Failed to upload logo',
     });
   }
 }
