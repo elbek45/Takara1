@@ -427,6 +427,7 @@ export async function getMyInvestments(req: Request, res: Response): Promise<voi
       include: {
         vault: true,
         laikaBoost: true,
+        takaraBoost: true,
         takaraMining: {
           orderBy: { miningDate: 'desc' },
           take: 1
@@ -452,10 +453,20 @@ export async function getMyInvestments(req: Request, res: Response): Promise<voi
       pendingUSDT: Number(inv.pendingUSDT),
       pendingTAKARA: Number(inv.pendingTAKARA),
       nftMintAddress: inv.nftMintAddress,
+      instantSalePrice: inv.instantSalePrice ? Number(inv.instantSalePrice) : null,
+      isInstantSaleEnabled: inv.isInstantSaleEnabled,
       laikaBoost: inv.laikaBoost ? {
         laikaAmount: Number(inv.laikaBoost.laikaAmount),
         additionalAPY: Number(inv.laikaBoost.additionalAPY),
         isReturned: inv.laikaBoost.isReturned
+      } : null,
+      takaraBoost: inv.takaraBoost ? {
+        takaraAmount: Number(inv.takaraBoost.takaraAmount),
+        takaraValueUSD: Number(inv.takaraBoost.takaraValueUSD),
+        maxAllowedUSD: Number(inv.takaraBoost.maxAllowedUSD),
+        boostPercentage: Number(inv.takaraBoost.boostPercentage),
+        additionalAPY: Number(inv.takaraBoost.additionalAPY),
+        isReturned: inv.takaraBoost.isReturned
       } : null,
       lastMiningDate: inv.takaraMining[0]?.miningDate || null
     }));
@@ -490,6 +501,7 @@ export async function getInvestmentById(req: Request, res: Response): Promise<vo
       include: {
         vault: true,
         laikaBoost: true,
+        takaraBoost: true,
         takaraMining: {
           orderBy: { miningDate: 'desc' },
           take: 30 // Last 30 days
@@ -545,6 +557,16 @@ export async function getInvestmentById(req: Request, res: Response): Promise<vo
           isReturned: investment.laikaBoost.isReturned,
           returnDate: investment.laikaBoost.returnDate
         } : null,
+        takaraBoost: investment.takaraBoost ? {
+          takaraAmount: Number(investment.takaraBoost.takaraAmount),
+          takaraValueUSD: Number(investment.takaraBoost.takaraValueUSD),
+          maxAllowedUSD: Number(investment.takaraBoost.maxAllowedUSD),
+          boostPercentage: Number(investment.takaraBoost.boostPercentage),
+          additionalAPY: Number(investment.takaraBoost.additionalAPY),
+          isReturned: investment.takaraBoost.isReturned
+        } : null,
+        instantSalePrice: investment.instantSalePrice ? Number(investment.instantSalePrice) : null,
+        isInstantSaleEnabled: investment.isInstantSaleEnabled,
         mining: {
           history: investment.takaraMining.map(m => ({
             date: m.miningDate,
