@@ -129,6 +129,8 @@ export const adminApiService = {
     requireTAKARA: boolean
     takaraRatio?: number
     totalCapacity?: number
+    miningThreshold?: number
+    acceptedPayments?: string
     isActive: boolean
   }) => {
     const response = await adminApi.post('/admin/vaults', data)
@@ -149,6 +151,8 @@ export const adminApiService = {
     requireTAKARA?: boolean
     takaraRatio?: number
     totalCapacity?: number
+    miningThreshold?: number
+    acceptedPayments?: string
     isActive?: boolean
   }) => {
     const response = await adminApi.put(`/admin/vaults/${id}`, data)

@@ -391,6 +391,8 @@ export async function createVault(req: Request, res: Response) {
       requireTAKARA: z.boolean().default(false),
       takaraRatio: z.number().min(0).optional(),
       totalCapacity: z.number().positive().optional(),
+      miningThreshold: z.number().min(0).optional(),
+      acceptedPayments: z.string().optional(),
       isActive: z.boolean().default(true)
     });
 
@@ -445,6 +447,8 @@ export async function createVault(req: Request, res: Response) {
         requireTAKARA: data.requireTAKARA,
         takaraRatio: data.takaraRatio,
         totalCapacity: data.totalCapacity,
+        miningThreshold: data.miningThreshold,
+        acceptedPayments: data.acceptedPayments,
         isActive: data.isActive
       }
     });
@@ -489,7 +493,6 @@ export async function updateVault(req: Request, res: Response) {
       maxInvestment: z.number().positive().optional(),
       baseAPY: z.number().min(0).max(100).optional(),
       maxAPY: z.number().min(0).max(100).optional(),
-      takaraAPY: z.number().min(0).optional(),
       baseTakaraAPY: z.number().min(0).optional(),
       maxTakaraAPY: z.number().min(0).optional(),
       requireTAKARA: z.boolean().optional(),

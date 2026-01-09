@@ -150,22 +150,6 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
-
-            {/* Right Content - Main Icon */}
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="relative w-80 h-80 xl:w-96 xl:h-96 animate-float">
-                <img
-                  src="/images/brand/icon.png"
-                  alt="Takara"
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                />
-                {/* Glow effect */}
-                <div
-                  className="absolute inset-0 rounded-full blur-3xl opacity-30 -z-10"
-                  style={{ background: GOLD }}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Stats Row */}
